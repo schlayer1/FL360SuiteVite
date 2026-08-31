@@ -2,7 +2,9 @@
  * COHORT & SEMINAR OVERVIEW MATRIX (Fachleiter 360° Suite Pro)
  */
 
-let dashboardViewMode = "profile"; // "profile" or "cohort"
+if (typeof dashboardViewMode === 'undefined') {
+  var dashboardViewMode = "profile";
+}
 
 function setDashboardViewMode(mode) {
   dashboardViewMode = mode;

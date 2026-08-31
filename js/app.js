@@ -3,6 +3,7 @@
  */
 
 let activeTabId = "tab-dashboard";
+var dashboardViewMode = "profile";
 let liveTimerInterval = null;
 let liveTimerSeconds = 0;
 let liveTimerRunning = false;
@@ -504,7 +505,6 @@ function renderDashboard() {
   }
 
   // Profile Grid
-  const profileContainer = document.getElementById("dashboardProfileGrid");
   if (profileContainer) {
     profileContainer.innerHTML = `
       <div class="profile-item">

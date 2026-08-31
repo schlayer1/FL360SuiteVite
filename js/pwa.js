@@ -36,7 +36,7 @@ function initPWA() {
   });
 
   // Check if already running standalone
-  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+  if ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (typeof navigator !== 'undefined' && navigator.standalone === true)) {
     const btn = document.getElementById('pwaInstallBtn');
     if (btn) btn.style.display = 'none';
   }

@@ -718,7 +718,7 @@ function nsResetAllConfirm() {
   }
 }
 
-let isDictating = false;
+let isNsDictating = false;
 function nsToggleDictation() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -726,14 +726,14 @@ function nsToggleDictation() {
     return;
   }
   const btn = document.getElementById("btnNsDictate");
-  if (!isDictating) {
+  if (!isNsDictating) {
     const recognition = new SpeechRecognition();
     recognition.lang = 'de-DE';
     recognition.continuous = false;
     recognition.interimResults = false;
     
     recognition.onstart = () => {
-      isDictating = true;
+      isNsDictating = true;
       if (btn) btn.classList.add("listening");
       showToast("Diktat aktiv: Bitte sprechen...", "🎤");
     };
@@ -747,12 +747,13 @@ function nsToggleDictation() {
     };
 
     recognition.onerror = () => {
-      isDictating = false;
+      isNsDictating = false;
       if (btn) btn.classList.remove("listening");
+      showToast("Spracherkennung abgebrochen oder keine Berechtigung.", "⚠️");
     };
 
     recognition.onend = () => {
-      isDictating = false;
+      isNsDictating = false;
       if (btn) btn.classList.remove("listening");
     };
 
