@@ -578,14 +578,38 @@ async function applyAutofill() {
   showToast(`✅ ${filledCount} Stammdaten- & Dropdown-Felder präzise eingetragen!`, "🎯");
 }
 
+function harvestLiveFormValues() {
+  if (!appState.pdfFormValues) appState.pdfFormValues = {};
+  document.querySelectorAll(".pdf-form-field-input, .pdf-form-field-select, .pdf-form-field-textarea").forEach(elem => {
+    const fn = elem.dataset.fieldName;
+    if (fn) {
+      if (elem.type === 'checkbox') {
+        appState.pdfFormValues[fn] = elem.checked;
+      } else {
+        appState.pdfFormValues[fn] = elem.value;
+      }
+    }
+  });
+  saveState();
+}
+
 async function generateFilledPdfDoc() {
   if (!pdfDocBytes || typeof PDFLib === 'undefined') return null;
+
+  harvestLiveFormValues();
 
   const pdfDoc = await PDFLib.PDFDocument.load(pdfDocBytes.slice(0), { ignoreEncryption: true });
   const form = pdfDoc.getForm();
 
+  // Force PDF Viewers (Apple Preview, Adobe Reader, Browsers) to display filled values
+  try {
+    form.acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+  } catch(e) {}
+
   if (appState.pdfFormValues) {
     for (const [fieldName, val] of Object.entries(appState.pdfFormValues)) {
+      if (val === undefined || val === null || val === '' || val === '--') continue;
+
       try {
         const field = form.getField(fieldName);
         const type = field.constructor.name;
@@ -594,15 +618,25 @@ async function generateFilledPdfDoc() {
           if (val === true || val === 'On') field.check();
           else field.uncheck();
         } else if (type === 'PDFDropdown') {
+          const strVal = String(val);
           try {
-            field.select(String(val));
+            const existingOpts = field.getOptions();
+            if (!existingOpts.includes(strVal)) {
+              field.addOptions([strVal]);
+            }
+            field.select(strVal);
           } catch(err) {
-            // Match substring or add fallback
             try {
               const opts = field.getOptions();
-              const match = opts.find(o => o.toLowerCase() === String(val).toLowerCase() || o.toLowerCase().includes(String(val).toLowerCase()));
+              const match = opts.find(o => o.toLowerCase() === strVal.toLowerCase() || o.toLowerCase().includes(strVal.toLowerCase()) || strVal.toLowerCase().includes(o.toLowerCase()));
               if (match) field.select(match);
-            } catch(err2) {}
+              else {
+                field.addOptions([strVal]);
+                field.select(strVal);
+              }
+            } catch(err2) {
+              console.warn("Dropdown select notice:", fieldName, strVal, err2);
+            }
           }
         } else if (type === 'PDFTextField' || field.setText) {
           field.setText(String(val || ''));
@@ -610,6 +644,11 @@ async function generateFilledPdfDoc() {
       } catch(e) {}
     }
   }
+
+  // Synchronize visual appearance streams
+  try {
+    form.updateFieldAppearances();
+  } catch(e) {}
 
   return await pdfDoc.save();
 }
