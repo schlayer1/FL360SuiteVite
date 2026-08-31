@@ -559,6 +559,66 @@ canvas { max-width: 100%; height: auto !important; }
   align-items: center;
 }
 
+/* ==========================================================================
+   DEADLINE TABLE & LEGAL CALCULATOR STYLES
+   ========================================================================== */
+.deadline-row:hover {
+  background: #f8fafc;
+}
+
+.deadline-title-input {
+  font-weight: 600;
+  font-size: 0.86rem;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.deadline-title-input:focus {
+  background: #ffffff;
+  border-color: #3b82f6;
+}
+
+.deadline-status-select {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.badge-open { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.badge-progress { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.badge-done { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-overdue { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.badge-urgent { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+
+.legal-doc-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.calc-unit {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  min-width: 28px;
+}
+
+.calc-result-box {
+  border-top: 2px solid #e2e8f0;
+  padding-top: 14px;
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 @media print {
   header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container { display: none !important; }
   .app-container { padding: 0 !important; }

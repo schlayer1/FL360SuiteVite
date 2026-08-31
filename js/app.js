@@ -1633,36 +1633,12 @@ function saveReflectionComparison() {
    ========================================================================== */
 
 function renderFristenTab() {
-  calculateDeadlines();
-}
-
-function calculateDeadlines() {
-  const cur = getCurrentLAA();
-  if (!cur || !cur.startDate) return;
-
-  const start = new Date(cur.startDate);
-  const addMonths = (d, m) => {
-    const res = new Date(d);
-    res.setMonth(res.getMonth() + m);
-    return res;
-  };
-
-  const d1 = addMonths(start, 3);
-  const d2 = addMonths(start, 6);
-  const d3 = addMonths(start, 12);
-  const d4 = addMonths(start, 16);
-  const d5 = addMonths(start, 18);
-
-  const el = (id, txt) => {
-    const node = document.getElementById(id);
-    if (node) node.innerText = txt;
-  };
-
-  el("deadline_eb", d1.toLocaleDateString('de-DE'));
-  el("deadline_hp1", d2.toLocaleDateString('de-DE'));
-  el("deadline_hp2", d3.toLocaleDateString('de-DE'));
-  el("deadline_ha", d4.toLocaleDateString('de-DE'));
-  el("deadline_exam", d5.toLocaleDateString('de-DE'));
+  if (typeof renderCustomDeadlinesUI === 'function') {
+    renderCustomDeadlinesUI();
+  }
+  if (typeof renderCalculatorUI === 'function') {
+    renderCalculatorUI();
+  }
 }
 
 function exportAllAppointmentsICS() {

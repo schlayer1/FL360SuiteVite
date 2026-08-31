@@ -572,79 +572,33 @@
   </div>
 
   <!-- =========================================================================
-       TAB 7: FRISTEN, TERMINE & NOTENRECHNER
+       TAB 7: FRISTEN, TERMINE & NOTENRECHNER (INDIVIDUELL & RECHTSKONFORM)
        ========================================================================= -->
   <div id="tab-fristen" class="tab-content">
-    <div class="grid-split">
-      <!-- Left: Thüringer Fristenrechner -->
-      <div class="card">
-        <div class="card-header">
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <!-- Top Card: Individuell befüllbare Ausbildungsfristen & Seminar-Zeitschiene -->
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <div>
-            <span class="card-title">📅 Gesetzliche Ausbildungsfristen (ThürAZStPLVO)</span>
-            <div class="card-subtitle">Berechnet anhand des Ausbildungsbeginns</div>
+            <span class="card-title" style="font-size:1.05rem;">📅 Gesetzliche Ausbildungsfristen &amp; Seminar-Zeitschiene</span>
+            <div class="card-subtitle">Thüringer gesetzliche Richtwerte + Individuell anpassbare Termine für dieses Kandidatenprofil</div>
           </div>
+          <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()">
+            📅 Als Kalender (.ics)
+          </button>
         </div>
-
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="profile-item">
-            <span class="profile-label">Eingangsberatung &amp; Ausbildungsplan (Monat 3)</span>
-            <span id="deadline_eb" class="profile-value">–</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Zwischenbilanz Hauptphase 1 (Monat 6)</span>
-            <span id="deadline_hp1" class="profile-value">–</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Entwicklungsgespräch Hauptphase 2 (Monat 12)</span>
-            <span id="deadline_hp2" class="profile-value">–</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">Abgabe Schriftliche Hausarbeit (Monat 16)</span>
-            <span id="deadline_ha" class="profile-value">–</span>
-          </div>
-          <div class="profile-item">
-            <span class="profile-label">2. Staatsprüfung / Prüfungszeitraum (Monat 18)</span>
-            <span id="deadline_exam" class="profile-value">–</span>
-          </div>
-        </div>
+        <div id="deadlinesTableContainer"></div>
       </div>
 
-      <!-- Right: Thüringer Prüfungsnoten-Rechner -->
+      <!-- Bottom Card: Rechtskonformer Gesamtergebnis-Rechner (LAA, NQ, WB) -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="flex-wrap:wrap; gap:8px;">
           <div>
-            <span class="card-title">🧮 Gesamtergebnis-Rechner (2. Staatsprüfung)</span>
-            <div class="card-subtitle">Offizielle Gewichtung nach Thüringer Prüfungsverordnung</div>
+            <span class="card-title">🧮 Amtlicher Gesamtergebnis-Rechner</span>
+            <div class="card-subtitle">Offizielle Gewichtung &amp; Punktesystem für Lehramtsanwärter, Nachqualifizierer und Weiterbildner</div>
           </div>
         </div>
-
-        <div class="calc-box">
-          <div class="calc-row">
-            <span>Vornote (Schule + Seminar) [30%]:</span>
-            <input id="calc_vornote" type="number" step="0.1" class="calc-input" value="2.0" onchange="calculateFinalGrade()" />
-          </div>
-          <div class="calc-row">
-            <span>1. Prüfungslehrprobe [25%]:</span>
-            <input id="calc_lp1" type="number" step="0.1" class="calc-input" value="1.7" onchange="calculateFinalGrade()" />
-          </div>
-          <div class="calc-row">
-            <span>2. Prüfungslehrprobe [25%]:</span>
-            <input id="calc_lp2" type="number" step="0.1" class="calc-input" value="2.0" onchange="calculateFinalGrade()" />
-          </div>
-          <div class="calc-row">
-            <span>Mündliche Prüfung [10%]:</span>
-            <input id="calc_mp" type="number" step="0.1" class="calc-input" value="1.3" onchange="calculateFinalGrade()" />
-          </div>
-          <div class="calc-row">
-            <span>Kolloquium / Reflexion [10%]:</span>
-            <input id="calc_koll" type="number" step="0.1" class="calc-input" value="1.7" onchange="calculateFinalGrade()" />
-          </div>
-
-          <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-            <strong>Gesamtnote der Staatsprüfung:</strong>
-            <strong id="calcResultDisplay" style="font-size:1.3rem; color:var(--primary); font-family:'JetBrains Mono',monospace;">1.84 (Gut)</strong>
-          </div>
-        </div>
+        <div id="calculatorContainer"></div>
       </div>
     </div>
   </div>
@@ -747,6 +701,7 @@
 <script src="js/app.js"></script>
 <script src="js/wizard.js"></script>
 <script src="js/cohort.js"></script>
+<script src="js/calculator.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/niederschrift.js"></script>
 <script src="js/pdf_engine.js"></script>

@@ -2,7 +2,7 @@
  * SERVICE WORKER FOR OFFLINE SUPPORT (Fachleiter 360° Suite Pro)
  */
 
-const CACHE_NAME = 'fachleiter-360-v1.0.0';
+const CACHE_NAME = 'fachleiter-360-v1.1.0';
 
 const PRECACHE_ASSETS = [
   './',
@@ -14,6 +14,9 @@ const PRECACHE_ASSETS = [
   './js/rubric_data.js',
   './js/app.js',
   './js/wizard.js',
+  './js/cohort.js',
+  './js/calculator.js',
+  './js/pwa.js',
   './js/niederschrift.js',
   './js/pdf_engine.js',
   './js/templates_data.js',
