@@ -19,6 +19,19 @@ const THUERINGEN_SUBJECTS = [
   "Kunsterziehung", "Musik", "Sport", "Französisch", "Russisch", "Spanisch", "Latein"
 ];
 
+function sanitizePdfText(str) {
+  if (str === undefined || str === null) return '';
+  return String(str)
+    .replace(/–/g, '-')
+    .replace(/—/g, '-')
+    .replace(/“/g, '"')
+    .replace(/”/g, '"')
+    .replace(/„/g, '"')
+    .replace(/’/g, "'")
+    .replace(/‘/g, "'")
+    .replace(/…/g, '...');
+}
+
 async function initPdfEngine() {
   updateTemplateDropdown();
   updateFolderUIState();
@@ -457,7 +470,6 @@ function setFieldValue(name, val) {
     if (elem.type === 'checkbox') elem.checked = Boolean(val);
     else {
       elem.value = val || '';
-      // If it is a select and value not in options, try matching case-insensitively or adding
       if (elem.tagName === 'SELECT' && elem.value !== val && val) {
         let found = false;
         for (let i = 0; i < elem.options.length; i++) {
@@ -593,7 +605,7 @@ function harvestLiveFormValues() {
   saveState();
 }
 
-async function generateFilledPdfDoc() {
+async function generateFilledPdfDoc(options = {}) {
   if (!pdfDocBytes || typeof PDFLib === 'undefined') return null;
 
   harvestLiveFormValues();
@@ -606,12 +618,12 @@ async function generateFilledPdfDoc() {
     standardFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
   } catch(e) {}
 
-  // Force PDF Viewers (Apple Preview, Adobe Reader, Chrome, Edge) to render fresh values
+  // Force PDF Viewers to render fresh values
   try {
     form.acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
   } catch(e) {}
 
-  // Clean stale pre-compiled appearance streams (/AP) on all fields & widgets so viewers never show cached "Bitte wählen"
+  // Clean stale pre-compiled appearance streams (/AP) on all fields & widgets
   try {
     const allFields = form.getFields();
     allFields.forEach(f => {
@@ -629,21 +641,20 @@ async function generateFilledPdfDoc() {
   } catch(e) {}
 
   if (appState.pdfFormValues) {
-    for (const [fieldName, val] of Object.entries(appState.pdfFormValues)) {
-      if (val === undefined || val === null || val === '' || val === '--') continue;
+    for (const [fieldName, rawVal] of Object.entries(appState.pdfFormValues)) {
+      if (rawVal === undefined || rawVal === null || rawVal === '' || rawVal === '--' || rawVal === 'Bitte wählen') continue;
 
       try {
         const field = form.getField(fieldName);
         const type = field.constructor.name;
-        const strVal = String(val).trim();
+        const strVal = sanitizePdfText(rawVal).trim();
 
         if (type === 'PDFCheckBox') {
-          if (val === true || val === 'On') field.check();
+          if (rawVal === true || rawVal === 'On') field.check();
           else field.uncheck();
         } else if (type === 'PDFDropdown') {
           let selected = false;
 
-          // 1. Try exact selection
           try {
             const existingOpts = field.getOptions();
             if (!existingOpts.includes(strVal)) {
@@ -653,7 +664,6 @@ async function generateFilledPdfDoc() {
             selected = true;
           } catch(err) {}
 
-          // 2. Try matching display or export value
           if (!selected) {
             try {
               const opts = field.getOptions();
@@ -669,7 +679,6 @@ async function generateFilledPdfDoc() {
             } catch(err2) {}
           }
 
-          // 3. Directly set /V and /DV in AcroForm dictionary as bulletproof fallback
           try {
             if (field.acroField && field.acroField.dict) {
               field.acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(strVal));
@@ -686,7 +695,7 @@ async function generateFilledPdfDoc() {
     }
   }
 
-  // Generate clean, sharp appearance streams for all updated fields
+  // Generate appearance streams
   try {
     if (standardFont) {
       form.updateFieldAppearances(standardFont);
@@ -695,12 +704,22 @@ async function generateFilledPdfDoc() {
     }
   } catch(e) {}
 
+  // Flatten the form so all text and checkboxes are permanently drawn into the page
+  // This guarantees 100% accurate printing on every printer and PDF viewer!
+  if (options.flatten !== false) {
+    try {
+      form.flatten();
+    } catch(errFlatten) {
+      console.warn("Form flattening notice:", errFlatten);
+    }
+  }
+
   return await pdfDoc.save();
 }
 
 async function downloadFilledPdf() {
   showToast("Generiere PDF mit allen Eingaben & Dropdown-Auswahlen...", "⏳");
-  const bytes = await generateFilledPdfDoc();
+  const bytes = await generateFilledPdfDoc({ flatten: true });
   if (!bytes) {
     showToast("Fehler beim Erstellen des PDFs!", "❌");
     return;
@@ -721,7 +740,7 @@ async function downloadFilledPdf() {
 
 async function printFilledPdf() {
   showToast("Bereite Druckversion mit Ihren Eingaben vor...", "⏳");
-  const bytes = await generateFilledPdfDoc();
+  const bytes = await generateFilledPdfDoc({ flatten: true });
   if (!bytes) {
     showToast("Fehler beim Erstellen der Druckversion!", "❌");
     return;
@@ -729,11 +748,29 @@ async function printFilledPdf() {
 
   const blob = new Blob([bytes], { type: 'application/pdf' });
   const blobUrl = URL.createObjectURL(blob);
-  const printWindow = window.open(blobUrl, '_blank');
-  if (printWindow) {
-    printWindow.focus();
-    setTimeout(() => {
-      try { printWindow.print(); } catch(e) {}
-    }, 500);
+
+  let iframe = document.getElementById("pdfPrintIframe");
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "pdfPrintIframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
   }
+
+  iframe.src = blobUrl;
+  iframe.onload = () => {
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch(e) {
+        window.open(blobUrl, '_blank');
+      }
+    }, 400);
+  };
 }
