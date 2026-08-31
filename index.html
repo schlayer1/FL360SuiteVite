@@ -15,6 +15,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fachleiter 360°" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg" />
+
   <!-- Stylesheets -->
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/niederschrift.css" />
@@ -40,6 +49,9 @@
     </div>
 
     <!-- Quick Profile Actions -->
+    <button id="pwaInstallBtn" class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px; border-color:#16a34a; color:#15803d; background:rgba(22,163,74,0.08);" onclick="triggerPWAInstall()" title="Fachleiter 360° Suite als native App auf Mac/iPad/PC installieren">
+      📲 App installieren
+    </button>
     <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px; border-color:#3b82f6; color:#1d4ed8; background:rgba(59,130,246,0.08);" onclick="openSetupWizard()" title="Einrichtungsassistent starten">
       🧙‍♂️ Assistent
     </button>
@@ -98,92 +110,101 @@
        TAB 1: DASHBOARD & KANDIDATENPROFIL
        ========================================================================= -->
   <div id="tab-dashboard" class="tab-content active">
-    <!-- Upcoming Appointment Alert Banner -->
-    <div id="dashboardUpcomingBanner" class="upcoming-banner" style="display:none;"></div>
+    <!-- Dashboard View Mode Switcher (Profile vs Cohort Matrix) -->
+    <div id="dashboardViewSwitcher" style="margin-bottom: 14px;"></div>
 
-    <div class="grid-2col">
-      <!-- Left Column: Stammdaten & Entwicklungsziele -->
-      <div>
-        <!-- Stammdaten Card -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="card-title">👤 Ausbildungsstammdaten</span>
-              <div class="card-subtitle">Offizielle Ausbildungsdaten nach ThürAZStPLVO</div>
-            </div>
-            <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()">✏️ Ändern</button>
-          </div>
-          <div id="dashboardProfileGrid" class="profile-grid"></div>
-        </div>
+    <!-- Cohort Overview Container -->
+    <div id="dashboardCohortView" style="display:none;"></div>
 
-        <!-- Entwicklungsziele Card -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="card-title">🎯 Vereinbarte Entwicklungsziele</span>
-              <div class="card-subtitle">Schwerpunkte für nachfolgende Unterrichtsbesuche</div>
-            </div>
-            <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()">+ Neues Ziel</button>
-          </div>
-          <ul id="dashboardGoalsList" class="goal-list"></ul>
-        </div>
-      </div>
+    <!-- Single Candidate Profile View -->
+    <div id="dashboardProfileView">
+      <!-- Upcoming Appointment Alert Banner -->
+      <div id="dashboardUpcomingBanner" class="upcoming-banner" style="display:none;"></div>
 
-      <!-- Right Column: Kompetenz-Radar, UB-Historie & Termine -->
-      <div>
-        <!-- Kompetenzprofil Radar Card -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="card-title">🕸️ Aktuelles Kompetenzprofil (6 Dimensionen)</span>
-              <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
+      <div class="grid-2col">
+        <!-- Left Column: Stammdaten & Entwicklungsziele -->
+        <div>
+          <!-- Stammdaten Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="card-title">👤 Ausbildungsstammdaten</span>
+                <div class="card-subtitle">Offizielle Ausbildungsdaten nach ThürAZStPLVO</div>
+              </div>
+              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()">✏️ Ändern</button>
             </div>
-            <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')">Verlauf ▶</button>
+            <div id="dashboardProfileGrid" class="profile-grid"></div>
           </div>
-          <div class="chart-wrapper" style="height:260px;">
-            <canvas id="radarCanvasDashboard"></canvas>
+
+          <!-- Entwicklungsziele Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="card-title">🎯 Vereinbarte Entwicklungsziele</span>
+                <div class="card-subtitle">Schwerpunkte für nachfolgende Unterrichtsbesuche</div>
+              </div>
+              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()">+ Neues Ziel</button>
+            </div>
+            <ul id="dashboardGoalsList" class="goal-list"></ul>
           </div>
         </div>
 
-        <!-- Bisherige Unterrichtsbesuche Table -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="card-title">📋 Dokumentierte Unterrichtsbesuche (UBs)</span>
-              <div class="card-subtitle">Historie &amp; Entwicklung über die Ausbildungsphasen</div>
+        <!-- Right Column: Kompetenz-Radar, UB-Historie & Termine -->
+        <div>
+          <!-- Kompetenzprofil Radar Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="card-title">🕸️ Aktuelles Kompetenzprofil (6 Dimensionen)</span>
+                <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
+              </div>
+              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')">Verlauf ▶</button>
             </div>
-            <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')">⏱️ Neue Hospitation</button>
+            <div class="chart-wrapper" style="height:260px;">
+              <canvas id="radarCanvasDashboard"></canvas>
+            </div>
           </div>
-          <div class="table-responsive">
-            <table class="standard-table">
-              <thead>
-                <tr>
-                  <th>Nr.</th>
-                  <th>Datum</th>
-                  <th>Phase</th>
-                  <th>Thema der Stunde</th>
-                  <th>Note</th>
-                  <th>Aktionen</th>
-                </tr>
-              </thead>
-              <tbody id="dashboardVisitsTableBody"></tbody>
-            </table>
-          </div>
-        </div>
 
-        <!-- Anstehende Termine List -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="card-title">📅 Anstehende Termine &amp; Prüfungen</span>
-              <div class="card-subtitle">Terminierte Hospitationen, Beratungen &amp; Staatsprüfungen</div>
+          <!-- Bisherige Unterrichtsbesuche Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="card-title">📋 Dokumentierte Unterrichtsbesuche (UBs)</span>
+                <div class="card-subtitle">Historie &amp; Entwicklung über die Ausbildungsphasen</div>
+              </div>
+              <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')">⏱️ Neue Hospitation</button>
             </div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Termine als .ics exportieren">📅 Alle .ics</button>
-              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()">+ Termin</button>
+            <div class="table-responsive">
+              <table class="standard-table">
+                <thead>
+                  <tr>
+                    <th>Nr.</th>
+                    <th>Datum</th>
+                    <th>Phase</th>
+                    <th>Thema der Stunde</th>
+                    <th>Note</th>
+                    <th>Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardVisitsTableBody"></tbody>
+              </table>
             </div>
           </div>
-          <ul id="dashboardAppointmentsList" class="goal-list"></ul>
+
+          <!-- Anstehende Termine List -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="card-title">📅 Anstehende Termine &amp; Prüfungen</span>
+                <div class="card-subtitle">Terminierte Hospitationen, Beratungen &amp; Staatsprüfungen</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Termine als .ics exportieren">📅 Alle .ics</button>
+                <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()">+ Termin</button>
+              </div>
+            </div>
+            <ul id="dashboardAppointmentsList" class="goal-list"></ul>
+          </div>
         </div>
       </div>
     </div>
@@ -725,6 +746,8 @@
 <script src="js/rubric_data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/wizard.js"></script>
+<script src="js/cohort.js"></script>
+<script src="js/pwa.js"></script>
 <script src="js/niederschrift.js"></script>
 <script src="js/pdf_engine.js"></script>
 <script src="js/templates_data.js"></script>

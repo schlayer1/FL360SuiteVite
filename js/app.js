@@ -416,6 +416,49 @@ function importDataJSON(event) {
 
 function renderDashboard() {
   const cur = getCurrentLAA();
+  const candidatesCount = Object.keys(appState.laas || {}).length;
+  const switcherEl = document.getElementById("dashboardViewSwitcher");
+  const cohortContainer = document.getElementById("dashboardCohortView");
+  const profileView = document.getElementById("dashboardProfileView");
+
+  // Render Top Mode Switcher
+  if (switcherEl) {
+    switcherEl.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; background:#e2e8f0; padding:3px; border-radius:8px; gap:4px;">
+          <button class="btn ${typeof dashboardViewMode !== 'undefined' && dashboardViewMode === 'profile' ? 'btn-primary' : 'btn-ghost'}" style="font-size:0.82rem; padding:5px 14px;" onclick="setDashboardViewMode('profile')">
+            👤 Einzelkandidat-Profil ${cur ? '(' + cur.name + ')' : ''}
+          </button>
+          <button class="btn ${typeof dashboardViewMode !== 'undefined' && dashboardViewMode === 'cohort' ? 'btn-primary' : 'btn-ghost'}" style="font-size:0.82rem; padding:5px 14px;" onclick="setDashboardViewMode('cohort')">
+            👥 Seminar- &amp; Kohortenübersicht (${candidatesCount})
+          </button>
+        </div>
+        ${typeof dashboardViewMode !== 'undefined' && dashboardViewMode === 'cohort' ? `
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" style="font-size:0.8rem; padding:5px 10px;" onclick="exportCohortCSV()">📑 CSV / Excel</button>
+            <button class="btn btn-outline" style="font-size:0.8rem; padding:5px 10px;" onclick="window.print()">🖨️ Drucken</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // Handle Cohort Matrix View Mode
+  if (typeof dashboardViewMode !== 'undefined' && dashboardViewMode === 'cohort') {
+    if (profileView) profileView.style.display = "none";
+    if (cohortContainer) {
+      cohortContainer.style.display = "block";
+      if (typeof renderCohortOverview === 'function') {
+        renderCohortOverview();
+      }
+    }
+    return;
+  }
+
+  // Handle Profile View Mode
+  if (cohortContainer) cohortContainer.style.display = "none";
+  if (profileView) profileView.style.display = "block";
+
   const bannerEl = document.getElementById("dashboardUpcomingBanner");
   const profileContainer = document.getElementById("dashboardProfileGrid");
 
