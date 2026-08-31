@@ -108,7 +108,8 @@ function renderCohortOverview() {
 
       const goalsDone = (laa.goals || []).filter(g => g.status === 'done').length;
       const goalsTotal = (laa.goals || []).length;
-      const seminarsCount = (laa.seminars || []).length;
+      const modules = appState.seminarCurriculum || [];
+      const seminarsCount = modules.filter(m => m.participants && m.participants[id]).length;
 
       tableRows += `
         <tr>

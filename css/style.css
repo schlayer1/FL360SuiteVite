@@ -619,6 +619,33 @@ canvas { max-width: 100%; height: auto !important; }
   gap: 12px;
 }
 
+/* ==========================================================================
+   SEMINAR CURRICULUM & PARTICIPANT CARDS
+   ========================================================================== */
+.seminar-module-card {
+  transition: all 0.2s ease;
+  overflow: hidden;
+  padding: 0;
+}
+
+.seminar-module-card:hover {
+  border-color: #93c5fd !important;
+}
+
+.seminar-participant-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  transition: all 0.15s ease;
+}
+
+.seminar-participant-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
 @media print {
   header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container { display: none !important; }
   .app-container { padding: 0 !important; }
