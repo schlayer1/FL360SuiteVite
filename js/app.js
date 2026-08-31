@@ -673,15 +673,15 @@ function deleteGoal(goalId) {
   showToast("Ziel entfernt.", "🗑️");
 }
 
-function openAddGoalModal() {
+function openAddGoalModal(prefillText, prefillSource) {
   const bodyHTML = `
     <div class="form-group">
       <label>Zielbeschreibung / Entwicklungsaufgabe</label>
-      <textarea id="newGoal_text" class="form-control" rows="3" placeholder="z. B. Wartezeit nach Impulsfragen konsequent auf >3 Sek. ausdehnen..."></textarea>
+      <textarea id="newGoal_text" class="form-control" rows="3" placeholder="z. B. Wartezeit nach Impulsfragen konsequent auf >3 Sek. ausdehnen...">${prefillText || ''}</textarea>
     </div>
     <div class="form-group">
       <label>Quelle / Anlass</label>
-      <input id="newGoal_source" class="form-control" placeholder="z. B. 2. Unterrichtsbesuch Nachbesprechung" />
+      <input id="newGoal_source" class="form-control" value="${prefillSource || 'Reflexionsabgleich / Nachbesprechung'}" placeholder="z. B. 2. Unterrichtsbesuch Nachbesprechung" />
     </div>
   `;
 
@@ -1373,150 +1373,7 @@ function renderProgressionTable() {
 /* ==========================================================================
    TAB 6: REFLEXIONSABGLEICH (SELBSTEINSCHÄTZUNG VS. FREMDEINSCHÄTZUNG)
    ========================================================================== */
-
-function renderReflectionTab() {
-  renderReflectionRadar();
-  renderReflectionInputs();
-}
-
-function renderReflectionRadar() {
-  const canvas = document.getElementById("radarCanvasReflection");
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  const cur = getCurrentLAA();
-  if (!cur) return;
-
-  const ctx = canvas.getContext("2d");
-  if (reflectionRadarChart) reflectionRadarChart.destroy();
-
-  const labels = typeof CRITERIA_DIMS !== 'undefined' ? CRITERIA_DIMS : [
-    "Fachdidaktik & Struktur",
-    "Klassenführung & Präsenz",
-    "Unterrichtsplanung & Ziele",
-    "Heterogenität & Differenzierung",
-    "Diagnostik & Feedback",
-    "Reflexion & Haltung"
-  ];
-
-  const flScores = (cur.scoresHistory && cur.scoresHistory.length > 0)
-    ? cur.scoresHistory[cur.scoresHistory.length - 1]
-    : [3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
-
-  const selfScores = cur.selfScores || [3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
-
-  try {
-    reflectionRadarChart = new Chart(ctx, {
-      type: "radar",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Fremdeinschätzung (Fachleitung)",
-            data: flScores,
-            backgroundColor: "rgba(37, 99, 235, 0.2)",
-            borderColor: "#2563eb",
-            borderWidth: 2,
-            pointBackgroundColor: "#1d4ed8"
-          },
-          {
-            label: `Selbsteinschätzung (${cur.name})`,
-            data: selfScores,
-            backgroundColor: "rgba(13, 148, 136, 0.25)",
-            borderColor: "#0d9488",
-            borderWidth: 2,
-            pointBackgroundColor: "#0f766e"
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: {
-            min: 1,
-            max: 5,
-            ticks: { stepSize: 1, backdropColor: "transparent" },
-            grid: { color: "rgba(0, 0, 0, 0.08)" },
-            angleLines: { color: "rgba(0, 0, 0, 0.08)" },
-            pointLabels: { font: { size: 11, weight: "bold" }, color: "#334155" }
-          }
-        }
-      }
-    });
-  } catch(e) {
-    console.warn("Reflection Chart render warning:", e);
-  }
-}
-
-function renderReflectionInputs() {
-  const container = document.getElementById("reflectionInputsWrap");
-  if (!container) return;
-
-  const cur = getCurrentLAA();
-  if (!cur) return;
-
-  const dims = typeof CRITERIA_DIMS !== 'undefined' ? CRITERIA_DIMS : [
-    "Fachdidaktik & Struktur",
-    "Klassenführung & Präsenz",
-    "Unterrichtsplanung & Ziele",
-    "Heterogenität & Differenzierung",
-    "Diagnostik & Feedback",
-    "Reflexion & Haltung"
-  ];
-
-  const flScores = (cur.scoresHistory && cur.scoresHistory.length > 0)
-    ? cur.scoresHistory[cur.scoresHistory.length - 1]
-    : [3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
-
-  const selfScores = cur.selfScores || [3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
-
-  container.innerHTML = dims.map((dim, idx) => {
-    const fl = flScores[idx] || 3.0;
-    const self = selfScores[idx] || 3.0;
-    const diff = (self - fl).toFixed(1);
-    let diffBadge = `<span class="badge-pill" style="background:#f1f5f9; color:#475569;">Deckungsgleich</span>`;
-    if (diff > 0.5) diffBadge = `<span class="badge-pill" style="background:#fef3c7; color:#92400e;">Überschätzung (+${diff})</span>`;
-    if (diff < -0.5) diffBadge = `<span class="badge-pill" style="background:#dbeafe; color:#1e40af;">Unterschätzung (${diff})</span>`;
-
-    return `
-      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="font-size:0.88rem; color:#0f172a;">${dim}</strong>
-          ${diffBadge}
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center;">
-          <div style="font-size:0.82rem; color:var(--text-muted);">
-            FL-Wertung: <strong style="color:#2563eb;">${fl.toFixed(1)} / 5.0</strong>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:0.78rem; font-weight:700; color:#0d9488;">LAA-Selbstwert:</label>
-            <input 
-              type="number" 
-              min="1" max="5" step="0.1" 
-              class="calc-input" 
-              value="${self}" 
-              onchange="updateSelfScoreLive(${idx}, this.value)"
-            />
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function updateSelfScoreLive(dimIdx, val) {
-  const cur = getCurrentLAA();
-  if (!cur) return;
-  if (!cur.selfScores) cur.selfScores = [3.5, 3.5, 3.5, 3.5, 3.5, 3.5];
-  cur.selfScores[dimIdx] = parseFloat(val) || 3.0;
-  saveState();
-  renderReflectionRadar();
-}
-
-function saveReflectionComparison() {
-  saveState();
-  showToast("Reflexionsdaten & Diskrepanzprofil gespeichert!", "🎯");
-}
+// Delegated to js/reflection.js
 
 /* ==========================================================================
    TAB 7: FRISTEN, TERMINE & NOTENRECHNER

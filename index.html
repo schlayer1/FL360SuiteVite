@@ -526,16 +526,16 @@
   </div>
 
   <!-- =========================================================================
-       TAB 6: REFLEXIONSABGLEICH (SELBST VS. FREMD)
+       TAB 6: REFLEXIONSABGLEICH (SELBST VS. FREMD & BERATUNGSHISTORIE)
        ========================================================================= -->
   <div id="tab-reflexion" class="tab-content">
     <div class="card">
-      <div class="card-header">
+      <div class="card-header" style="flex-direction:column; align-items:stretch; gap:12px;">
         <div>
           <span class="card-title">🪞 Reflexionsabgleich: Selbsteinschätzung vs. Fachleitung</span>
-          <div class="card-subtitle">Erkennen von Wahrnehmungsdiskrepanzen zur gezielten Beratung</div>
+          <div class="card-subtitle">Erkennen von Wahrnehmungsdiskrepanzen zur gezielten Beratung &amp; Zielvereinbarung</div>
         </div>
-        <button class="btn btn-accent" onclick="saveReflectionComparison()">💾 Abgleich speichern</button>
+        <div id="reflectionHeaderControls"></div>
       </div>
 
       <div class="grid-split">
@@ -678,6 +678,7 @@
 <script src="js/wizard.js"></script>
 <script src="js/cohort.js"></script>
 <script src="js/seminar.js"></script>
+<script src="js/reflection.js"></script>
 <script src="js/calculator.js"></script>
 <script src="js/pwa.js"></script>
 <script src="js/niederschrift.js"></script>
