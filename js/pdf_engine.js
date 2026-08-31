@@ -12,6 +12,13 @@ let customTemplates = [];
 let localDirectoryHandle = null;
 let pdfFieldElements = {};
 
+const THUERINGEN_SUBJECTS = [
+  "Mathematik", "Deutsch", "Englisch", "Physik", "Chemie", "Biologie",
+  "Informatik", "Technik", "Geografie", "Geschichte", "Sozialkunde / Wirtschaft und Recht",
+  "Ethik", "Evangelische Religionslehre", "Katholische Religionslehre",
+  "Kunsterziehung", "Musik", "Sport", "Französisch", "Russisch", "Spanisch", "Latein"
+];
+
 async function initPdfEngine() {
   updateTemplateDropdown();
   updateFolderUIState();
@@ -242,7 +249,7 @@ async function loadPdfTemplate(key) {
       const tplName = (typeof OFFICIAL_TEMPLATES !== 'undefined' && OFFICIAL_TEMPLATES[key]) ? OFFICIAL_TEMPLATES[key].title : "Benutzerdefiniertes Formular";
       const titleEl = document.getElementById("pdfDocTitle");
       if (titleEl) titleEl.innerText = `${key.toUpperCase()} • ${tplName}`;
-      showToast(`Formular "${key}" geladen (Felder direkt im Dokument beschreibbar)!`, "✅");
+      showToast(`Formular "${key}" geladen (inkl. Dropdowns &amp; Textfeldern)!`, "✅");
     }
   } catch (err) {
     console.error("PDF Load Error:", err);
@@ -307,17 +314,104 @@ async function renderPage(pageNum) {
           const vh = Math.abs(vRect[3] - vRect[1]);
 
           let inputElem;
-          if (annot.fieldType === 'Tx' && (vh > 36 || annot.multiline)) {
+
+          // 1. Choice / Dropdown / ComboBox fields
+          if (annot.fieldType === 'Ch' || annot.combo || (annot.options && annot.options.length > 0)) {
+            inputElem = document.createElement("select");
+            inputElem.className = "pdf-form-field-select";
+
+            let optionsList = annot.options || [];
+
+            // If empty or only dummy option, enrich with Thuringian standard lists
+            const fnLower = annot.fieldName.toLowerCase();
+            if (optionsList.length <= 1 && (fnLower.includes("ausbildungsfach") || fnLower.includes("fach"))) {
+              optionsList = [
+                { exportValue: "--", displayValue: "-- Bitte wählen --" },
+                ...THUERINGEN_SUBJECTS.map(s => ({ exportValue: s, displayValue: s }))
+              ];
+            }
+
+            optionsList.forEach(opt => {
+              const optElem = document.createElement("option");
+              if (typeof opt === 'object' && opt !== null) {
+                optElem.value = opt.exportValue !== undefined ? opt.exportValue : (opt.value || opt.displayValue);
+                optElem.innerText = opt.displayValue || opt.label || opt.value || opt.exportValue;
+              } else {
+                optElem.value = String(opt);
+                optElem.innerText = String(opt);
+              }
+              inputElem.appendChild(optElem);
+            });
+
+            // Restore saved or auto value
+            const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
+            if (savedVal !== undefined) {
+              inputElem.value = savedVal;
+            } else if (annot.fieldValue) {
+              inputElem.value = annot.fieldValue;
+            }
+
+            inputElem.addEventListener('change', (e) => {
+              if (!appState.pdfFormValues) appState.pdfFormValues = {};
+              appState.pdfFormValues[annot.fieldName] = e.target.value;
+              saveState();
+            });
+
+          // 2. Multiline Text Areas
+          } else if (annot.fieldType === 'Tx' && (vh > 36 || annot.multiline)) {
             inputElem = document.createElement("textarea");
             inputElem.className = "pdf-form-field-textarea";
+
+            const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
+            if (savedVal !== undefined) {
+              inputElem.value = savedVal;
+            } else if (annot.fieldValue) {
+              inputElem.value = annot.fieldValue;
+            }
+
+            inputElem.addEventListener('input', (e) => {
+              if (!appState.pdfFormValues) appState.pdfFormValues = {};
+              appState.pdfFormValues[annot.fieldName] = e.target.value;
+              saveState();
+            });
+
+          // 3. Checkboxes & Radio Buttons
           } else if (annot.fieldType === 'Btn' && (annot.checkBox || annot.radioButton)) {
             inputElem = document.createElement("input");
             inputElem.type = "checkbox";
             inputElem.className = "pdf-form-field-input";
+
+            const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
+            if (savedVal !== undefined) {
+              inputElem.checked = Boolean(savedVal);
+            } else if (annot.fieldValue) {
+              inputElem.checked = (annot.fieldValue === 'On' || annot.fieldValue === true);
+            }
+
+            inputElem.addEventListener('change', (e) => {
+              if (!appState.pdfFormValues) appState.pdfFormValues = {};
+              appState.pdfFormValues[annot.fieldName] = e.target.checked;
+              saveState();
+            });
+
+          // 4. Standard Single-line Text Inputs
           } else {
             inputElem = document.createElement("input");
             inputElem.type = "text";
             inputElem.className = "pdf-form-field-input";
+
+            const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
+            if (savedVal !== undefined) {
+              inputElem.value = savedVal;
+            } else if (annot.fieldValue) {
+              inputElem.value = annot.fieldValue;
+            }
+
+            inputElem.addEventListener('input', (e) => {
+              if (!appState.pdfFormValues) appState.pdfFormValues = {};
+              appState.pdfFormValues[annot.fieldName] = e.target.value;
+              saveState();
+            });
           }
 
           inputElem.id = `field_${annot.fieldName}`;
@@ -326,23 +420,6 @@ async function renderPage(pageNum) {
           inputElem.style.top = `${vy}px`;
           inputElem.style.width = `${vw}px`;
           inputElem.style.height = `${vh}px`;
-
-          // Restore saved value or annotation value
-          const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
-          if (savedVal !== undefined) {
-            if (inputElem.type === 'checkbox') inputElem.checked = Boolean(savedVal);
-            else inputElem.value = savedVal;
-          } else if (annot.fieldValue) {
-            if (inputElem.type === 'checkbox') inputElem.checked = (annot.fieldValue === 'On' || annot.fieldValue === true);
-            else inputElem.value = annot.fieldValue;
-          }
-
-          // Live sync on typing/clicking
-          inputElem.addEventListener('input', (e) => {
-            if (!appState.pdfFormValues) appState.pdfFormValues = {};
-            appState.pdfFormValues[annot.fieldName] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-            saveState();
-          });
 
           pdfFieldElements[annot.fieldName] = inputElem;
           formLayer.appendChild(inputElem);
@@ -378,7 +455,29 @@ function setFieldValue(name, val) {
   const elem = pdfFieldElements[name] || document.querySelector(`[data-field-name="${name}"]`);
   if (elem) {
     if (elem.type === 'checkbox') elem.checked = Boolean(val);
-    else elem.value = val || '';
+    else {
+      elem.value = val || '';
+      // If it is a select and value not in options, try matching case-insensitively or adding
+      if (elem.tagName === 'SELECT' && elem.value !== val && val) {
+        let found = false;
+        for (let i = 0; i < elem.options.length; i++) {
+          const opt = elem.options[i];
+          if (opt.value.toLowerCase() === String(val).toLowerCase() || opt.innerText.toLowerCase().includes(String(val).toLowerCase())) {
+            elem.selectedIndex = i;
+            appState.pdfFormValues[name] = opt.value;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const newOpt = document.createElement("option");
+          newOpt.value = val;
+          newOpt.innerText = val;
+          elem.appendChild(newOpt);
+          elem.value = val;
+        }
+      }
+    }
   }
 }
 
@@ -393,6 +492,30 @@ async function applyAutofill() {
   const getValForField = (fName) => {
     const fn = fName.toLowerCase();
     
+    // Lehramt Dropdown mapping (GS, RS, GY, BBS, FÖP)
+    if (fn.includes("drlehramt") || (fn.includes("lehramt") && fn.startsWith("lehramtsanwaerter.dr"))) {
+      const st = (cur.schoolType || "").toLowerCase();
+      if (st.includes("regel")) return "RS";
+      if (st.includes("gym")) return "GY";
+      if (st.includes("grund")) return "GS";
+      if (st.includes("beruf")) return "BBS";
+      if (st.includes("förder") || st.includes("foerder")) return "FÖP";
+      return "RS";
+    }
+
+    // Ausbildungsfach ComboBox (Prüfungstag / Modus 1/2)
+    if (fn.includes("drausbildungsfachpraktischepruefung") || fn.includes("drausbildungsfachmuendlichepruefung")) {
+      return "1. Prüfungstag | Erstes Ausbildungsfach";
+    }
+
+    if (fn.includes("drausbildungsfach") || (fn.includes("ausbildungsfach") && fn.includes("dr"))) {
+      return cur.subject1 || "Mathematik";
+    }
+
+    if (fn.includes("drhandlungsfeld")) {
+      return "Didaktik und Methodik";
+    }
+
     if (fn.includes("kandidat") || fn.includes("prüfling") || fn.includes("anwärter") || fn.includes("pruefling") || fn.includes("name_anwaerter") || fn.includes("name_kandidat") || fn.includes("lehramtsanwaerter.namevorname")) {
       return cur.name || "";
     }
@@ -439,21 +562,20 @@ async function applyAutofill() {
     }
   });
 
-  // Also check currently rendered DOM inputs
-  document.querySelectorAll(".pdf-form-field-input, .pdf-form-field-textarea").forEach(input => {
+  // Also update currently rendered DOM elements (inputs, selects, textareas)
+  document.querySelectorAll(".pdf-form-field-input, .pdf-form-field-select, .pdf-form-field-textarea").forEach(input => {
     const fn = input.dataset.fieldName;
     if (fn) {
       const val = getValForField(fn);
       if (val !== null) {
-        input.value = val;
-        appState.pdfFormValues[fn] = val;
+        setFieldValue(fn, val);
         filledCount++;
       }
     }
   });
 
   saveState();
-  showToast(`✅ ${filledCount} Stammdatenfelder automatisch eingetragen! Sie können jetzt jedes Feld direkt bearbeiten & ergänzen.`, "✍️");
+  showToast(`✅ ${filledCount} Stammdaten- & Dropdown-Felder präzise eingetragen!`, "🎯");
 }
 
 async function generateFilledPdfDoc() {
@@ -467,9 +589,21 @@ async function generateFilledPdfDoc() {
       try {
         const field = form.getField(fieldName);
         const type = field.constructor.name;
+
         if (type === 'PDFCheckBox') {
           if (val === true || val === 'On') field.check();
           else field.uncheck();
+        } else if (type === 'PDFDropdown') {
+          try {
+            field.select(String(val));
+          } catch(err) {
+            // Match substring or add fallback
+            try {
+              const opts = field.getOptions();
+              const match = opts.find(o => o.toLowerCase() === String(val).toLowerCase() || o.toLowerCase().includes(String(val).toLowerCase()));
+              if (match) field.select(match);
+            } catch(err2) {}
+          }
         } else if (type === 'PDFTextField' || field.setText) {
           field.setText(String(val || ''));
         }
@@ -481,7 +615,7 @@ async function generateFilledPdfDoc() {
 }
 
 async function downloadFilledPdf() {
-  showToast("Generiere PDF mit allen Eingaben & Ergänzungen...", "⏳");
+  showToast("Generiere PDF mit allen Eingaben & Dropdown-Auswahlen...", "⏳");
   const bytes = await generateFilledPdfDoc();
   if (!bytes) {
     showToast("Fehler beim Erstellen des PDFs!", "❌");
