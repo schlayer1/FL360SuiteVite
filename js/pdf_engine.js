@@ -339,28 +339,36 @@ async function renderPage(pageNum) {
             const fnLower = annot.fieldName.toLowerCase();
             if (optionsList.length <= 1 && (fnLower.includes("ausbildungsfach") || fnLower.includes("fach"))) {
               optionsList = [
-                { exportValue: "--", displayValue: "-- Bitte wählen --" },
+                { exportValue: "", displayValue: "-- Bitte wählen --" },
                 ...THUERINGEN_SUBJECTS.map(s => ({ exportValue: s, displayValue: s }))
               ];
             }
 
             optionsList.forEach(opt => {
               const optElem = document.createElement("option");
+              let disp = "";
               if (typeof opt === 'object' && opt !== null) {
-                optElem.value = opt.exportValue !== undefined ? opt.exportValue : (opt.value || opt.displayValue);
-                optElem.innerText = opt.displayValue || opt.label || opt.value || opt.exportValue;
+                disp = opt.displayValue || opt.label || opt.value || opt.exportValue || "";
               } else {
-                optElem.value = String(opt);
-                optElem.innerText = String(opt);
+                disp = String(opt);
+              }
+
+              // Use readable text as the value so it gets stored and printed as readable text
+              if (disp === "--" || disp === "Bitte wählen" || disp === "-- Bitte wählen --") {
+                optElem.value = "";
+                optElem.innerText = "-- Bitte wählen --";
+              } else {
+                optElem.value = disp;
+                optElem.innerText = disp;
               }
               inputElem.appendChild(optElem);
             });
 
             // Restore saved or auto value
             const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
-            if (savedVal !== undefined) {
+            if (savedVal !== undefined && savedVal !== null) {
               inputElem.value = savedVal;
-            } else if (annot.fieldValue) {
+            } else if (annot.fieldValue && annot.fieldValue !== '--' && annot.fieldValue !== 'Bitte wählen') {
               inputElem.value = annot.fieldValue;
             }
 
@@ -376,7 +384,7 @@ async function renderPage(pageNum) {
             inputElem.className = "pdf-form-field-textarea";
 
             const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
-            if (savedVal !== undefined) {
+            if (savedVal !== undefined && savedVal !== null) {
               inputElem.value = savedVal;
             } else if (annot.fieldValue) {
               inputElem.value = annot.fieldValue;
@@ -395,7 +403,7 @@ async function renderPage(pageNum) {
             inputElem.className = "pdf-form-field-input";
 
             const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
-            if (savedVal !== undefined) {
+            if (savedVal !== undefined && savedVal !== null) {
               inputElem.checked = Boolean(savedVal);
             } else if (annot.fieldValue) {
               inputElem.checked = (annot.fieldValue === 'On' || annot.fieldValue === true);
@@ -414,7 +422,7 @@ async function renderPage(pageNum) {
             inputElem.className = "pdf-form-field-input";
 
             const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
-            if (savedVal !== undefined) {
+            if (savedVal !== undefined && savedVal !== null) {
               inputElem.value = savedVal;
             } else if (annot.fieldValue) {
               inputElem.value = annot.fieldValue;
@@ -474,7 +482,7 @@ function setFieldValue(name, val) {
         let found = false;
         for (let i = 0; i < elem.options.length; i++) {
           const opt = elem.options[i];
-          if (opt.value.toLowerCase() === String(val).toLowerCase() || opt.innerText.toLowerCase().includes(String(val).toLowerCase())) {
+          if (opt.value.toLowerCase() === String(val).toLowerCase() || opt.innerText.toLowerCase().includes(String(val).toLowerCase()) || String(val).toLowerCase().includes(opt.value.toLowerCase())) {
             elem.selectedIndex = i;
             appState.pdfFormValues[name] = opt.value;
             found = true;
@@ -504,15 +512,15 @@ async function applyAutofill() {
   const getValForField = (fName) => {
     const fn = fName.toLowerCase();
     
-    // Lehramt Dropdown mapping (GS, RS, GY, BBS, FÖP)
+    // Lehramt Dropdown mapping (an Regelschulen, an Gymnasien, an Grundschulen, etc.)
     if (fn.includes("drlehramt") || (fn.includes("lehramt") && fn.startsWith("lehramtsanwaerter.dr"))) {
       const st = (cur.schoolType || "").toLowerCase();
-      if (st.includes("regel")) return "RS";
-      if (st.includes("gym")) return "GY";
-      if (st.includes("grund")) return "GS";
-      if (st.includes("beruf")) return "BBS";
-      if (st.includes("förder") || st.includes("foerder")) return "FÖP";
-      return "RS";
+      if (st.includes("regel")) return "an Regelschulen";
+      if (st.includes("gym")) return "an Gymnasien";
+      if (st.includes("grund")) return "an Grundschulen";
+      if (st.includes("beruf")) return "an berufsbildenden Schulen";
+      if (st.includes("förder") || st.includes("foerder")) return "für Förderpädagogik";
+      return "an Regelschulen";
     }
 
     // Ausbildungsfach ComboBox (Prüfungstag / Modus 1/2)
@@ -522,6 +530,14 @@ async function applyAutofill() {
 
     if (fn.includes("drausbildungsfach") || (fn.includes("ausbildungsfach") && fn.includes("dr"))) {
       return cur.subject1 || "Mathematik";
+    }
+
+    if (fn.includes("drfachrichtung") || (fn.includes("fachrichtung") && fn.includes("dr"))) {
+      const st = (cur.schoolType || "").toLowerCase();
+      if (st.includes("förder") || st.includes("foerder")) {
+        return "Pädagogik im Förderschwerpunkt Lernen";
+      }
+      return "-";
     }
 
     if (fn.includes("drhandlungsfeld")) {
@@ -597,6 +613,11 @@ function harvestLiveFormValues() {
     if (fn) {
       if (elem.type === 'checkbox') {
         appState.pdfFormValues[fn] = elem.checked;
+      } else if (elem.tagName === 'SELECT') {
+        const selectedOpt = elem.options[elem.selectedIndex];
+        let val = selectedOpt ? selectedOpt.innerText : elem.value;
+        if (val.startsWith("--") || val === "Bitte wählen") val = "";
+        appState.pdfFormValues[fn] = val;
       } else {
         appState.pdfFormValues[fn] = elem.value;
       }
@@ -642,7 +663,7 @@ async function generateFilledPdfDoc(options = {}) {
 
   if (appState.pdfFormValues) {
     for (const [fieldName, rawVal] of Object.entries(appState.pdfFormValues)) {
-      if (rawVal === undefined || rawVal === null || rawVal === '' || rawVal === '--' || rawVal === 'Bitte wählen') continue;
+      if (rawVal === undefined || rawVal === null || rawVal === '' || rawVal === '--' || rawVal === 'Bitte wählen' || rawVal === '-- Bitte wählen --') continue;
 
       try {
         const field = form.getField(fieldName);
@@ -653,29 +674,14 @@ async function generateFilledPdfDoc(options = {}) {
           if (rawVal === true || rawVal === 'On') field.check();
           else field.uncheck();
         } else if (type === 'PDFDropdown') {
-          let selected = false;
-
+          // Set option directly so select never fails and never draws shorthand or '--'
           try {
-            const existingOpts = field.getOptions();
-            if (!existingOpts.includes(strVal)) {
-              field.addOptions([strVal]);
-            }
+            field.setOptions([strVal]);
             field.select(strVal);
-            selected = true;
-          } catch(err) {}
-
-          if (!selected) {
+          } catch(err) {
             try {
-              const opts = field.getOptions();
-              const match = opts.find(o => o.toLowerCase() === strVal.toLowerCase() || o.toLowerCase().includes(strVal.toLowerCase()) || strVal.toLowerCase().includes(o.toLowerCase()));
-              if (match) {
-                field.select(match);
-                selected = true;
-              } else {
-                field.addOptions([strVal]);
-                field.select(strVal);
-                selected = true;
-              }
+              field.addOptions([strVal]);
+              field.select(strVal);
             } catch(err2) {}
           }
 
@@ -695,7 +701,7 @@ async function generateFilledPdfDoc(options = {}) {
     }
   }
 
-  // Generate appearance streams
+  // Generate clean appearance streams
   try {
     if (standardFont) {
       form.updateFieldAppearances(standardFont);
@@ -704,8 +710,7 @@ async function generateFilledPdfDoc(options = {}) {
     }
   } catch(e) {}
 
-  // Flatten the form so all text and checkboxes are permanently drawn into the page
-  // This guarantees 100% accurate printing on every printer and PDF viewer!
+  // Flatten the form so all text and checkboxes are permanently drawn into the page content
   if (options.flatten !== false) {
     try {
       form.flatten();
