@@ -32,6 +32,25 @@ function sanitizePdfText(str) {
     .replace(/…/g, '...');
 }
 
+function wrapText(text, maxChars) {
+  const paragraphs = text.split('\n');
+  const result = [];
+  paragraphs.forEach(para => {
+    const words = para.split(' ');
+    let currentLine = '';
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).trim().length <= maxChars) {
+        currentLine = (currentLine + ' ' + word).trim();
+      } else {
+        if (currentLine) result.push(currentLine);
+        currentLine = word;
+      }
+    });
+    if (currentLine) result.push(currentLine);
+  });
+  return result;
+}
+
 async function initPdfEngine() {
   updateTemplateDropdown();
   updateFolderUIState();
@@ -353,7 +372,6 @@ async function renderPage(pageNum) {
                 disp = String(opt);
               }
 
-              // Use readable text as the value so it gets stored and printed as readable text
               if (disp === "--" || disp === "Bitte wählen" || disp === "-- Bitte wählen --") {
                 optElem.value = "";
                 optElem.innerText = "-- Bitte wählen --";
@@ -512,7 +530,7 @@ async function applyAutofill() {
   const getValForField = (fName) => {
     const fn = fName.toLowerCase();
     
-    // Lehramt Dropdown mapping (an Regelschulen, an Gymnasien, an Grundschulen, etc.)
+    // Lehramt Dropdown mapping
     if (fn.includes("drlehramt") || (fn.includes("lehramt") && fn.startsWith("lehramtsanwaerter.dr"))) {
       const st = (cur.schoolType || "").toLowerCase();
       if (st.includes("regel")) return "an Regelschulen";
@@ -616,7 +634,7 @@ function harvestLiveFormValues() {
       } else if (elem.tagName === 'SELECT') {
         const selectedOpt = elem.options[elem.selectedIndex];
         let val = selectedOpt ? selectedOpt.innerText : elem.value;
-        if (val.startsWith("--") || val === "Bitte wählen") val = "";
+        if (val.startsWith("--") || val === "Bitte wählen" || val === "-- Bitte wählen --") val = "";
         appState.pdfFormValues[fn] = val;
       } else {
         appState.pdfFormValues[fn] = elem.value;
@@ -626,6 +644,9 @@ function harvestLiveFormValues() {
   saveState();
 }
 
+/**
+ * ROCK-SOLID PDF GENERATOR (Vector Text Drawing + Annotation Purging)
+ */
 async function generateFilledPdfDoc(options = {}) {
   if (!pdfDocBytes || typeof PDFLib === 'undefined') return null;
 
@@ -636,97 +657,103 @@ async function generateFilledPdfDoc(options = {}) {
   const pages = pdfDoc.getPages();
 
   let standardFont = null;
+  let boldFont = null;
   try {
     standardFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-  } catch(e) {}
-
-  // Force PDF Viewers to render fresh values
-  try {
-    form.acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
-  } catch(e) {}
-
-  // Clean stale pre-compiled appearance streams (/AP) on all fields & widgets
-  try {
-    const allFields = form.getFields();
-    allFields.forEach(f => {
-      try {
-        if (f.acroField && f.acroField.dict) {
-          f.acroField.dict.delete(PDFLib.PDFName.of('AP'));
-        }
-        if (f.acroField && f.acroField.getWidgets) {
-          f.acroField.getWidgets().forEach(w => {
-            if (w.dict) w.dict.delete(PDFLib.PDFName.of('AP'));
-          });
-        }
-      } catch(e) {}
-    });
+    boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
   } catch(e) {}
 
   if (appState.pdfFormValues) {
-    for (const [fieldName, rawVal] of Object.entries(appState.pdfFormValues)) {
-      if (rawVal === undefined || rawVal === null || rawVal === '' || rawVal === '--' || rawVal === 'Bitte wählen' || rawVal === '-- Bitte wählen --') continue;
+    const allFields = form.getFields();
+
+    allFields.forEach(field => {
+      const fieldName = field.getName();
+      const rawVal = appState.pdfFormValues[fieldName];
+      const type = field.constructor.name;
 
       try {
-        const field = form.getField(fieldName);
-        const type = field.constructor.name;
-        const strVal = sanitizePdfText(rawVal).trim();
+        const widgets = field.acroField.getWidgets ? field.acroField.getWidgets() : [];
+        
+        widgets.forEach(widget => {
+          const rect = widget.getRectangle();
+          let targetPage = pages[0];
+          const widgetP = widget.P ? widget.P() : null;
+          if (widgetP) {
+            const pIndex = pages.findIndex(p => p.ref === widgetP);
+            if (pIndex !== -1) targetPage = pages[pIndex];
+          }
 
-        if (type === 'PDFCheckBox') {
-          if (rawVal === true || rawVal === 'On') field.check();
-          else field.uncheck();
-        } else if (type === 'PDFDropdown' || fieldName.toLowerCase().includes('.dr') || fieldName.toLowerCase().startsWith('dr')) {
-          // Direct Page Text Placement for all Dropdowns to guarantee 100% readable text on print & export
-          try {
-            const widgets = field.acroField.getWidgets();
-            widgets.forEach(widget => {
-              const rect = widget.getRectangle();
-              let targetPage = pages[0];
-              const widgetP = widget.P();
-              if (widgetP) {
-                const pIndex = pages.findIndex(p => p.ref === widgetP);
-                if (pIndex !== -1) targetPage = pages[pIndex];
-              }
+          if (!targetPage) return;
 
-              if (targetPage && standardFont && strVal && strVal !== '--') {
-                targetPage.drawText(strVal, {
-                  x: rect.x + 2,
-                  y: rect.y + 4,
-                  size: 9.5,
-                  font: standardFont,
+          // Checkbox
+          if (type === 'PDFCheckBox') {
+            if (rawVal === true || rawVal === 'On') {
+              if (boldFont) {
+                targetPage.drawText("X", {
+                  x: rect.x + (rect.width - 7) / 2,
+                  y: rect.y + (rect.height - 7) / 2,
+                  size: 9,
+                  font: boldFont,
                   color: PDFLib.rgb(0, 0, 0)
                 });
               }
-            });
-            form.removeField(field);
-          } catch(errDraw) {
-            console.warn("Dropdown draw fallback:", errDraw);
+            }
+          // Text, Dropdown, Textarea
+          } else if (rawVal !== undefined && rawVal !== null && rawVal !== '') {
+            const strVal = sanitizePdfText(rawVal).trim();
+            if (strVal && strVal !== '--' && strVal !== 'Bitte wählen' && strVal !== '-- Bitte wählen --') {
+              if (standardFont) {
+                if (rect.height > 25) {
+                  // Multiline Textarea
+                  const fontSize = 9;
+                  const lineHeight = 11.5;
+                  const maxChars = Math.max(10, Math.floor(rect.width / 5.2));
+                  const lines = wrapText(strVal, maxChars);
+                  let curY = rect.y + rect.height - fontSize - 2;
+                  for (const line of lines) {
+                    if (curY >= rect.y) {
+                      targetPage.drawText(line, {
+                        x: rect.x + 2,
+                        y: curY,
+                        size: fontSize,
+                        font: standardFont,
+                        color: PDFLib.rgb(0, 0, 0)
+                      });
+                      curY -= lineHeight;
+                    }
+                  }
+                } else {
+                  // Single line field (Name, Lehramt, Fach, Schule, Datum, etc.)
+                  const fontSize = 9.5;
+                  targetPage.drawText(strVal, {
+                    x: rect.x + 2,
+                    y: rect.y + (rect.height - fontSize) / 2,
+                    size: fontSize,
+                    font: standardFont,
+                    color: PDFLib.rgb(0, 0, 0)
+                  });
+                }
+              }
+            }
           }
-        } else if (type === 'PDFTextField' || field.setText) {
-          field.setText(strVal);
-        }
+        });
       } catch(e) {
-        console.warn("Field export notice:", fieldName, e);
+        console.warn("Field vector render notice:", fieldName, e);
       }
-    }
+    });
   }
 
-  // Generate appearance streams for remaining standard fields
-  try {
-    if (standardFont) {
-      form.updateFieldAppearances(standardFont);
-    } else {
-      form.updateFieldAppearances();
-    }
-  } catch(e) {}
-
-  // Flatten the form so all text fields and checkboxes are permanently baked into the PDF vector stream
-  if (options.flatten !== false) {
+  // PURGE ALL ANNOTATIONS & ACROFORM:
+  // Completely eliminates any stale cached "/AP" streams containing "Bitte wählen"
+  pages.forEach(p => {
     try {
-      form.flatten();
-    } catch(errFlatten) {
-      console.warn("Form flattening notice:", errFlatten);
-    }
-  }
+      p.node.delete(PDFLib.PDFName.of('Annots'));
+    } catch(e) {}
+  });
+
+  try {
+    pdfDoc.catalog.delete(PDFLib.PDFName.of('AcroForm'));
+  } catch(e) {}
 
   return await pdfDoc.save();
 }
