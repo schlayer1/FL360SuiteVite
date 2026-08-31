@@ -1252,32 +1252,77 @@ function renderProgressionChart() {
     "Reflexion & Haltung"
   ];
 
-  const history = cur.scoresHistory || [];
-  const datasets = [];
+  // Retrieve scores per visit (with fallback to scoresHistory)
+  let history = [];
+  if (cur.visits && cur.visits.length > 0) {
+    history = cur.visits.map((v, i) => ({
+      index: i,
+      scores: (v.scores && v.scores.length === 6) ? v.scores : (cur.scoresHistory && cur.scoresHistory[i] ? cur.scoresHistory[i] : [3, 3, 3, 3, 3, 3]),
+      label: `UB ${i + 1} (${v.topic ? (v.topic.length > 22 ? v.topic.substring(0, 22) + '...' : v.topic) : (v.date || 'Besuch')})`
+    }));
+  } else if (cur.scoresHistory && cur.scoresHistory.length > 0) {
+    history = cur.scoresHistory.map((s, i) => ({
+      index: i,
+      scores: s,
+      label: `UB ${i + 1}`
+    }));
+  }
 
-  const colors = [
-    { bg: "rgba(239, 68, 68, 0.15)", border: "#ef4444" },
-    { bg: "rgba(245, 158, 11, 0.15)", border: "#f59e0b" },
-    { bg: "rgba(59, 130, 246, 0.2)", border: "#2563eb" },
-    { bg: "rgba(16, 185, 129, 0.25)", border: "#059669" }
+  const filter = appState.selectedProgressionUB || 'all';
+
+  // Apply filter
+  let displayEntries = [];
+  if (filter === 'latest') {
+    if (history.length > 0) {
+      displayEntries = [history[history.length - 1]];
+    }
+  } else if (filter === 'first_vs_last') {
+    if (history.length === 1) {
+      displayEntries = [history[0]];
+    } else if (history.length >= 2) {
+      displayEntries = [history[0], history[history.length - 1]];
+    }
+  } else {
+    // 'all'
+    displayEntries = history;
+  }
+
+  const palette = [
+    { bg: "rgba(239, 68, 68, 0.15)", border: "#ef4444", point: "#dc2626" },   // UB 1 (Rot)
+    { bg: "rgba(245, 158, 11, 0.15)", border: "#f59e0b", point: "#d97706" }, // UB 2 (Orange)
+    { bg: "rgba(59, 130, 246, 0.2)", border: "#2563eb", point: "#1d4ed8" },   // UB 3 (Blau)
+    { bg: "rgba(16, 185, 129, 0.25)", border: "#059669", point: "#047857" }, // UB 4 (Grün)
+    { bg: "rgba(139, 92, 246, 0.2)", border: "#7c3aed", point: "#6d28d9" }   // UB 5+ (Lila)
   ];
 
-  if (history.length === 0) {
+  const datasets = [];
+  if (displayEntries.length === 0) {
     datasets.push({
-      label: "Keine Verlaufsdaten",
+      label: "Keine Verlaufsdaten vorhanden",
       data: [3, 3, 3, 3, 3, 3],
-      borderColor: "#cbd5e1"
+      borderColor: "#cbd5e1",
+      backgroundColor: "rgba(203, 213, 225, 0.2)"
     });
   } else {
-    history.forEach((scores, idx) => {
-      const col = colors[idx % colors.length];
+    displayEntries.forEach(entry => {
+      let col = palette[entry.index % palette.length];
+      if (filter === 'first_vs_last') {
+        if (entry.index === 0) {
+          col = { bg: "rgba(239, 68, 68, 0.2)", border: "#ef4444", point: "#dc2626" }; // 1. UB = Rot
+        } else {
+          col = { bg: "rgba(16, 185, 129, 0.3)", border: "#059669", point: "#047857" }; // Letzter UB = Grün
+        }
+      }
+
       datasets.push({
-        label: `${idx + 1}. UB (${cur.visits && cur.visits[idx] ? cur.visits[idx].topic : 'Besuch'})`,
-        data: scores,
+        label: entry.label,
+        data: entry.scores,
         backgroundColor: col.bg,
         borderColor: col.border,
         borderWidth: 2,
-        pointBackgroundColor: col.border
+        pointBackgroundColor: col.point,
+        pointRadius: 4,
+        pointHoverRadius: 6
       });
     });
   }
@@ -1297,6 +1342,12 @@ function renderProgressionChart() {
             grid: { color: "rgba(0, 0, 0, 0.08)" },
             angleLines: { color: "rgba(0, 0, 0, 0.08)" },
             pointLabels: { font: { size: 11, weight: "bold" }, color: "#334155" }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { size: 11, weight: '600' } }
           }
         }
       }
@@ -1322,11 +1373,29 @@ function renderProgressionTable() {
     "Reflexion & Haltung"
   ];
 
-  const history = cur.scoresHistory || [];
+  let history = [];
+  if (cur.visits && cur.visits.length > 0) {
+    history = cur.visits.map((v, i) => ({
+      index: i,
+      scores: (v.scores && v.scores.length === 6) ? v.scores : (cur.scoresHistory && cur.scoresHistory[i] ? cur.scoresHistory[i] : [3, 3, 3, 3, 3, 3]),
+      topic: v.topic || `UB #${i+1}`,
+      date: v.date || ""
+    }));
+  } else if (cur.scoresHistory && cur.scoresHistory.length > 0) {
+    history = cur.scoresHistory.map((s, i) => ({
+      index: i,
+      scores: s,
+      topic: `UB #${i+1}`,
+      date: ""
+    }));
+  }
+
   if (history.length === 0) {
     container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px; font-style:italic;">Keine Verlaufsdaten vorhanden.</div>`;
     return;
   }
+
+  const filter = appState.selectedProgressionUB || 'all';
 
   let html = `
     <div class="table-responsive">
@@ -1334,7 +1403,10 @@ function renderProgressionTable() {
         <thead>
           <tr>
             <th>Kompetenzdimension</th>
-            ${history.map((_, idx) => `<th>UB #${idx + 1}</th>`).join('')}
+            ${history.map((h, idx) => {
+              const isSelected = (filter === 'all') || (filter === 'latest' && idx === history.length - 1) || (filter === 'first_vs_last' && (idx === 0 || idx === history.length - 1));
+              return `<th style="${isSelected ? 'background:#eff6ff; color:#1e40af; font-weight:800;' : 'opacity:0.6;'}">UB #${idx + 1}<br><span style="font-size:0.7rem; font-weight:normal;">${h.date ? new Date(h.date).toLocaleDateString('de-DE') : ''}</span></th>`;
+            }).join('')}
             <th>Entwicklung / Delta</th>
           </tr>
         </thead>
@@ -1342,7 +1414,7 @@ function renderProgressionTable() {
   `;
 
   dims.forEach((dim, dIdx) => {
-    const scoresForDim = history.map(h => h[dIdx] || 0);
+    const scoresForDim = history.map(h => h.scores[dIdx] || 0);
     const first = scoresForDim[0] || 0;
     const last = scoresForDim[scoresForDim.length - 1] || 0;
     const delta = (last - first).toFixed(1);
@@ -1351,7 +1423,10 @@ function renderProgressionTable() {
     html += `
       <tr>
         <td><strong>${dim}</strong></td>
-        ${scoresForDim.map(s => `<td><span class="badge-pill" style="background:#f1f5f9; font-weight:700;">${s.toFixed(1)}</span></td>`).join('')}
+        ${scoresForDim.map((s, idx) => {
+          const isSelected = (filter === 'all') || (filter === 'latest' && idx === history.length - 1) || (filter === 'first_vs_last' && (idx === 0 || idx === history.length - 1));
+          return `<td style="${isSelected ? 'background:#f8fafc;' : 'opacity:0.5;'}"><span class="badge-pill" style="background:#f1f5f9; font-weight:700;">${s.toFixed(1)}</span></td>`;
+        }).join('')}
         <td>
           <strong style="color:${deltaColor}; font-size:0.88rem;">
             ${delta > 0 ? '+' : ''}${delta}
