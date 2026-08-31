@@ -1,6 +1,6 @@
 let nsState = {
   activeExam: "praktisch",
-  activeSubTab: "entwurf",
+  activeSubTab: "raster",
   selections: {},
   categoryFilter: "all",
   focusMode: false,
@@ -33,7 +33,7 @@ function initAuthenticNiederschrift() {
   nsRenderRasterView();
   nsUpdateCalculationsAndProgress();
 
-  const currentActive = nsState.activeSubTab || 'entwurf';
+  const currentActive = nsState.activeSubTab || 'raster';
   nsSwitchTab(currentActive);
 }
 
