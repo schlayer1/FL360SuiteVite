@@ -10,64 +10,96 @@ const THURINGIA_DEFAULT_SEMINARS = [
     title: "Lehrplananalyse & Strukturierung von Unterrichtsreihen",
     kmk: "Unterrichten",
     coreCompetence: "Fachdidaktische Reduktion und curriculare Reihenplanung nach Thüringer Lehrplan",
-    materialPath: "Seminarmaterialien/M01_Lehrplan_Reihenplanung.pdf",
-    description: "Analyse von Kompetenzstufen, Formulierung von Stundenzielen und didaktische Jahresplanung."
+    materialPath: "Seminarmaterialien/M01_Lehrplan_Reihenplanung/",
+    description: "Analyse von Kompetenzstufen, Formulierung von Stundenzielen und didaktische Jahresplanung.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   },
   {
     code: "M 02",
     title: "Unterrichtseinstiege, Problemorientierung & Kognitive Aktivierung",
     kmk: "Unterrichten",
     coreCompetence: "Entwicklung motivierender Problemfragen und aktivierender Einstiegsphasen",
-    materialPath: "Seminarmaterialien/M02_Problemorientierung.pdf",
-    description: "Methoden für kognitiv aktivierende Impulse, Advance Organizer und Problemstellungen."
+    materialPath: "Seminarmaterialien/M02_Problemorientierung/",
+    description: "Methoden für kognitiv aktivierende Impulse, Advance Organizer und Problemstellungen.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   },
   {
     code: "M 03",
     title: "Heterogenität, Differenzierung & Gestufte Lernhilfen",
     kmk: "Unterrichten",
     coreCompetence: "Planung und Durchführung differenzierender Lernarrangements",
-    materialPath: "Seminarmaterialien/M03_Differenzierung.pdf",
-    description: "Methoden der Binnendifferenzierung, Hilfekarten, niveaudifferenzierte Aufgabenformate."
+    materialPath: "Seminarmaterialien/M03_Differenzierung/",
+    description: "Methoden der Binnendifferenzierung, Hilfekarten, niveaudifferenzierte Aufgabenformate.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   },
   {
     code: "M 04",
     title: "Klassenführung, Rituale & Konstruktiver Umgang mit Störungen",
     kmk: "Erziehen",
     coreCompetence: "Präsenz, Reibungslosigkeit im Unterrichtsfluss und transparente Regelkultur",
-    materialPath: "Seminarmaterialien/M04_Klassenfuehrung.pdf",
-    description: "Strategien nach Kounin, Zeitmanagement, nonverbale Signale und Interventionsstufen."
+    materialPath: "Seminarmaterialien/M04_Klassenfuehrung/",
+    description: "Strategien nach Kounin, Zeitmanagement, nonverbale Signale und Interventionsstufen.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   },
   {
     code: "M 05",
     title: "Kompetenzorientierte Aufgabenkultur & Lernaufgaben",
     kmk: "Unterrichten",
     coreCompetence: "Gestaltung authentischer und anforderungsdifferenzierter Fachaufgaben",
-    materialPath: "Seminarmaterialien/M05_Aufgabenkultur.pdf",
-    description: "Operator-Einsatz, Materialaufbereitung und formative Zwischensicherungen."
+    materialPath: "Seminarmaterialien/M05_Aufgabenkultur/",
+    description: "Operator-Einsatz, Materialaufbereitung und formative Zwischensicherungen.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   },
   {
     code: "M 06",
     title: "Diagnostik, Feedback & Formative Leistungsmessung",
     kmk: "Beurteilen",
     coreCompetence: "Erkennen individueller Lernstände und lernförderliches Feedback",
-    materialPath: "Seminarmaterialien/M06_Diagnostik.pdf",
-    description: "Lernstandsanalysen, Feedback-Methoden, Selbsteinschätzungsbögen und Kriterienraster."
+    materialPath: "Seminarmaterialien/M06_Diagnostik/",
+    description: "Lernstandsanalysen, Feedback-Methoden, Selbsteinschätzungsbögen und Kriterienraster.",
+    format: "Online",
+    timeStart: "15:00",
+    timeEnd: "17:30",
+    location: "Online • BigBlueButton / Thüringer Schulcloud"
   },
   {
     code: "M 07",
     title: "Digitale Medien & Fachspezifische Werkzeuge im Unterricht",
     kmk: "Innovieren",
     coreCompetence: "Didaktisch begründeter Einsatz digitaler Medien zur Lernunterstützung",
-    materialPath: "Seminarmaterialien/M07_Digitale_Medien.pdf",
-    description: "Einsatz von Tablets, interaktiven Tafeln, Thüringer Schulcloud und Fachsoftware."
+    materialPath: "Seminarmaterialien/M07_Digitale_Medien/",
+    description: "Einsatz von Tablets, interaktiven Tafeln, Thüringer Schulcloud und Fachsoftware.",
+    format: "Online",
+    timeStart: "15:00",
+    timeEnd: "17:30",
+    location: "Online • BigBlueButton / Thüringer Schulcloud"
   },
   {
     code: "M 08",
     title: "Schüler- und Elterngespräche & Beratungskompetenz",
     kmk: "Beraten",
     coreCompetence: "Professionelle Gesprächsführung in Entwicklungs- und Beratungskontexten",
-    materialPath: "Seminarmaterialien/M08_Beratung.pdf",
-    description: "Gesprächsphasen, lösungsorientierte Beratung und Feedback an Erziehungsberechtigte."
+    materialPath: "Seminarmaterialien/M08_Beratung/",
+    description: "Gesprächsphasen, lösungsorientierte Beratung und Feedback an Erziehungsberechtigte.",
+    format: "Präsenz",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    location: "Studienseminar • Raum 2"
   }
 ];
 
@@ -87,7 +119,6 @@ function renderSeminarTab() {
 
   const modules = appState.seminarCurriculum || [];
   const laas = appState.laas || {};
-  const laaCount = Object.keys(laas).length;
 
   if (modules.length === 0) {
     container.innerHTML = `
@@ -134,6 +165,30 @@ function renderSeminarTab() {
     });
 
     const avgScore = scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : "–";
+
+    // Format badge
+    let formatBadge = "🏫 Präsenz";
+    let formatBg = "#eff6ff";
+    let formatColor = "#1e40af";
+    if (mod.format === "Online") {
+      formatBadge = "💻 Online";
+      formatBg = "#f0fdf4";
+      formatColor = "#166534";
+    } else if (mod.format === "Hybrid") {
+      formatBadge = "🏢 Hybrid";
+      formatBg = "#fef3c7";
+      formatColor = "#92400e";
+    }
+
+    // Time display
+    let timeDisplay = "";
+    if (mod.timeStart && mod.timeEnd) {
+      timeDisplay = `${mod.timeStart} – ${mod.timeEnd} Uhr`;
+    } else if (mod.timeStart) {
+      timeDisplay = `ab ${mod.timeStart} Uhr`;
+    } else if (mod.time) {
+      timeDisplay = mod.time;
+    }
 
     // Participant rows
     let participantRows = "";
@@ -221,13 +276,18 @@ function renderSeminarTab() {
               <span class="badge" style="background:#1e3a8a; color:#ffffff; font-weight:800; font-size:0.75rem; padding:3px 8px;">${mod.code || 'MODUL'}</span>
               <h3 style="margin:0; font-size:1.05rem; color:#0f172a;">${mod.title}</h3>
               <span class="badge-pill" style="background:#e0e7ff; color:#3730a3; font-weight:700; font-size:0.72rem;">${mod.kmk || 'Unterrichten'}</span>
+              <span class="badge" style="background:${formatBg}; color:${formatColor}; font-size:0.72rem; padding:2px 6px;">${formatBadge}</span>
             </div>
             <div style="font-size:0.8rem; color:#475569; margin-top:4px;">
               🎯 <strong>Kernkompetenz:</strong> ${mod.coreCompetence || 'Fachdidaktische Umsetzung'}
             </div>
-            ${mod.date ? `<div style="font-size:0.75rem; color:#64748b; margin-top:2px;">📅 <strong>Sitzungsdatum:</strong> ${new Date(mod.date).toLocaleDateString('de-DE')} ${mod.time ? '• ' + mod.time + ' Uhr' : ''} ${mod.room ? '• ' + mod.room : ''}</div>` : ''}
+            <div style="font-size:0.75rem; color:#64748b; margin-top:3px; display:flex; gap:12px; flex-wrap:wrap;">
+              ${mod.date ? `<span>📅 <strong>Datum:</strong> ${new Date(mod.date).toLocaleDateString('de-DE')}</span>` : ''}
+              ${timeDisplay ? `<span>⏰ <strong>Zeit:</strong> ${timeDisplay}</span>` : ''}
+              ${mod.location ? `<span>📍 <strong>Ort / Raum:</strong> ${mod.location}</span>` : ''}
+            </div>
             ${mod.materialPath ? `
-              <div style="font-size:0.75rem; color:#2563eb; margin-top:2px; display:flex; align-items:center; gap:4px;">
+              <div style="font-size:0.75rem; color:#2563eb; margin-top:3px; display:flex; align-items:center; gap:4px;">
                 <span>📁</span> <span>Materialordner / Datei:</span> <code>${mod.materialPath}</code>
               </div>
             ` : ''}
@@ -286,6 +346,10 @@ function renderSeminarTab() {
       </div>
     </div>
 
+    <!-- Hidden Input Pickers for Material Selection -->
+    <input type="file" id="seminarFileInputHidden" style="display:none;" onchange="handleSeminarFileSelected(event)" />
+    <input type="file" id="seminarFolderInputHidden" webkitdirectory directory style="display:none;" onchange="handleSeminarFolderSelected(event)" />
+
     <!-- Modules List -->
     <div>
       ${modulesHtml}
@@ -342,8 +406,10 @@ function openEditSeminarModuleModal(modIdx) {
     kmk: "Unterrichten",
     coreCompetence: "",
     date: new Date().toISOString().split('T')[0],
-    time: "14:00 - 17:30",
-    room: appState.seminarLocation || "Studienseminar",
+    timeStart: "14:00",
+    timeEnd: "17:30",
+    format: "Präsenz",
+    location: appState.seminarLocation ? `${appState.seminarLocation} • Seminarraum` : "Studienseminar • Raum 2",
     materialPath: `Seminarmaterialien/Modul_${(appState.seminarCurriculum || []).length + 1}/`,
     description: "",
     participants: {}
@@ -377,27 +443,62 @@ function openEditSeminarModuleModal(modIdx) {
       <input id="mod_coreCompetence" class="form-control" value="${mod.coreCompetence || ''}" placeholder="z. B. Einsatz gestufter Lernhilfen im schülerzentrierten Unterricht" />
     </div>
 
-    <div class="form-row-2col">
-      <div class="form-group">
-        <label>Sitzungsdatum</label>
-        <input id="mod_date" type="date" class="form-control" value="${mod.date || ''}" />
+    <!-- Date, Time & Format Section -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+      <div style="font-weight:700; font-size:0.84rem; color:#1e293b; margin-bottom:8px;">📅 Termin, Zeit &amp; Veranstaltungsort</div>
+      
+      <div class="form-row-2col">
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>Sitzungsdatum</label>
+          <input id="mod_date" type="date" class="form-control" value="${mod.date || ''}" />
+        </div>
+        
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>Uhrzeit (von – bis)</label>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input id="mod_timeStart" type="time" class="form-control" style="padding:4px 6px;" value="${mod.timeStart || '14:00'}" />
+            <span style="font-size:0.8rem; color:#64748b;">bis</span>
+            <input id="mod_timeEnd" type="time" class="form-control" style="padding:4px 6px;" value="${mod.timeEnd || '17:30'}" />
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Uhrzeit &amp; Raum</label>
-        <input id="mod_time_room" class="form-control" value="${(mod.time || '') + (mod.room ? ' • ' + mod.room : '')}" placeholder="14:00 - 17:30 • Seminarraum 2" />
+
+      <div class="form-row-2col">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Veranstaltungsformat</label>
+          <select id="mod_format" class="form-control" onchange="handleFormatChange(this.value)">
+            <option value="Präsenz" ${(!mod.format || mod.format === 'Präsenz') ? 'selected' : ''}>🏫 Präsenz (Seminarraum / Schule)</option>
+            <option value="Online" ${mod.format === 'Online' ? 'selected' : ''}>💻 Online (Videokonferenz / BBB / Webex)</option>
+            <option value="Hybrid" ${mod.format === 'Hybrid' ? 'selected' : ''}>🏢 Hybrid / Schulpraxis</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label id="lbl_mod_location">${mod.format === 'Online' ? '💻 Online-Plattform / Link' : '📍 Seminarraum / Ort'}</label>
+          <input id="mod_location" class="form-control" value="${mod.location || ''}" placeholder="z. B. Seminarraum 2 oder BigBlueButton Raum" />
+        </div>
       </div>
     </div>
 
+    <!-- Material Folder & Explorer Picker -->
     <div class="form-group">
       <label>📁 Lokaler Materialordner / Dateipfad</label>
-      <input id="mod_materialPath" class="form-control" value="${mod.materialPath || ''}" placeholder="z. B. Seminarmaterialien/M03_Differenzierung/" />
-      <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">
-        Geben Sie den relativen Pfad im Projektordner oder zu Ihren Seminarunterlagen an.
+      <div style="display:flex; gap:6px;">
+        <input id="mod_materialPath" class="form-control" value="${mod.materialPath || ''}" placeholder="z. B. Seminarmaterialien/M03_Differenzierung/" />
+        <button type="button" class="btn btn-outline" style="white-space:nowrap; padding:6px 12px; font-size:0.8rem; background:#fff;" onclick="triggerSeminarFolderPicker()" title="Lokalen Ordner über Dateiexplorer auswählen">
+          📁 Ordner wählen...
+        </button>
+        <button type="button" class="btn btn-outline" style="white-space:nowrap; padding:6px 12px; font-size:0.8rem; background:#fff;" onclick="triggerSeminarFilePicker()" title="Lokale Datei auswählen">
+          📄 Datei...
+        </button>
+      </div>
+      <div style="font-size:0.72rem; color:#64748b; margin-top:3px;">
+        💡 Wählen Sie einen Ordner (z. B. <code>Seminarmaterialien/</code>) oder eine Datei auf Ihrem Dienstgerät aus.
       </div>
     </div>
 
     <div class="form-group">
-      <label>Inhaltliche Beschreibung / Ablauf</label>
+      <label>Inhaltliche Beschreibung / Vorbereitungsauftrag</label>
       <textarea id="mod_description" class="form-control" rows="2" placeholder="Kurze Stichpunkte zu Zielen, Methoden und Vorbereitungsauftrag...">${mod.description || ''}</textarea>
     </div>
   `;
@@ -414,6 +515,79 @@ function openEditSeminarModuleModal(modIdx) {
   });
 }
 
+function handleFormatChange(val) {
+  const lbl = document.getElementById("lbl_mod_location");
+  const input = document.getElementById("mod_location");
+  if (!lbl || !input) return;
+
+  if (val === "Online") {
+    lbl.innerText = "💻 Online-Plattform / Link";
+    if (!input.value || input.value.includes("Seminarraum")) {
+      input.value = "BigBlueButton / Thüringer Schulcloud";
+    }
+  } else if (val === "Hybrid") {
+    lbl.innerText = "🏢 Hybrid-Ort & Online-Link";
+  } else {
+    lbl.innerText = "📍 Seminarraum / Ort";
+    if (!input.value || input.value.includes("BigBlueButton")) {
+      input.value = appState.seminarLocation ? `${appState.seminarLocation} • Seminarraum` : "Studienseminar • Raum 2";
+    }
+  }
+}
+
+/**
+ * FILE & FOLDER EXPLORER PICKERS
+ */
+async function triggerSeminarFolderPicker() {
+  try {
+    if (window.showDirectoryPicker) {
+      const dirHandle = await window.showDirectoryPicker();
+      const input = document.getElementById("mod_materialPath");
+      if (input && dirHandle) {
+        input.value = `Seminarmaterialien/${dirHandle.name}/`;
+        showToast(`Ordner "${dirHandle.name}" verknüpft!`, "📁");
+      }
+    } else {
+      const hidden = document.getElementById("seminarFolderInputHidden");
+      if (hidden) hidden.click();
+    }
+  } catch(e) {
+    if (e.name !== "AbortError") {
+      const hidden = document.getElementById("seminarFolderInputHidden");
+      if (hidden) hidden.click();
+    }
+  }
+}
+
+function triggerSeminarFilePicker() {
+  const hidden = document.getElementById("seminarFileInputHidden");
+  if (hidden) hidden.click();
+}
+
+function handleSeminarFileSelected(e) {
+  const file = e.target.files?.[0];
+  if (file) {
+    const input = document.getElementById("mod_materialPath");
+    if (input) {
+      input.value = `Seminarmaterialien/${file.name}`;
+      showToast(`Datei "${file.name}" ausgewählt!`, "📄");
+    }
+  }
+}
+
+function handleSeminarFolderSelected(e) {
+  const files = e.target.files;
+  if (files && files.length > 0) {
+    const relPath = files[0].webkitRelativePath || files[0].name;
+    const folderName = relPath.split('/')[0] || 'Material';
+    const input = document.getElementById("mod_materialPath");
+    if (input) {
+      input.value = `Seminarmaterialien/${folderName}/`;
+      showToast(`Ordner "${folderName}" ausgewählt!`, "📁");
+    }
+  }
+}
+
 function saveSeminarModule(modIdx) {
   initSeminarCurriculum();
   const title = document.getElementById("mod_title")?.value.trim();
@@ -421,11 +595,6 @@ function saveSeminarModule(modIdx) {
     showToast("Bitte geben Sie einen Modultitel ein!", "⚠️");
     return;
   }
-
-  const timeRoomRaw = document.getElementById("mod_time_room")?.value || "";
-  const parts = timeRoomRaw.split("•");
-  const time = (parts[0] || "").trim();
-  const room = (parts[1] || "").trim();
 
   const isEdit = modIdx >= 0;
   const existing = isEdit ? appState.seminarCurriculum[modIdx] : {};
@@ -438,8 +607,10 @@ function saveSeminarModule(modIdx) {
     kmk: document.getElementById("mod_kmk")?.value || "Unterrichten",
     coreCompetence: document.getElementById("mod_coreCompetence")?.value.trim() || "Fachdidaktische Umsetzung",
     date: document.getElementById("mod_date")?.value || "",
-    time,
-    room,
+    timeStart: document.getElementById("mod_timeStart")?.value || "14:00",
+    timeEnd: document.getElementById("mod_timeEnd")?.value || "17:30",
+    format: document.getElementById("mod_format")?.value || "Präsenz",
+    location: document.getElementById("mod_location")?.value.trim() || "Studienseminar",
     materialPath: document.getElementById("mod_materialPath")?.value.trim() || "",
     description: document.getElementById("mod_description")?.value.trim() || "",
     participants: existing.participants || {}
@@ -606,8 +777,10 @@ function importThuringiaDefaultSeminars() {
       kmk: tmpl.kmk,
       coreCompetence: tmpl.coreCompetence,
       date: d.toISOString().split('T')[0],
-      time: "14:00 - 17:30",
-      room: appState.seminarLocation || "Studienseminar",
+      timeStart: tmpl.timeStart || "14:00",
+      timeEnd: tmpl.timeEnd || "17:30",
+      format: tmpl.format || "Präsenz",
+      location: tmpl.location || "Studienseminar • Raum 2",
       materialPath: tmpl.materialPath,
       description: tmpl.description,
       participants
@@ -642,19 +815,19 @@ function exportCurriculumCSV() {
     return;
   }
 
-  let csv = "Modulcode;Titel;KMK-Bereich;Sitzungsdatum;Uhrzeit;Kernkompetenz;Kandidat;Typ;Mitarbeit (1-5);UB-Transfer;UB-Notiz\n";
+  let csv = "Modulcode;Titel;KMK-Bereich;Sitzungsdatum;Format;Zeit von;Zeit bis;Ort / Raum;Kernkompetenz;Materialpfad;Kandidat;Typ;Mitarbeit (1-5);UB-Transfer;UB-Notiz\n";
 
   modules.forEach(mod => {
     const participants = mod.participants || {};
     const pKeys = Object.keys(participants);
 
     if (pKeys.length === 0) {
-      csv += `"${mod.code}";"${mod.title}";"${mod.kmk}";"${mod.date || ''}";"${mod.time || ''}";"${mod.coreCompetence || ''}";"-";"-";"-";"-";"-"\n`;
+      csv += `"${mod.code}";"${mod.title}";"${mod.kmk}";"${mod.date || ''}";"${mod.format || 'Präsenz'}";"${mod.timeStart || ''}";"${mod.timeEnd || ''}";"${mod.location || ''}";"${mod.coreCompetence || ''}";"${mod.materialPath || ''}";"-";"-";"-";"-";"-"\n`;
     } else {
       pKeys.forEach(laaId => {
         const laa = laas[laaId];
         const p = participants[laaId];
-        csv += `"${mod.code}";"${mod.title}";"${mod.kmk}";"${mod.date || ''}";"${mod.time || ''}";"${mod.coreCompetence || ''}";"${laa ? laa.name : laaId}";"${laa ? (laa.type || 'LAA') : 'LAA'}";${p.participationScore || ''};"${p.transferStatus || ''}";"${p.transferNote || ''}"\n`;
+        csv += `"${mod.code}";"${mod.title}";"${mod.kmk}";"${mod.date || ''}";"${mod.format || 'Präsenz'}";"${mod.timeStart || ''}";"${mod.timeEnd || ''}";"${mod.location || ''}";"${mod.coreCompetence || ''}";"${mod.materialPath || ''}";"${laa ? laa.name : laaId}";"${laa ? (laa.type || 'LAA') : 'LAA'}";${p.participationScore || ''};"${p.transferStatus || ''}";"${p.transferNote || ''}"\n`;
       });
     }
   });
