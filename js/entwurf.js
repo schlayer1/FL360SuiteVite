@@ -84,24 +84,8 @@ function initCandidateEntwurfData() {
  * TAB 3 MODE SWITCHER
  */
 function switchTab3Mode(mode) {
-  const btnN = document.getElementById("modeBtnNiederschrift");
-  const btnE = document.getElementById("modeBtnEntwurf");
-  const cntN = document.getElementById("tab3ContentNiederschrift");
-  const cntE = document.getElementById("tab3ContentEntwurf");
-
-  if (mode === 'entwurf') {
-    if (btnN) btnN.classList.remove("active");
-    if (btnE) btnE.classList.add("active");
-    if (cntN) cntN.style.display = "none";
-    if (cntE) {
-      cntE.style.display = "block";
-      renderEntwurfWorkspace();
-    }
-  } else {
-    if (btnN) btnN.classList.add("active");
-    if (btnE) btnE.classList.remove("active");
-    if (cntN) cntN.style.display = "block";
-    if (cntE) cntE.style.display = "none";
+  if (typeof nsSwitchTab === 'function') {
+    nsSwitchTab(mode);
   }
 }
 

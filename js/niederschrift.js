@@ -40,7 +40,13 @@ function nsSwitchTab(tabName, btn) {
   const target = document.getElementById("nsView-" + tabName);
   if (target) target.style.display = "block";
 
-  const btnIds = { 'protokoll': 'btnNsTabProtokoll', 'raster': 'btnNsTabRaster', 'editor': 'btnNsTabEditor' };
+  const btnIds = { 
+    'entwurf': 'btnNsTabEntwurf',
+    'protokoll': 'btnNsTabProtokoll', 
+    'raster': 'btnNsTabRaster', 
+    'editor': 'btnNsTabEditor' 
+  };
+
   Object.entries(btnIds).forEach(([tKey, bId]) => {
     const b = document.getElementById(bId);
     if (b) {
@@ -56,11 +62,12 @@ function nsSwitchTab(tabName, btn) {
     }
   });
 
-  if (tabName === 'raster') {
+  if (tabName === 'entwurf') {
+    if (typeof renderEntwurfWorkspace === 'function') renderEntwurfWorkspace();
+  } else if (tabName === 'raster') {
     nsRenderCategoryFilterPills();
     nsRenderRasterView();
-  }
-  if (tabName === 'editor') {
+  } else if (tabName === 'editor') {
     nsGenerateDynamicText();
   }
 }

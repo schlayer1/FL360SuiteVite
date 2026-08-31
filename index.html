@@ -291,22 +291,8 @@
        ========================================================================= -->
   <div id="tab-niederschrift" class="tab-content">
     
-    <!-- Tab 3 Mode Switcher (Niederschrift vs. Entwurfsbegutachtung) -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-      <div style="display:flex; gap:8px;">
-        <button id="modeBtnNiederschrift" class="btn btn-outline active" style="font-weight:700; padding:6px 14px; background:#fff;" onclick="switchTab3Mode('niederschrift')">
-          📝 Unterrichts-Niederschrift
-        </button>
-        <button id="modeBtnEntwurf" class="btn btn-outline" style="font-weight:700; padding:6px 14px; background:#fff;" onclick="switchTab3Mode('entwurf')">
-          📑 Entwurfs-Begutachtung &amp; Archiv
-        </button>
-      </div>
-    </div>
-
-    <!-- Container 1: Unterrichts-Niederschrift (15 Pkt.) -->
-    <div id="tab3ContentNiederschrift">
-      <!-- Top Header Bar (High-Contrast Navy Card) -->
-      <div class="card" style="padding:16px 20px; background:#1e293b; color:#ffffff; border:none; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+    <!-- Top Header Bar (High-Contrast Navy Card) -->
+    <div class="card" style="padding:16px 20px; background:#1e293b; color:#ffffff; border:none; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
       <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px;">
           <span style="font-size:1.8rem;">🎓</span>
@@ -373,18 +359,26 @@
         </div>
       </div>
 
-      <!-- 3 Internal Sub-Tabs Navigation -->
-      <div style="display:flex; gap:6px; margin-top:14px; background:#0f172a; padding:5px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
+      <!-- 4 Chronological Sub-Tabs Navigation (Entwurf, Mitschrift, Raster, Editor) -->
+      <div style="display:flex; gap:6px; margin-top:14px; background:#0f172a; padding:6px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
+        <button class="ns-btn-subnav" id="btnNsTabEntwurf" onclick="nsSwitchTab('entwurf', this)">
+          📑 1. Entwurfs-Begutachtung &amp; PDF
+        </button>
         <button class="ns-btn-subnav active" id="btnNsTabProtokoll" onclick="nsSwitchTab('protokoll', this)">
-          ⏱️ 1. Mitschrift &amp; Beobachtung
+          ⏱️ 2. Mitschrift &amp; Beobachtung
         </button>
         <button class="ns-btn-subnav" id="btnNsTabRaster" onclick="nsSwitchTab('raster', this)">
-          📊 2. Bewerten (15-Punkte-Raster)
+          📊 3. 15-Punkte-Bewertungsraster
         </button>
         <button class="ns-btn-subnav" id="btnNsTabEditor" onclick="nsSwitchTab('editor', this)">
-          📝 3. Niederschrift-Editor (Anhang)
+          📝 4. Niederschrift-Editor (Anhang)
         </button>
       </div>
+    </div>
+
+    <!-- VIEW 0: ENTWURFS-BEGUTACHTUNG (SPLIT-SCREEN) -->
+    <div id="nsView-entwurf" class="ns-view-pane" style="display:none;">
+      <div id="tab3ContentEntwurf"></div>
     </div>
 
     <!-- AUSWERTUNGSPROFIL (BAR VISUALIZATION DER KATEGORIEN) -->
@@ -396,7 +390,7 @@
       <div id="nsProfileBarsContainer" style="display:flex; flex-direction:column; gap:12px; padding-top:12px;"></div>
     </div>
 
-    <!-- VIEW 1: MIT记载 & PROTOKOLL -->
+    <!-- VIEW 1: MITSCHRIFT & PROTOKOLL -->
     <div id="nsView-protokoll" class="ns-view-pane active">
       <div class="card" style="background:#ffffff; border:1px solid #cbd5e1;">
         <div class="timer-banner" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
@@ -506,11 +500,6 @@
         <textarea id="nsEditableTextarea" style="width:100%; height:480px; padding:16px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; font-family:Arial, sans-serif; font-size:11pt; line-height:1.6; outline:none; resize:vertical;" oninput="nsHandleManualTextInput(this.value)"></textarea>
       </div>
     </div>
-
-    </div> <!-- End #tab3ContentNiederschrift -->
-
-    <!-- Container 2: Entwurfs-Begutachtung & Split-Screen -->
-    <div id="tab3ContentEntwurf" style="display:none;"></div>
 
   </div>
 
