@@ -101,3 +101,30 @@ const CRITERIA_DIMS = [
   "Diagnostik & Feedback",
   "Reflexion & Haltung"
 ];
+
+const POINT_GROUPS = [
+  [15, 14],
+  [13, 12, 11],
+  [10, 9, 8],
+  [7, 6, 5],
+  [4, 3, 2],
+  [1, 0]
+];
+
+const POINT_MAPPING = {
+  15: 0, 14: 0,
+  13: 1, 12: 1, 11: 1,
+  10: 2, 9: 2, 8: 2,
+  7: 3, 6: 3, 5: 3,
+  4: 4, 3: 4, 2: 4,
+  1: 5, 0: 5
+};
+
+const COLUMN_COLORS = [
+  { activeBg: '#16a34a', activeText: '#ffffff', label: 'Sehr gut' },
+  { activeBg: '#0d9488', activeText: '#ffffff', label: 'Gut' },
+  { activeBg: '#eab308', activeText: '#ffffff', label: 'Befriedigend' },
+  { activeBg: '#f97316', activeText: '#ffffff', label: 'Ausreichend' },
+  { activeBg: '#ef4444', activeText: '#ffffff', label: 'Mangelhaft' },
+  { activeBg: '#64748b', activeText: '#ffffff', label: 'Ungenügend' }
+];

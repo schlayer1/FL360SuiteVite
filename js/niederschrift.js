@@ -1,6 +1,21 @@
-/**
- * AUTHENTISCHE PRÜFUNGS-NIEDERSCHRIFT & 15-PUNKTE-SYSTEM ENGINE
- */
+let nsState = {
+  activeExam: "praktisch",
+  activeSubTab: "entwurf",
+  selections: {},
+  categoryFilter: "all",
+  focusMode: false,
+  showProfile: false,
+  openCategories: {},
+  protocolEntries: [],
+  currentTags: [],
+  timerSeconds: 0,
+  timerIsRunning: false,
+  editableText: "",
+  lastAutoText: "",
+  backupText: "",
+  editorFont: "Arial",
+  editorSize: "11pt"
+};
 
 function initAuthenticNiederschrift() {
   const cur = getCurrentLAA();
@@ -17,6 +32,9 @@ function initAuthenticNiederschrift() {
   nsRenderCategoryFilterPills();
   nsRenderRasterView();
   nsUpdateCalculationsAndProgress();
+
+  const currentActive = nsState.activeSubTab || 'entwurf';
+  nsSwitchTab(currentActive);
 }
 
 function nsChangeActiveExam(val) {
@@ -36,6 +54,7 @@ function nsChangeActiveExam(val) {
 }
 
 function nsSwitchTab(tabName, btn) {
+  nsState.activeSubTab = tabName;
   document.querySelectorAll(".ns-view-pane").forEach(p => p.style.display = "none");
   const target = document.getElementById("nsView-" + tabName);
   if (target) target.style.display = "block";
