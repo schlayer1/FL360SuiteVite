@@ -7,25 +7,102 @@ let activeCalcMode = "LAA"; // "LAA", "NQ", "WB"
 
 const LEGAL_DOCS = {
   LAA: {
-    title: "ThürAZStPLVO (2016)",
-    fullTitle: "Thüringer Verordnung über die Ausbildung und Zweite Staatsprüfung für die Lehrämter",
+    title: "ThürAZStPLVO",
+    fullTitle: "Thüringer Verordnung über die Ausbildung und Zweite Staatsprüfung für die Lehrämter (vom 26. April 2016)",
     section: "§ 31 (Noten und Punktesystem), § 32 (Mündliche Prüfung), § 33 (Gesamtergebnis)",
-    url: "https://landesrecht.thueringen.de/bsth/document/jlr-LehrAmtsStPrVTH2016pP1",
-    infoText: "Die Zweite Staatsprüfung gilt als bestanden, wenn das Gesamtergebnis mindestens 5,00 Notenpunkte ('ausreichend') beträgt und keine der Prüfungsleistungen mit 0 Punkten bewertet wurde."
+    url: "https://landesrecht.thueringen.de/bsth/document/jlr-LehrAusbPrVTH2016rahmen",
+    infoText: "Die Zweite Staatsprüfung gilt als bestanden, wenn das Gesamtergebnis mindestens 5,00 Notenpunkte ('ausreichend') beträgt und keine der Prüfungsleistungen mit 0 Punkten bewertet wurde.",
+    modalContentHTML: `
+      <div style="font-size:0.88rem; color:#334155; line-height:1.6;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px; margin-bottom:16px;">
+          <strong style="color:#1e3a8a; font-size:1rem;">⚖️ ThürAZStPLVO – Auszug Zweite Staatsprüfung</strong>
+          <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Rechtsverbindliche Vorschriften für Lehramtsanwärterinnen und Lehramtsanwärter</div>
+        </div>
+
+        <h4 style="color:#0f172a; margin:14px 0 6px;">§ 31 Noten- und Punktesystem</h4>
+        <p>Die einzelnen Prüfungsleistungen und das Gesamtergebnis werden mit folgenden Noten und Punkten bewertet:</p>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
+          <ul style="margin:0; padding-left:20px; font-size:0.84rem;">
+            <li><strong>Sehr gut (15, 14, 13 Punkte / 1,0 – 1,3):</strong> Eine den Anforderungen in besonderem Maße entsprechende Leistung.</li>
+            <li><strong>Gut (12, 11, 10 Punkte / 1,7 – 2,3):</strong> Eine den Anforderungen voll entsprechende Leistung.</li>
+            <li><strong>Befriedigend (9, 8, 7 Punkte / 2,7 – 3,3):</strong> Eine den Anforderungen im Allgemeinen entsprechende Leistung.</li>
+            <li><strong>Ausreichend (6, 5 Punkte / 3,7 – 4,0):</strong> Eine Leistung, die Mängel aufweist, aber den Anforderungen noch entspricht.</li>
+            <li><strong>Mangelhaft (4, 3, 2, 1 Punkte / 4,3 – 5,5):</strong> Eine den Anforderungen nicht entsprechende Leistung.</li>
+            <li><strong>Ungenügend (0 Punkte / 6,0):</strong> Eine völlig unbrauchbare Leistung.</li>
+          </ul>
+        </div>
+
+        <h4 style="color:#0f172a; margin:14px 0 6px;">§ 33 Ermittlung des Gesamtergebnisses</h4>
+        <p>Das Gesamtergebnis der Zweiten Staatsprüfung wird aus den Notenpunkten der Prüfungsteile wie folgt ermittelt:</p>
+        <ol style="padding-left:20px; margin-bottom:14px;">
+          <li><strong>Ausbildungsnote (40%):</strong> Gesamturteil der Ausbildungsschule und des Staatlichen Studienseminars (§ 18).</li>
+          <li><strong>1. Prüfungslehrprobe (20%):</strong> Schulpraktischer Prüfungsunterricht im 1. Ausbildungsfach (§ 24).</li>
+          <li><strong>2. Prüfungslehrprobe (20%):</strong> Schulpraktischer Prüfungsunterricht im 2. Ausbildungsfach (§ 24).</li>
+          <li><strong>Mündliche Prüfung / Kolloquium (20%):</strong> Pädagogik, Schulrecht und Fachdidaktiken (§ 27).</li>
+        </ol>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; font-size:0.84rem; color:#166534;">
+          🎯 <strong>Bestehenskriterium (§ 33 Abs. 3):</strong> Die Zweite Staatsprüfung ist bestanden, wenn der Gesamtdurchschnitt mindestens <strong>5,00 Punkte</strong> beträgt und keine Prüfungsleistung mit <strong>0 Punkten</strong> bewertet wurde.
+        </div>
+      </div>
+    `
   },
   NQ: {
     title: "ThürNQVO / ThürLbG",
-    fullTitle: "Thüringer Verordnung über die Nachqualifizierung & Anpassungslehrgänge für den Seiteneinstieg",
+    fullTitle: "Thüringer Verordnung über die Nachqualifizierung von Lehrkräften & Anpassungslehrgänge für den Seiteneinstieg",
     section: "§ 8 (Schulpraktische Nachqualifikation) & § 12 (Abschlusskolloquium & Gesamtnote)",
     url: "https://bildung.thueringen.de/lehrkraefte/lehrerausbildung",
-    infoText: "Die Nachqualifikation umfasst die Bewertung der KMK-Pädagogik-Module (40%), die schulpraktische Beurteilung (20%), den Prüfungsunterricht (20%) und das Abschlusskolloquium (20%)."
+    infoText: "Die Nachqualifikation umfasst die Bewertung der KMK-Pädagogik-Module (40%), die schulpraktische Beurteilung (20%), den Prüfungsunterricht (20%) und das Abschlusskolloquium (20%).",
+    modalContentHTML: `
+      <div style="font-size:0.88rem; color:#334155; line-height:1.6;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px; margin-bottom:16px;">
+          <strong style="color:#1e3a8a; font-size:1rem;">⚖️ Nachqualifikation &amp; Seiteneinstieg in Thüringen</strong>
+          <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Rechtsgrundlagen: ThürLbG, KMK-Standards &amp; Nachqualifizierungsrichtlinien</div>
+        </div>
+
+        <h4 style="color:#0f172a; margin:14px 0 6px;">Struktur der pädagogischen Nachqualifizierung</h4>
+        <p>Lehrkräfte im Seiteneinstieg absolvieren eine modularisierte pädagogisch-didaktische Nachqualifizierung am Staatlichen Studienseminar sowie begleitenden Unterricht an ihrer Stammschule.</p>
+
+        <h4 style="color:#0f172a; margin:14px 0 6px;">Zusammensetzung des Gesamtergebnisses</h4>
+        <ol style="padding-left:20px; margin-bottom:14px;">
+          <li><strong>Pädagogische Modulnachweise (40%):</strong> Nachweis über die erfolgreiche Teilnahme und Leistungsnachweise in den 5 KMK-Kompetenzbereichen am Studienseminar.</li>
+          <li><strong>Schulpraktische Beurteilung (20%):</strong> Gutachten der Schulleitung über die Bewährung und Unterrichtstätigkeit an der Schule.</li>
+          <li><strong>Prüfungslehrprobe / Unterrichtspraxis (20%):</strong> Fachdidaktischer Prüfungsunterricht unter Beobachtung der Prüfungskommission.</li>
+          <li><strong>Abschlusskolloquium &amp; Reflexionsgespräch (20%):</strong> Fachdidaktisch-pädagogisches Prüfungsgespräch zum Abschluss der Nachqualifikation.</li>
+        </ol>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; font-size:0.84rem; color:#166534;">
+          🎯 <strong>Zertifikatserteilung:</strong> Nach erfolgreichem Gesamtergebnis (&ge; 5,00 Punkte bzw. Note 4,0) wird die unbefristete Gleichstellung bzw. die Lehrbefähigung ausgesprochen.
+        </div>
+      </div>
+    `
   },
   WB: {
     title: "ThürAZStPLVO § 40 / WB-RL",
     fullTitle: "Thüringer Richtlinie über die Weiterbildung & Erweiterungsprüfungen für Lehrkräfte",
     section: "§ 40 (Erweiterungsprüfung und Zusatzzertifikate) & TMBJS-Weiterbildungsrichtlinie",
-    url: "https://landesrecht.thueringen.de/bsth/document/jlr-LehrAmtsStPrVTH2016pP40",
-    infoText: "Zusatzqualifikationen und Erweiterungsfächer erfordern den erfolgreichen Nachweis der Fachdidaktik-Module (30%), die Weiterbildungs-Lehrprobe (40%) und das Fachkolloquium (30%)."
+    url: "https://landesrecht.thueringen.de/bsth/document/jlr-LehrAusbPrVTH2016rahmen",
+    infoText: "Zusatzqualifikationen und Erweiterungsfächer erfordern den erfolgreichen Nachweis der Fachdidaktik-Module (30%), die Weiterbildungs-Lehrprobe (40%) und das Fachkolloquium (30%).",
+    modalContentHTML: `
+      <div style="font-size:0.88rem; color:#334155; line-height:1.6;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px; margin-bottom:16px;">
+          <strong style="color:#1e3a8a; font-size:1rem;">⚖️ § 40 ThürAZStPLVO – Erweiterungsprüfungen &amp; Weiterbildung</strong>
+          <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Erwerb der Lehrbefähigung in einem weiteren Fach oder einer sonderpädagogischen Fachrichtung</div>
+        </div>
+
+        <h4 style="color:#0f172a; margin:14px 0 6px;">Prüfungsteile der Erweiterungsprüfung</h4>
+        <p>Die Weiterbildungs- und Erweiterungsprüfung umfasst nach § 40 ThürAZStPLVO:</p>
+        <ol style="padding-left:20px; margin-bottom:14px;">
+          <li><strong>Fachdidaktische Seminar-Module (30%):</strong> Nachweis über die erfolgreiche Absolvierung der fachdidaktischen und fachwissenschaftlichen Weiterbildungskurse.</li>
+          <li><strong>Weiterbildungs-Lehrprobe (40%):</strong> Schulpraktischer Prüfungsunterricht im neuen Erweiterungsfach vor der Prüfungskommission.</li>
+          <li><strong>Fachwissenschaftliches / fachdidaktisches Kolloquium (30%):</strong> Mündliche Abschlussprüfung zu Theorie, Methodik und Lehrplan des Erweiterungsfachs.</li>
+        </ol>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; font-size:0.84rem; color:#166534;">
+          🎯 <strong>Lehrbefähigung:</strong> Mit Bestehen der Erweiterungsprüfung wird die offizielle Lehrbefähigung für das Erweiterungsfach zuerkannt.
+        </div>
+      </div>
+    `
   }
 };
 
@@ -246,6 +323,26 @@ function setCalcMode(mode) {
   renderCalculatorUI();
 }
 
+function openLegalDocModal(mode) {
+  const m = mode || activeCalcMode || "LAA";
+  const doc = LEGAL_DOCS[m] || LEGAL_DOCS.LAA;
+
+  if (typeof openModal === "function") {
+    openModal({
+      title: `⚖️ ${doc.title} – Amtliche Bestimmungen`,
+      bodyHTML: doc.modalContentHTML,
+      footerHTML: `
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+          <a href="${doc.url}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size:0.8rem; padding:6px 14px;">
+            🔗 Landesrecht Thüringen öffnen ↗
+          </a>
+          <button class="btn btn-primary" onclick="closeModal()">Schließen</button>
+        </div>
+      `
+    });
+  }
+}
+
 function renderCalculatorUI() {
   const container = document.getElementById("calculatorContainer");
   if (!container) return;
@@ -400,9 +497,9 @@ function renderCalculatorUI() {
 
     <!-- Official Legal Reference Link Banner -->
     <div class="legal-doc-banner">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-        <div>
-          <div style="font-weight:700; font-size:0.86rem; color:#1e3a8a; display:flex; align-items:center; gap:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:280px;">
+          <div style="font-weight:700; font-size:0.88rem; color:#1e3a8a; display:flex; align-items:center; gap:6px;">
             <span>⚖️</span> <span>${doc.title}</span> &ndash; <span>${doc.section}</span>
           </div>
           <div style="font-size:0.78rem; color:#475569; margin-top:2px;">
@@ -412,9 +509,14 @@ function renderCalculatorUI() {
             💡 ${doc.infoText}
           </div>
         </div>
-        <a href="${doc.url}" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:0.72rem; padding:3px 8px; white-space:nowrap; background:#fff;">
-          🔗 Gesetzestext öffnen ↗
-        </a>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn btn-primary" style="font-size:0.76rem; padding:5px 12px;" onclick="openLegalDocModal('${activeCalcMode}')" title="Bestimmungen direkt offline einsehen">
+            📖 Vorschriften im Detail
+          </button>
+          <a href="${doc.url}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size:0.76rem; padding:5px 12px; white-space:nowrap; background:#fff;" title="Offizielles Landesrechtsportal aufrufen">
+            🔗 Landesrecht Thüringen ↗
+          </a>
+        </div>
       </div>
     </div>
 
@@ -488,7 +590,6 @@ function calculateFinalGradeLive() {
 
 function pointsToDecimalGrade(points) {
   // Thuringian linear translation formula from 15 to 1:
-  // 15 -> 1.0, 14 -> 1.0, 13 -> 1.3, 12 -> 1.7, 11 -> 2.0, 10 -> 2.3, 9 -> 2.7, 8 -> 3.0, 7 -> 3.3, 6 -> 3.7, 5 -> 4.0, 4 -> 4.3, 3 -> 4.7, 2 -> 5.0, 1 -> 5.5, 0 -> 6.0
   if (points >= 14.5) return "1,0";
   if (points >= 13.5) return "1,1";
   if (points >= 12.5) return "1,3";
