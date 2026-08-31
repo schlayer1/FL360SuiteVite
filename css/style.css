@@ -352,10 +352,81 @@ canvas { max-width: 100%; height: auto !important; }
 .form-control:focus { border-color: var(--primary-light); box-shadow: 0 0 0 2px var(--primary-glow); }
 .form-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* Interactive PDF AcroForm Overlay */
+.pdf-page-container {
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  background: white;
+  display: inline-block;
+}
+
+.pdf-form-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.pdf-form-field-input {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(239, 246, 255, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  border-radius: 2px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: #0f172a;
+  padding: 1px 4px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  z-index: 5;
+}
+
+.pdf-form-field-input:focus {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+  outline: none;
+  z-index: 20;
+}
+
+.pdf-form-field-input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #1e3a8a;
+}
+
+.pdf-form-field-textarea {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(239, 246, 255, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  border-radius: 2px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: #0f172a;
+  padding: 3px 5px;
+  box-sizing: border-box;
+  resize: none;
+  line-height: 1.35;
+  transition: all 0.15s ease;
+  z-index: 5;
+}
+
+.pdf-form-field-textarea:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+  outline: none;
+  z-index: 20;
+}
+
 /* Toast Notifications */
 .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast { background: #0f172a; color: white; padding: 12px 18px; border-radius: var(--radius-md); font-size: 0.86rem; font-weight: 600; box-shadow: var(--shadow-xl); display: flex; align-items: center; gap: 10px; animation: toastIn 0.25s ease-out; pointer-events: auto; border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid var(--primary-light); }
-@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* Privacy Footer */
 .privacy-footer { padding: 14px 20px; background: #f1f5f9; border-top: 1px solid var(--border); font-size: 0.76rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; text-align: center; margin-top: auto; }

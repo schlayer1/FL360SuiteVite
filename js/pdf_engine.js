@@ -10,6 +10,7 @@ let activeTemplateKey = "f230";
 let formFieldMap = {};
 let customTemplates = [];
 let localDirectoryHandle = null;
+let pdfFieldElements = {};
 
 async function initPdfEngine() {
   updateTemplateDropdown();
@@ -193,6 +194,7 @@ async function loadPdfTemplate(key) {
   pdfDocBytes = null;
   pdfJsDoc = null;
   formFieldMap = {};
+  pdfFieldElements = {};
 
   showToast(`Formular "${key}" wird geladen...`, "⏳");
   
@@ -240,7 +242,7 @@ async function loadPdfTemplate(key) {
       const tplName = (typeof OFFICIAL_TEMPLATES !== 'undefined' && OFFICIAL_TEMPLATES[key]) ? OFFICIAL_TEMPLATES[key].title : "Benutzerdefiniertes Formular";
       const titleEl = document.getElementById("pdfDocTitle");
       if (titleEl) titleEl.innerText = `${key.toUpperCase()} • ${tplName}`;
-      showToast(`Formular "${key}" erfolgreich geladen!`, "✅");
+      showToast(`Formular "${key}" geladen (Felder direkt im Dokument beschreibbar)!`, "✅");
     }
   } catch (err) {
     console.error("PDF Load Error:", err);
@@ -270,6 +272,7 @@ async function discoverAcroFormFields() {
 async function renderPage(pageNum) {
   if (!pdfJsDoc) return;
   const canvas = document.getElementById("pdfCanvas");
+  const formLayer = document.getElementById("pdfFormLayer");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
@@ -285,6 +288,70 @@ async function renderPage(pageNum) {
   };
 
   await page.render(renderContext).promise;
+
+  // Clear & render interactive form overlay layer
+  if (formLayer) {
+    formLayer.innerHTML = "";
+    formLayer.style.width = `${viewport.width}px`;
+    formLayer.style.height = `${viewport.height}px`;
+
+    try {
+      const annotations = await page.getAnnotations();
+      annotations.forEach(annot => {
+        if (annot.subtype === 'Widget' && annot.fieldName) {
+          const rect = annot.rect;
+          const vRect = viewport.convertToViewportRectangle(rect);
+          const vx = Math.min(vRect[0], vRect[2]);
+          const vy = Math.min(vRect[1], vRect[3]);
+          const vw = Math.abs(vRect[2] - vRect[0]);
+          const vh = Math.abs(vRect[3] - vRect[1]);
+
+          let inputElem;
+          if (annot.fieldType === 'Tx' && (vh > 36 || annot.multiline)) {
+            inputElem = document.createElement("textarea");
+            inputElem.className = "pdf-form-field-textarea";
+          } else if (annot.fieldType === 'Btn' && (annot.checkBox || annot.radioButton)) {
+            inputElem = document.createElement("input");
+            inputElem.type = "checkbox";
+            inputElem.className = "pdf-form-field-input";
+          } else {
+            inputElem = document.createElement("input");
+            inputElem.type = "text";
+            inputElem.className = "pdf-form-field-input";
+          }
+
+          inputElem.id = `field_${annot.fieldName}`;
+          inputElem.dataset.fieldName = annot.fieldName;
+          inputElem.style.left = `${vx}px`;
+          inputElem.style.top = `${vy}px`;
+          inputElem.style.width = `${vw}px`;
+          inputElem.style.height = `${vh}px`;
+
+          // Restore saved value or annotation value
+          const savedVal = appState.pdfFormValues ? appState.pdfFormValues[annot.fieldName] : undefined;
+          if (savedVal !== undefined) {
+            if (inputElem.type === 'checkbox') inputElem.checked = Boolean(savedVal);
+            else inputElem.value = savedVal;
+          } else if (annot.fieldValue) {
+            if (inputElem.type === 'checkbox') inputElem.checked = (annot.fieldValue === 'On' || annot.fieldValue === true);
+            else inputElem.value = annot.fieldValue;
+          }
+
+          // Live sync on typing/clicking
+          inputElem.addEventListener('input', (e) => {
+            if (!appState.pdfFormValues) appState.pdfFormValues = {};
+            appState.pdfFormValues[annot.fieldName] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+            saveState();
+          });
+
+          pdfFieldElements[annot.fieldName] = inputElem;
+          formLayer.appendChild(inputElem);
+        }
+      });
+    } catch(err) {
+      console.warn("Annotation rendering notice:", err);
+    }
+  }
 
   const pageIndicator = document.getElementById("pdfPageIndicator");
   if (pageIndicator) pageIndicator.innerText = `Seite ${pageNum} von ${totalPages}`;
@@ -304,118 +371,145 @@ function nextPdfPage() {
   }
 }
 
-async function applyAutofill() {
-  if (!pdfDocBytes || typeof PDFLib === 'undefined') {
-    showToast("Bitte zuerst ein Formular laden!", "⚠️");
-    return;
-  }
+function setFieldValue(name, val) {
+  if (!appState.pdfFormValues) appState.pdfFormValues = {};
+  appState.pdfFormValues[name] = val;
 
+  const elem = pdfFieldElements[name] || document.querySelector(`[data-field-name="${name}"]`);
+  if (elem) {
+    if (elem.type === 'checkbox') elem.checked = Boolean(val);
+    else elem.value = val || '';
+  }
+}
+
+async function applyAutofill() {
   const cur = getCurrentLAA();
   if (!cur) return;
   showToast(`Übertrage Stammdaten für ${cur.name}...`, "⚡");
 
-  try {
-    const pdfDoc = await PDFLib.PDFDocument.load(pdfDocBytes.slice(0), { ignoreEncryption: true });
-    const form = pdfDoc.getForm();
-    const fields = form.getFields();
+  if (!appState.pdfFormValues) appState.pdfFormValues = {};
 
-    let filledCount = 0;
-
-    const getValForField = (fName) => {
-      const fn = fName.toLowerCase();
-      
-      if (fn.includes("kandidat") || fn.includes("prüfling") || fn.includes("anwärter") || fn.includes("pruefling") || fn.includes("name_anwaerter") || fn.includes("name_kandidat") || fn.includes("lehramtsanwaerter.namevorname")) {
-        return cur.name || "";
-      }
-      if (fn.includes("geburt") || fn.includes("dategeburtsdatum")) {
-        return cur.birthDate ? new Date(cur.birthDate).toLocaleDateString('de-DE') : "";
-      }
-      if (fn === "name" || fn.startsWith("name_") || fn.endsWith("_name") || fn.includes("nachname")) {
-        return cur.name || "";
-      }
-      if (fn.includes("vorname")) {
-        const parts = (cur.name || "").split(" ");
-        return parts.length > 1 ? parts[0] : "";
-      }
-      if (fn.includes("schule") || fn.includes("ausbildungsschule") || fn.includes("seminarschule") || fn.includes("dienststelle") || fn.includes("schuleanschrift")) {
-        return cur.school || "";
-      }
-      if (fn.includes("fach_1") || fn.includes("fach1") || fn.includes("ausbildungsfach_1") || fn.includes("erstfach") || fn.includes("unterrichtsfach") || fn.includes("lernfeld")) {
-        return cur.subject1 || "";
-      }
-      if (fn.includes("fach_2") || fn.includes("fach2") || fn.includes("ausbildungsfach_2") || fn.includes("zweitfach")) {
-        return cur.subject2 || "";
-      }
-      if (fn.includes("fachleiter") || fn.includes("ausbilder") || fn.includes("erstgutachter") || fn.includes("ausschussvorsitzender") || fn.includes("mentor")) {
-        return cur.mentor || (appState && appState.mentorName) || "Fachleitung";
-      }
-      if (fn.includes("ort") || fn.includes("ausstellungsort")) {
-        return "Erfurt";
-      }
-      if (fn.includes("datum") || fn.includes("ausstellungsdatum") || fn.includes("pruefungsdatum") || fn.includes("dateanddayofweek")) {
-        return new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
-      }
-      if (fn.includes("thema") || fn.includes("themaderlehrprobe")) {
-        return (cur.visits && cur.visits.length > 0) ? cur.visits[cur.visits.length - 1].topic : "Prüfungsunterricht";
-      }
-      if (fn.includes("bemerkungen") || fn.includes("begruendungderpunktevergabe")) {
-        const area = document.getElementById("gutachtenTextArea");
-        return area ? area.value : "";
-      }
-      return null;
-    };
-
-    fields.forEach(field => {
-      const type = field.constructor.name;
-      const name = field.getName();
-      const autoVal = getValForField(name);
-
-      if (autoVal !== null) {
-        try {
-          if (type === 'PDFTextField' || field.setText) {
-            field.setText(String(autoVal));
-            filledCount++;
-          }
-        } catch(e) {}
-      }
-    });
-
-    const modifiedBytes = await pdfDoc.save();
-    pdfDocBytes = modifiedBytes;
-    pdfJsDoc = await pdfjsLib.getDocument({ data: modifiedBytes.buffer.slice(0) }).promise;
-    await renderPage(currentPage);
+  let filledCount = 0;
+  const getValForField = (fName) => {
+    const fn = fName.toLowerCase();
     
-    showToast(`${filledCount} amtliche Stammdatenfelder präzise ausgefüllt!`, "🎯");
-  } catch(err) {
-    console.error("Autofill error:", err);
-    showToast("Fehler beim Autofill: " + err.message, "❌");
+    if (fn.includes("kandidat") || fn.includes("prüfling") || fn.includes("anwärter") || fn.includes("pruefling") || fn.includes("name_anwaerter") || fn.includes("name_kandidat") || fn.includes("lehramtsanwaerter.namevorname")) {
+      return cur.name || "";
+    }
+    if (fn.includes("geburt") || fn.includes("dategeburtsdatum")) {
+      return cur.birthDate ? new Date(cur.birthDate).toLocaleDateString('de-DE') : "";
+    }
+    if (fn === "name" || fn.startsWith("name_") || fn.endsWith("_name") || fn.includes("nachname")) {
+      return cur.name || "";
+    }
+    if (fn.includes("vorname")) {
+      const parts = (cur.name || "").split(" ");
+      return parts.length > 1 ? parts[0] : "";
+    }
+    if (fn.includes("schule") || fn.includes("ausbildungsschule") || fn.includes("seminarschule") || fn.includes("dienststelle") || fn.includes("schuleanschrift")) {
+      return cur.school || "";
+    }
+    if (fn.includes("fach_1") || fn.includes("fach1") || fn.includes("ausbildungsfach_1") || fn.includes("erstfach") || fn.includes("unterrichtsfach") || fn.includes("lernfeld")) {
+      return cur.subject1 || "";
+    }
+    if (fn.includes("fach_2") || fn.includes("fach2") || fn.includes("ausbildungsfach_2") || fn.includes("zweitfach")) {
+      return cur.subject2 || "";
+    }
+    if (fn.includes("fachleiter") || fn.includes("ausbilder") || fn.includes("erstgutachter") || fn.includes("ausschussvorsitzender") || fn.includes("mentor")) {
+      return cur.mentor || (appState && appState.mentorName) || "Fachleitung";
+    }
+    if (fn.includes("ort") || fn.includes("ausstellungsort")) {
+      return "Erfurt";
+    }
+    if (fn.includes("datum") || fn.includes("ausstellungsdatum") || fn.includes("pruefungsdatum") || fn.includes("dateanddayofweek")) {
+      return new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+    if (fn.includes("thema") || fn.includes("themaderlehrprobe")) {
+      return (cur.visits && cur.visits.length > 0) ? cur.visits[cur.visits.length - 1].topic : "Prüfungsunterricht";
+    }
+    return null;
+  };
+
+  // Populate from discovered fields
+  Object.keys(formFieldMap).forEach(fieldName => {
+    const val = getValForField(fieldName);
+    if (val !== null) {
+      setFieldValue(fieldName, val);
+      filledCount++;
+    }
+  });
+
+  // Also check currently rendered DOM inputs
+  document.querySelectorAll(".pdf-form-field-input, .pdf-form-field-textarea").forEach(input => {
+    const fn = input.dataset.fieldName;
+    if (fn) {
+      const val = getValForField(fn);
+      if (val !== null) {
+        input.value = val;
+        appState.pdfFormValues[fn] = val;
+        filledCount++;
+      }
+    }
+  });
+
+  saveState();
+  showToast(`✅ ${filledCount} Stammdatenfelder automatisch eingetragen! Sie können jetzt jedes Feld direkt bearbeiten & ergänzen.`, "✍️");
+}
+
+async function generateFilledPdfDoc() {
+  if (!pdfDocBytes || typeof PDFLib === 'undefined') return null;
+
+  const pdfDoc = await PDFLib.PDFDocument.load(pdfDocBytes.slice(0), { ignoreEncryption: true });
+  const form = pdfDoc.getForm();
+
+  if (appState.pdfFormValues) {
+    for (const [fieldName, val] of Object.entries(appState.pdfFormValues)) {
+      try {
+        const field = form.getField(fieldName);
+        const type = field.constructor.name;
+        if (type === 'PDFCheckBox') {
+          if (val === true || val === 'On') field.check();
+          else field.uncheck();
+        } else if (type === 'PDFTextField' || field.setText) {
+          field.setText(String(val || ''));
+        }
+      } catch(e) {}
+    }
   }
+
+  return await pdfDoc.save();
 }
 
 async function downloadFilledPdf() {
-  if (!pdfDocBytes) {
-    showToast("Kein aktives Dokument zum Herunterladen!", "⚠️");
+  showToast("Generiere PDF mit allen Eingaben & Ergänzungen...", "⏳");
+  const bytes = await generateFilledPdfDoc();
+  if (!bytes) {
+    showToast("Fehler beim Erstellen des PDFs!", "❌");
     return;
   }
+
   const cur = getCurrentLAA() || {};
   const candidateName = cur.name ? cur.name.replace(/[^a-zA-Z0-9_äöüÄÖÜß]/g, '_') : 'Kandidat';
   const formId = activeTemplateKey.replace(/[^a-zA-Z0-9_]/g, '_');
   const filename = `${formId}_${candidateName}.pdf`;
 
-  const blob = new Blob([pdfDocBytes], { type: "application/pdf" });
+  const blob = new Blob([bytes], { type: "application/pdf" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
-  showToast(`PDF "${filename}" erfolgreich gespeichert!`, "💾");
+  showToast(`PDF "${filename}" erfolgreich heruntergeladen!`, "💾");
 }
 
 async function printFilledPdf() {
-  if (!pdfDocBytes) {
-    showToast("Kein Dokument zum Drucken vorhanden!", "⚠️");
+  showToast("Bereite Druckversion mit Ihren Eingaben vor...", "⏳");
+  const bytes = await generateFilledPdfDoc();
+  if (!bytes) {
+    showToast("Fehler beim Erstellen der Druckversion!", "❌");
     return;
   }
-  const blob = new Blob([pdfDocBytes], { type: 'application/pdf' });
+
+  const blob = new Blob([bytes], { type: 'application/pdf' });
   const blobUrl = URL.createObjectURL(blob);
   const printWindow = window.open(blobUrl, '_blank');
   if (printWindow) {
