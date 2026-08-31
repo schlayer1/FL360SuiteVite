@@ -21,6 +21,15 @@ function initApp() {
     populateLAASelector();
     initActiveTab();
     initLiveCockpit();
+
+    // Auto-launch Setup Wizard on first start if no candidates exist
+    if (appState && !appState.wizardCompleted && Object.keys(appState.laas || {}).length === 0) {
+      setTimeout(() => {
+        if (typeof openSetupWizard === "function") {
+          openSetupWizard();
+        }
+      }, 400);
+    }
   } catch(err) {
     console.error("Initialization Error:", err);
   }
