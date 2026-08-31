@@ -80,11 +80,18 @@ function switchTab(tabId) {
 
 function populateLAASelector() {
   const selector = document.getElementById("laaSelect");
-  if (!selector || !appState || !appState.laas) return;
+  if (!selector || !appState) return;
 
   const currentId = appState.selectedLAA;
+  const entries = Object.entries(appState.laas || {});
+
+  if (entries.length === 0) {
+    selector.innerHTML = `<option value="">➕ Kein Kandidat angelegt (+ Profil)</option>`;
+    return;
+  }
+
   let html = "";
-  for (const [id, laa] of Object.entries(appState.laas)) {
+  for (const [id, laa] of entries) {
     const isSelected = id === currentId ? "selected" : "";
     const roleBadge = laa.type ? ` [${laa.type}]` : "";
     html += `<option value="${id}" ${isSelected}>${laa.name}${roleBadge} (${laa.subject1 || 'Fach 1'}/${laa.subject2 || 'Fach 2'})</option>`;
@@ -400,10 +407,31 @@ function importDataJSON(event) {
 
 function renderDashboard() {
   const cur = getCurrentLAA();
-  if (!cur) return;
+  const bannerEl = document.getElementById("dashboardUpcomingBanner");
+  const profileContainer = document.getElementById("dashboardProfileGrid");
+
+  if (!cur) {
+    if (bannerEl) bannerEl.style.display = "none";
+    if (profileContainer) {
+      profileContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: white; border-radius: 12px; border: 2px dashed #cbd5e1;">
+          <div style="font-size: 3rem; margin-bottom: 12px;">👥</div>
+          <h2 style="font-size: 1.3rem; margin-bottom: 8px; color: #1e293b;">Herzlich willkommen in Ihrer Fachleiter 360° Suite</h2>
+          <p style="color: #64748b; font-size: 0.95rem; max-width: 540px; margin: 0 auto 20px;">Es ist aktuell noch kein Ausbildungs- oder Prüfungskandidat angelegt. Starten Sie, indem Sie Ihr erstes Profil anlegen.</p>
+          <button class="btn btn-primary" onclick="openAddLAAModal()" style="padding: 10px 24px; font-size: 1rem;">➕ Erstes Kandidatenprofil anlegen</button>
+        </div>
+      `;
+    }
+    const visitsTable = document.getElementById("dashboardVisitsTableBody");
+    if (visitsTable) visitsTable.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">Noch keine Unterrichtsbesuche vorhanden</td></tr>';
+    const goalsList = document.getElementById("dashboardGoalsList");
+    if (goalsList) goalsList.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">Noch keine Entwicklungsziele vorhanden</div>';
+    const appointmentsList = document.getElementById("dashboardAppointmentsList");
+    if (appointmentsList) appointmentsList.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">Noch keine anstehenden Termine vorhanden</div>';
+    return;
+  }
 
   // Upcoming Banner
-  const bannerEl = document.getElementById("dashboardUpcomingBanner");
   if (bannerEl) {
     const upcoming = (cur.appointments || []).find(a => new Date(a.date) >= new Date(new Date().setHours(0,0,0,0)));
     if (upcoming) {
