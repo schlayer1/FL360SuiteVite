@@ -302,7 +302,7 @@ function getWizardStepHtml(step) {
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:0.8rem; color:#475569;">
           <div>📊 <strong>Tab 1:</strong> Dashboard &amp; Profil</div>
           <div>⏱️ <strong>Tab 2:</strong> Live-Hospitationsprotokoll</div>
-          <div>📝 <strong>Tab 3:</strong> Amtliche 15-Pkt.-Niederschrift</div>
+          <div>📝 <strong>Tab 3:</strong> Niederschrift</div>
           <div>📈 <strong>Tab 4:</strong> Progression &amp; Radar-Analyse</div>
           <div>📚 <strong>Tab 5:</strong> Seminar- &amp; Modulplaner</div>
           <div>🪞 <strong>Tab 6:</strong> Reflexions- &amp; Zielabgleich</div>
