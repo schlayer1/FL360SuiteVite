@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="de" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Niederschrift</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        body { overscroll-behavior-y: contain; }
+        html, body { height: 100%; margin: 0; }
+        
+        /* Premium Custom Scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; border: 2px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; border: 2px solid transparent; background-clip: padding-box; }
+        
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* KUGELSICHERES DRUCK-LAYOUT (Entfernt Schatten, Reste und Scrolling-Bugs) */
+        @media screen {
+            .print-only { display: none !important; }
+        }
+        @media print {
+            .screen-only { display: none !important; }
+            
+            /* Zwingt den Browser, das endlose Blatt zu akzeptieren und Schatten zu löschen */
+            html, body, #root { 
+                height: auto !important; 
+                min-height: 100% !important;
+                display: block !important;
+                background-color: white !important; 
+                background: white !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            * {
+                box-shadow: none !important;
+                background-color: transparent !important;
+            }
+
+            @page {
+                margin: 0 !important; /* Unterdrückt URL und Datum vom Tablet-Browser */
+                size: A4 portrait;
+            }
+            
+            .print-only {
+                display: block !important;
+                background-color: white !important;
+                color: black !important;
+                padding: 2.5cm 2.5cm 2.5cm 2.5cm !important; /* Physischer Rand für den Text */
+                width: 100% !important;
+                box-sizing: border-box !important;
+                white-space: pre-wrap !important;
+                text-align: justify !important;
+                line-height: 1.5 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200 h-full flex flex-col">
+    
+    <div id="root" class="h-full flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS (SVG) ---
+        const IconClipboard = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>);
+        const IconCheckCircle = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>);
+        const IconRefreshCcw = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>);
+        const IconBookOpen = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>);
+        const IconPresentation = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>);
+        const IconChevronDown = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>);
+        const IconChevronUp = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>);
+        const IconCalculator = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>);
+        const IconPrinter = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect width="12" height="8" x="6" y="14" rx="1"/></svg>);
+        const IconMoon = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>);
+        const IconSun = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>);
+        const IconFileWord = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 11.5l1.5 5 1.5-5 1.5 5 1.5-5"/></svg>);
+        const IconUndo = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>);
+        const IconAlertTriangle = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>);
+        const IconType = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>);
+        const IconBarChart = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>);
+        const IconClock = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>);
+        const IconPlay = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>);
+        const IconPause = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>);
+        const IconSquare = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/></svg>);
+        const IconTag = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>);
+        const IconList = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>);
+        const IconFilter = ({ className }) => (<svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>);
+
+        // --- DATENBASIS ---
+        const examData = {
+          muendlich: {
+            title: "Mündliche Prüfung",
+            categories: [
+              {
+                id: "m_fach", title: "Anforderung: Fachlichkeit", shortName: "Fachlichkeit",
+                indicators: [
+                  { id: "m_fach_1", name: "Die theoriegeleitete Betrachtung der Handlungssituation", grades: ["wird komplex analysiert und tiefgründig, vergleichend erläutert; die fachliche Korrektheit wird vielschichtig, differenziert, beispielhaft nachgewiesen", "wird umfassend analysiert und überwiegend erläutert; die fachliche Korrektheit wird fundiert nachgewiesen", "wird angemessen analysiert und prinzipiell erläutert; die fachliche Korrektheit wird grundsätzlich nachgewiesen", "wird ansatzweise analysiert und oberflächlich erläutert; die fachliche Korrektheit wird hinreichend nachgewiesen", "wird kaum oder lückenhaft analysiert und nachgewiesen", "wird nicht analysiert und nicht erläutert; die fachliche Korrektheit wird nicht nachgewiesen"] },
+                  { id: "m_fach_2", name: "Der Bezug zu schulgesetzlichen Regelungen, Richtlinien und Lehrplänen sowie entsprechender Fachliteratur", grades: ["wird korrekt hergestellt", "wird überwiegend korrekt hergestellt", "wird weitgehend korrekt hergestellt", "wird teilweise korrekt hergestellt", "wird kaum hergestellt", "wird nicht hergestellt"] },
+                  { id: "m_fach_3", name: "Die Schwerpunktsetzung innerhalb der Handlungssituation", grades: ["gelingt professionell", "gelingt themengerecht", "gelingt zweckmäßig", "gelingt teilweise themengerecht und nachvollziehbar", "gelingt kaum oder lückenhaft", "gelingt nicht oder fehlt"] },
+                  { id: "m_fach_4", name: "Der bildungswissenschaftliche und fachspezifische Gehalt", grades: ["wird professionell ausgeführt und konsequent, souverän aufeinander bezogen", "wird zielgerichtet ausgeführt und themengerecht, überzeugend aufeinander bezogen", "wird prinzipiell ausgeführt und zweckmäßig aufeinander bezogen", "wird partiell, punktuell oder oberflächlich ausgeführt und bedingt aufeinander bezogen", "wird unzureichend ausgeführt und widersprüchlich oder kaum aufeinander bezogen", "wird nicht ausgeführt und nicht aufeinander bezogen"] },
+                  { id: "m_fach_5", name: "Konzeptionelle Entscheidungen auf der Basis von Theorien und Modellen", grades: ["werden allumfassend begründet", "werden umfassend begründet", "werden grundsätzlich begründet", "werden ansatzweise begründet", "werden widersprüchlich oder unzureichend begründet", "werden nicht begründet"] }
+                ]
+              },
+              {
+                id: "m_komm", title: "Anforderung: Kommunikation", shortName: "Kommunikation",
+                indicators: [
+                  { id: "m_komm_1", name: "Der Lehramtsanwärter agiert dabei", grades: ["kompetent und konsequent in der Auseinandersetzung", "zielgerichtet und schlüssig in der Auseinandersetzung", "zweckmäßig in der Auseinandersetzung", "in kaum erkennbarer Auseinandersetzung", "ohne Auseinandersetzung", "konzeptionslos"] },
+                  { id: "m_komm_2", name: "Im Umgang mit Fragen und Impulsen", grades: ["reagiert der Prüfling souverän, flexibel und kompetent", "reagiert der Prüfling überzeugend und zielgerichtet", "reagiert der Prüfling angemessen", "reagiert der Prüfling oberflächlich oder punktuell", "reagiert der Prüfling unpassend und unsicher", "reagiert der Prüfling nicht"] },
+                  { id: "m_komm_3", name: "Die Problemerfassung und -darstellung", grades: ["gelingt tiefgründig, allumfassend und souverän", "gelingt umfassend und überzeugend", "gelingt im Wesentlichen", "gelingt hinreichend, bedingt oder teilweise", "gelingt kaum", "gelingt nicht"] },
+                  { id: "m_komm_4", name: "Plausibilität, Folgerichtigkeit und Stringenz in der Vortragsweise", grades: ["werden in besonderem Maße und optimal erreicht", "werden zielgerichtet erreicht", "werden weitgehend erreicht", "werden ansatzweise erreicht", "werden kaum erreicht", "werden nicht erreicht"] }
+                ]
+              },
+              {
+                id: "m_refl", title: "Anforderung: Reflexion", shortName: "Reflexion",
+                indicators: [
+                  { id: "m_refl_1", name: "Die theoriegeleitete Praxisreflexion", grades: ["gelingt allumfassend und souverän", "gelingt umfassend und fundiert", "gelingt im Wesentlichen", "gelingt im Ansatz", "gelingt kaum oder widersprüchlich", "gelingt nicht oder abwegig"] },
+                  { id: "m_refl_2", name: "Mehrperspektivität", grades: ["wird professionell erreicht", "wird zielgerichtet und schlüssig erreicht", "wird weitgehend und tragfähig erreicht", "wird ansatzweise erreicht", "wird kaum erreicht", "wird nicht erreicht"] },
+                  { id: "m_refl_3", name: "Die Vernetzung zu weiteren Handlungssituationen", grades: ["wird optimal hergestellt", "wird zielgerichtet hergestellt", "wird prinzipiell hergestellt", "wird oberflächlich hergestellt", "wird unzureichend hergestellt", "wird nicht hergestellt"] },
+                  { id: "m_refl_4", name: "Das eigene Professionshandeln", grades: ["wird nachhaltig reflektiert", "wird überzeugend reflektiert", "wird grundsätzlich reflektiert", "wird partiell reflektiert", "wird unzureichend reflektiert", "wird nicht reflektiert"] }
+                ]
+              },
+              {
+                id: "m_inno", title: "Anforderung: Innovation", shortName: "Innovation",
+                indicators: [
+                  { id: "m_inno_1", name: "Potenzen und Ressourcen für den Schulentwicklungsprozess", grades: ["werden tiefgründig erörtert", "werden fundiert erörtert", "werden grundsätzlich erörtert", "werden bedingt oder oberflächlich erörtert", "werden unzureichend erörtert", "werden nicht erörtert"] },
+                  { id: "m_inno_2", name: "Der eigene und kollektive Lern- und Entwicklungsbedarf sowie entsprechende Maßnahmen", grades: ["werden zutreffend und souverän abgeleitet und konzipiert", "werden schlüssig abgeleitet und konzipiert", "werden im Wesentlichen abgeleitet und konzipiert", "werden mit erheblichen Abstrichen, aber erkennbar abgeleitet und konzipiert", "werden widersprüchlich oder lückenhaft abgeleitet und konzipiert", "werden fehlerhaft abgeleitet oder bleiben konzeptionslos"] }
+                ]
+              }
+            ]
+          },
+          praktisch: {
+            title: "Praktische Prüfung",
+            categories: [
+              {
+                id: "p_plan", title: "Anforderung: Planung", shortName: "Planung",
+                indicators: [
+                  { id: "p_plan_1", name: "Der Entwurf wird in seiner Gesamtdarstellung", grades: ["stringent und logisch strukturiert. Formale Vorgaben, Aspekte und Kriterien werden vollständig und fehlerfrei eingehalten", "überwiegend stringent und schlüssig strukturiert. Formale Vorgaben, Aspekte und Kriterien werden überwiegend fehlerfrei eingehalten", "zweckmäßig strukturiert. Formale Vorgaben, Aspekte und Kriterien werden im Wesentlichen eingehalten", "erkennbar und nachvollziehbar strukturiert. Formale Vorgaben, Aspekte und Kriterien werden mit erheblichen Einschränkungen eingehalten", "kaum strukturiert. Formale Vorgaben, Aspekte und Kriterien werden kaum eingehalten", "konzeptionslos. Formale Vorgaben, Aspekte und Kriterien werden nicht eingehalten"] },
+                  { id: "p_plan_2", name: "Die fachliche Korrektheit", grades: ["wird vielschichtig (verdeutlichend differenziert) nachgewiesen", "wird fundiert nachgewiesen", "wird mit Abstrichen, aber zweckmäßig nachgewiesen", "wird punktuell und oberflächlich nachgewiesen", "wird kaum sinnvoll und lückenhaft nachgewiesen", "wird nicht oder fehlerhaft nachgewiesen"] },
+                  { id: "p_plan_3", name: "Das Anwenden zielgruppenorientierter didaktischer, fachdidaktischer und pädagogischer Konzepte und Methoden", grades: ["wird vielschichtig und kompetent erörtert", "wird umfassend und schlüssig erläutert", "wird solide und zweckmäßig erörtert", "wird oberflächlich, aber hinreichend erörtert", "wird unzureichend erörtert", "ist konzeptionslos"] }
+                ]
+              },
+              {
+                id: "p_durch_bez", title: "Anforderung: Beziehungsqualität", shortName: "Beziehungsqualität",
+                indicators: [
+                  { id: "p_durch_bez_1", name: "Es wurde eine Lernatmosphäre geschaffen, welche die Entfaltung der Lernkompetenz jedes einzelnen Schülers", grades: ["im höchsten Maß gewährleistet", "zielgerichtet gewährleistet", "grundsätzlich gewährleistet", "punktuell gewährleistet", "wird kaum geschaffen", "wird nicht geschaffen"] },
+                  { id: "p_durch_bez_2", name: "Die pädagogische Grundhaltung", grades: ["wird professionell zum Ausdruck gebracht", "wird überzeugend zum Ausdruck gebracht", "ist prinzipiell wahrnehmbar", "ist partiell wahrnehmbar", "ist unzureichend wahrnehmbar", "ist nicht wahrnehmbar"] }
+                ]
+              },
+              {
+                id: "p_durch_did", title: "Anforderung: Didaktik & Methodik", shortName: "Didaktik & Methodik",
+                indicators: [
+                  { id: "p_durch_did_1", name: "Der Unterrichtseinstieg", grades: ["wird optimal schülerorientiert gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird optimal und professionell gesteuert", "wird gelungen und schülerorientiert gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird überwiegend professionell und gelungen gesteuert", "wird praktikabel und schülerorientiert gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird solide und zweckmäßig gesteuert", "wird bedingt schülerorientiert gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird ansatzweise zweckmäßig gesteuert", "wird kaum schülerorientiert oder stockend gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird unzureichend gesteuert", "wird nicht schülerorientiert und/oder falsch gestaltet. Der individuelle Lern- und Kompetenzzuwachs wird nicht oder falsch gesteuert"] },
+                  { id: "p_durch_did_2", name: "Die Verstehens- und Aneignungsprozesse", grades: ["werden optimal ermöglicht und differenziert unterstützt", "werden umfassend ermöglicht und überwiegend differenziert unterstützt", "werden grundsätzlich ermöglicht und angemessen unterstützt", "werden ansatzweise ermöglicht und unterstützt", "werden kaum ermöglicht und unzureichend unterstützt", "werden nicht ermöglicht und nicht unterstützt"] },
+                  { id: "p_durch_did_3", name: "Die Steuerung der Lernprozesse", grades: ["gelingt optimal und professionell", "gelingt zielgerichtet", "gelingt zweckmäßig", "ist erkennbar", "gelingt unzureichend", "gelingt nicht"] },
+                  { id: "p_durch_did_4", name: "Die Reflexions- und Feedbackkultur", grades: ["ist konsequent entwickelt und wird nachhaltig gepflegt. In unerwarteten Situationen tritt der Prüfling professionell und souverän auf", "ist entwickelt und wird zielgerichtet gepflegt. In unerwarteten Situationen tritt der Prüfling überwiegend professionell und überzeugend auf", "ist grundsätzlich entwickelt und wird zweckmäßig gepflegt. In unerwarteten Situationen reagiert der Prüfling angemessen und tritt akzeptabel auf", "wird ansatzweise entwickelt. In unerwarteten Situationen wird ansatzweise zweckmäßig reagiert", "ist wenig entwickelt. In unerwarteten Situationen wird unzureichend reagiert", "ist nicht entwickelt. In unerwarteten Situationen wird nicht oder falsch reagiert"] }
+                ]
+              },
+              {
+                id: "p_durch_fach", title: "Anforderung: Fachlichkeit", shortName: "Fachlichkeit",
+                indicators: [
+                  { id: "p_durch_fach_1", name: "Die fachliche und fachsprachliche Korrektheit", grades: ["wird vielschichtig (differenziert, beispielhaft) nachgewiesen", "wird fundiert nachgewiesen", "wird grundsätzlich nachgewiesen", "wird hinreichend nachgewiesen", "wird kaum oder lückenhaft nachgewiesen", "wird nicht nachgewiesen"] }
+                ]
+              },
+              {
+                id: "p_durch_paed", title: "Anforderung: Klassenmanagement", shortName: "Klassenmanagement",
+                indicators: [
+                  { id: "p_durch_paed_1", name: "Das Klassenmanagement", grades: ["wird optimal geführt und nachhaltig umgesetzt. Sinnstiftendes Kommunizieren sowie die aktive und passive Sprachkompetenz der Schüler werden nachhaltig und sicher gefördert", "wird gelungen geführt und zielgerichtet umgesetzt. Sinnstiftendes Kommunizieren wird zielgerichtet gefördert", "wird solide geführt und tragfähig umgesetzt. Sinnstiftendes Kommunizieren wird zweckmäßig und angemessen gefördert", "wird erkennbar geführt und oberflächlich umgesetzt. Sinnstiftendes Kommunizieren wird im Ansatz gefördert", "wird unzureichend geführt und gefördert", "wird nicht oder konzeptionslos geführt und nicht gefördert"] }
+                ]
+              },
+              {
+                id: "p_refl", title: "Anforderung: Reflexion", shortName: "Reflexion",
+                indicators: [
+                  { id: "p_refl_1", name: "Erkenntnisse und Erfahrungen, Wertungen und Schlussfolgerungen", grades: ["werden im besonderen Maße und überzeugend fach- und sachlogisch erörtert", "werden umfassend und vorwiegend fach- und sachlogisch erörtert", "werden angemessen und im Wesentlichen fach- und sachlogisch erörtert", "werden oberflächlich und teilweise fach- und sachlogisch erörtert", "werden kaum erörtert", "werden nicht oder konzeptionslos erörtert"] },
+                  { id: "p_refl_2", name: "Mehrperspektivität", grades: ["wird professionell erreicht", "wird zielgerichtet und schlüssig erreicht", "wird weitgehend und tragfähig erreicht", "wird ansatzweise erreicht", "wird kaum erreicht", "wird nicht erreicht"] },
+                  { id: "p_refl_3", name: "Das Reflektieren des eigenen Verhaltens und dessen Wirkung im Prozess Transfer für den persönlichen Lernprozess", grades: ["wird logisch analysiert und beispielhaft erläutert", "wird umfassend analysiert und schlüssig erläutert", "wird angemessen analysiert und tragfähig erläutert", "wird oberflächlich analysiert und nachvollziehbar erläutert", "wird lückenhaft analysiert und kaum erläutert", "wird nicht analysiert"] }
+                ]
+              }
+            ]
+          }
+        };
+
+        const POINT_MAPPING = { 15:0, 14:0, 13:1, 12:1, 11:1, 10:2, 9:2, 8:2, 7:3, 6:3, 5:3, 4:4, 3:4, 2:4, 1:5, 0:5 };
+        const POINT_GROUPS = [[15, 14], [13, 12, 11], [10, 9, 8], [7, 6, 5], [4, 3, 2], [1, 0]];
+        const COLUMN_COLORS = [
+          "bg-green-100 hover:bg-green-200 border-green-500 text-green-800 dark:bg-green-900/40 dark:text-green-300 dark:border-green-600",
+          "bg-emerald-100 hover:bg-emerald-200 border-emerald-500 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-600",
+          "bg-yellow-100 hover:bg-yellow-200 border-yellow-500 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-600",
+          "bg-orange-100 hover:bg-orange-200 border-orange-500 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-600",
+          "bg-red-100 hover:bg-red-200 border-red-500 text-red-800 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600",
+          "bg-rose-100 hover:bg-rose-200 border-rose-600 text-rose-900 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-600"
+        ];
+
+        const getColorClassForAvg = (avg) => {
+            if (avg >= 13) return "bg-green-500";
+            if (avg >= 10) return "bg-emerald-500";
+            if (avg >= 7) return "bg-yellow-500";
+            if (avg >= 4) return "bg-orange-500";
+            return "bg-red-500";
+        };
+
+        const loadSavedState = () => {
+            try {
+                const saved = localStorage.getItem('gutachten_state_final_v14');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.protocolEntries)) {
+                        parsed.protocolEntries = parsed.protocolEntries.map(e => ({
+                            ...e,
+                            tags: Array.isArray(e.tags) ? e.tags : []
+                        }));
+                    } else if (parsed) {
+                        parsed.protocolEntries = [];
+                    }
+                    return parsed;
+                }
+            } catch (e) { console.error("Storage Load Error", e); }
+            return null;
+        };
+
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, errorInfo: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, errorInfo: error.message };
+            }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="p-8 bg-slate-50 text-slate-900 h-screen flex flex-col items-center justify-center text-center">
+                            <IconAlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+                            <h1 className="text-2xl font-bold mb-4">Ein Ladefehler ist aufgetreten.</h1>
+                            <p className="mb-6 text-sm text-slate-600 max-w-md">Ihr Browser hat versucht, einen alten, inkompatiblen Speicherstand zu laden. Bitte setzen Sie die App zurück.</p>
+                            <button 
+                                onClick={() => { localStorage.clear(); window.location.reload(); }}
+                                className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-red-700 active:scale-95 transition-all"
+                            >
+                                App reparieren & neu starten
+                            </button>
+                        </div>
+                    );
+                }
+                return this.props.children; 
+            }
+        }
+
+        function AppContent() {
+          const savedState = loadSavedState();
+          
+          const [activeExam, setActiveExam] = useState(savedState?.activeExam || "praktisch");
+          const [selections, setSelections] = useState(savedState?.selections || {});
+          
+          const [timerSeconds, setTimerSeconds] = useState(savedState?.timerSeconds || 0);
+          const [timerIsRunning, setTimerIsRunning] = useState(savedState?.timerIsRunning || false);
+          const [protocolEntries, setProtocolEntries] = useState(savedState?.protocolEntries || []);
+          const [currentNote, setCurrentNote] = useState("");
+          const [currentTags, setCurrentTags] = useState([]); 
+          
+          const [focusMode, setFocusMode] = useState(false);
+          const [showProfile, setShowProfile] = useState(false);
+
+          const [gender, setGender] = useState(savedState?.gender || 'w');
+          const [examineeType, setExamineeType] = useState(savedState?.examineeType || 'laa');
+          const [examineeName, setExamineeName] = useState(savedState?.examineeName || 'Name des Prüflings');
+          
+          const [editableText, setEditableText] = useState(savedState?.editableText || "");
+          const [lastAutoText, setLastAutoText] = useState(savedState?.lastAutoText || "");
+          const [backupText, setBackupText] = useState("");
+          
+          const [editorFont, setEditorFont] = useState(savedState?.editorFont || 'Arial');
+          const [editorSize, setEditorSize] = useState(savedState?.editorSize || '11pt');
+
+          const [openCategories, setOpenCategories] = useState(() => {
+              const initial = {};
+              examData.muendlich.categories.forEach(cat => initial[cat.id] = true);
+              examData.praktisch.categories.forEach(cat => initial[cat.id] = true);
+              return initial;
+          });
+          
+          const [copied, setCopied] = useState(false);
+          const [isDarkMode, setIsDarkMode] = useState(() => {
+              if (savedState?.isDarkMode !== undefined) return savedState.isDarkMode;
+              if (typeof window !== 'undefined' && window.matchMedia) return window.matchMedia('(prefers-color-scheme: dark)').matches;
+              return false;
+          });
+          const [showWarning, setShowWarning] = useState(false);
+          const [confirmDialog, setConfirmDialog] = useState(null); 
+          
+          const [activeTab, setActiveTab] = useState('protokoll'); 
+
+          useEffect(() => {
+            let interval = null;
+            if (timerIsRunning) {
+                interval = setInterval(() => {
+                    setTimerSeconds(prev => prev + 1);
+                }, 1000);
+            }
+            return () => {
+                if (interval) clearInterval(interval);
+            };
+          }, [timerIsRunning]);
+
+          const formatTime = (totalSeconds) => {
+              const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+              const s = (totalSeconds % 60).toString().padStart(2, '0');
+              return `${m}:${s}`;
+          };
+
+          useEffect(() => {
+              if (isDarkMode) document.documentElement.classList.add('dark');
+              else document.documentElement.classList.remove('dark');
+          }, [isDarkMode]);
+
+          useEffect(() => {
+              const stateToSave = { 
+                  activeExam, selections, gender, examineeType, examineeName, 
+                  editableText, lastAutoText, isDarkMode, editorFont, editorSize,
+                  timerSeconds, timerIsRunning, protocolEntries 
+              };
+              localStorage.setItem('gutachten_state_final_v14', JSON.stringify(stateToSave));
+          }, [activeExam, selections, gender, examineeType, examineeName, editableText, lastAutoText, isDarkMode, editorFont, editorSize, timerSeconds, timerIsRunning, protocolEntries]);
+
+          const getExamineeTerm = () => {
+            if (examineeType === 'laa' && gender === 'm') return "Der Lehramtsanwärter";
+            if (examineeType === 'laa' && gender === 'w') return "Die Lehramtsanwärterin";
+            if (examineeType === 'nq' && gender === 'm') return "Der Nachqualifizierer";
+            if (examineeType === 'nq' && gender === 'w') return "Die Nachqualifiziererin";
+            return "Der Lehramtsanwärter";
+          };
+
+          const parseDynamicText = (text) => {
+            if (!text) return "";
+            let res = text.replace("Der Lehramtsanwärter", getExamineeTerm());
+            if (examineeName.trim() !== '' && examineeName !== 'Name des Prüflings') {
+              const titlePrefix = gender === 'w' ? 'Frau ' : 'Herr ';
+              const cleanName = examineeName.trim().replace(/^(Frau|Herr)\s+/i, '');
+              const fullName = titlePrefix + cleanName;
+              res = res.replace(/tritt der Prüfling/g, `tritt ${fullName}`);
+              res = res.replace(/reagiert der Prüfling/g, `reagiert ${fullName}`);
+              res = res.replace(/der Prüfling/g, fullName);
+            } else {
+              res = res.replace(/tritt der Prüfling/g, `tritt der Prüfling`);
+              res = res.replace(/reagiert der Prüfling/g, `reagiert der Prüfling`);
+              res = res.replace(/der Prüfling/g, 'der Prüfling');
+            }
+            return res;
+          };
+
+          const currentCategories = examData[activeExam] ? examData[activeExam].categories : examData.praktisch.categories;
+          const totalIndicators = currentCategories.reduce((acc, cat) => acc + cat.indicators.length, 0);
+          const answeredIndicators = currentCategories.reduce((acc, cat) => acc + cat.indicators.filter(ind => selections[ind.id] !== undefined).length, 0);
+          const isComplete = answeredIndicators === totalIndicators;
+
+          useEffect(() => {
+            let sentences = [];
+            currentCategories.forEach(category => {
+              category.indicators.forEach(indicator => {
+                const selectedPoint = selections[indicator.id];
+                if (selectedPoint !== undefined) {
+                  const colIndex = POINT_MAPPING[selectedPoint];
+                  const textSnippet = indicator.grades[colIndex];
+                  sentences.push(`${parseDynamicText(indicator.name)} ${parseDynamicText(textSnippet)}.`);
+                }
+              });
+            });
+            const newGeneratedText = sentences.join(" ");
+
+            if (newGeneratedText !== lastAutoText) {
+                if (editableText !== lastAutoText && (editableText || "").trim() !== "") {
+                    setBackupText(editableText);
+                }
+                setEditableText(newGeneratedText);
+                setLastAutoText(newGeneratedText);
+            }
+          }, [selections, gender, examineeType, examineeName, activeExam]); 
+
+          const handleSelect = (indicatorId, point) => {
+            setSelections(prev => ({ ...prev, [indicatorId]: point }));
+            if (showWarning) setShowWarning(false);
+          };
+
+          const toggleCategory = (categoryId) => {
+            setOpenCategories(prev => ({ ...prev, [categoryId]: !prev[categoryId] }));
+          };
+
+          const toggleTagOnCurrentNote = (catId) => {
+              setCurrentTags(prev => prev.includes(catId) ? prev.filter(id => id !== catId) : [...prev, catId]);
+          };
+
+          const addProtocolEntry = () => {
+              if (!currentNote.trim()) return;
+              const newEntry = {
+                  id: Date.now().toString(),
+                  time: timerSeconds,
+                  text: currentNote.trim(),
+                  tags: [...currentTags]
+              };
+              setProtocolEntries([newEntry, ...protocolEntries]);
+              setCurrentNote("");
+              setCurrentTags([]);
+          };
+
+          const handleNoteKeyDown = (e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  addProtocolEntry();
+              }
+          };
+
+          const toggleTagOnExistingEntry = (entryId, catId) => {
+              setProtocolEntries(entries => entries.map(entry => {
+                  if (entry.id === entryId) {
+                      const existingTags = Array.isArray(entry.tags) ? entry.tags : [];
+                      const newTags = existingTags.includes(catId) 
+                          ? existingTags.filter(id => id !== catId)
+                          : [...existingTags, catId];
+                      return { ...entry, tags: newTags };
+                  }
+                  return entry;
+              }));
+          };
+
+          const requestConfirm = (title, text, action) => {
+              setConfirmDialog({ title, text, action });
+          };
+
+          const executeResetAll = () => {
+            setSelections({});
+            setEditableText("");
+            setLastAutoText("");
+            setBackupText("");
+            setProtocolEntries([]);
+            setTimerSeconds(0);
+            setTimerIsRunning(false);
+            setExamineeName('Name des Prüflings');
+            setConfirmDialog(null);
+          };
+
+          const restoreBackup = () => {
+              setEditableText(backupText);
+              setBackupText("");
+          };
+
+          const handleExportAction = (actionFn) => {
+              if (!isComplete) {
+                  setShowWarning(true);
+                  setTimeout(() => setShowWarning(false), 4000);
+              }
+              actionFn();
+          };
+
+          const copyToClipboard = () => {
+            navigator.clipboard.writeText(editableText).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            });
+          };
+
+          const triggerPrint = () => {
+              window.print();
+          };
+
+          const exportToWord = () => {
+              let safeFont = "\\f0";
+              if (editorFont.includes("Times")) safeFont = "\\f1";
+              if (editorFont.includes("Calibri")) safeFont = "\\f2";
+              
+              let fSize = 22; 
+              if (editorSize === "10pt") fSize = 20;
+              if (editorSize === "11pt") fSize = 22;
+              if (editorSize === "12pt") fSize = 24;
+              if (editorSize === "14pt") fSize = 28;
+
+              const escapeRTF = (str) => {
+                  return str.replace(/[\\{}]/g, "\\$&")
+                            .replace(/\n/g, "\\par\n")
+                            .replace(/[^\x00-\x7F]/g, c => "\\u" + c.charCodeAt(0) + "?");
+              };
+
+              const rtf1 = "{\\rtf1\\ansi\\ansicpg1252\\deff0\\nouicompat\n";
+              const rtf2 = "{\\fonttbl{\\f0\\fnil\\fcharset0 Arial;}{\\f1\\fnil\\fcharset0 Times New Roman;}{\\f2\\fnil\\fcharset0 Calibri;}}\n";
+              const rtf3 = "\\viewkind4\\uc1 \n";
+              const rtf4 = "\\pard\\sa200\\sl360\\slmult1\\qj" + safeFont + "\\fs" + fSize + "\\lang7 " + escapeRTF(editableText || "Kein Text generiert.") + "\\par\n";
+              const rtf5 = "}";
+              
+              const rtfContent = rtf1 + rtf2 + rtf3 + rtf4 + rtf5;
+
+              const blob = new Blob([rtfContent], { type: 'application/rtf' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = "Niederschrift_" + (examineeName !== 'Name des Prüflings' ? examineeName.replace(/\s+/g, '_') : 'Pruefling') + ".rtf";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              setTimeout(() => URL.revokeObjectURL(url), 100);
+          };
+
+          const calculateCategoryAverage = (category) => {
+            let sum = 0, count = 0;
+            category.indicators.forEach(ind => {
+              if (selections[ind.id] !== undefined) { sum += selections[ind.id]; count++; }
+            });
+            if (count === 0) return null;
+            return (sum / count).toFixed(1);
+          };
+
+          const calculateTotalAverage = () => {
+            let sum = 0, count = 0;
+            currentCategories.forEach(cat => {
+              cat.indicators.forEach(ind => {
+                if (selections[ind.id] !== undefined) { sum += selections[ind.id]; count++; }
+              });
+            });
+            if (count === 0) return null;
+            // Rückkehr des gewohnten 1-Dezimalstellen-Formats (z.B. 12.4)
+            return (sum / count).toFixed(1);
+          };
+          const totalAvg = calculateTotalAverage();
+
+          return (
+            <React.Fragment>
+            {/* Screen UI */}
+            <div className="h-full flex flex-col relative screen-only">
+              
+              {confirmDialog && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-opacity">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-700 fade-in">
+                     <h3 className="font-bold text-lg mb-2 text-slate-800 dark:text-slate-100 flex items-center">
+                        <IconAlertTriangle className="w-5 h-5 text-orange-500 mr-2" />
+                        {confirmDialog.title}
+                     </h3>
+                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                        {confirmDialog.text}
+                     </p>
+                     <div className="flex justify-end gap-3">
+                       <button onClick={() => setConfirmDialog(null)} className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 transition-colors active:scale-95">Abbrechen</button>
+                       <button onClick={confirmDialog.action} className="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors shadow-sm active:scale-95">Ja, ausführen</button>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* HEADER */}
+              <header className="bg-slate-900/95 backdrop-blur-md text-white p-3 sm:p-4 shadow-md z-20 flex flex-col sm:flex-row justify-between items-center flex-shrink-0 border-b border-slate-800">
+                <div className="w-full sm:w-auto flex justify-between items-center">
+                  <div>
+                    <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                      Niederschrift
+                      {(answeredIndicators > 0 || protocolEntries.length > 0) && <span className="hidden sm:inline-block text-[10px] bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-0.5 rounded-full font-medium tracking-wide uppercase">Auto-Saved</span>}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-slate-400 mt-0.5 font-medium">Standardisiertes Leistungsbild LPA Lehrämter</p>
+                  </div>
+                  
+                  <div className="flex sm:hidden items-center gap-2">
+                    <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 bg-slate-800 rounded-lg text-slate-300 active:scale-95 transition-transform">
+                      {isDarkMode ? <IconSun className="w-4 h-4" /> : <IconMoon className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex w-full sm:w-auto flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3 mt-3 sm:mt-0">
+                  <button onClick={() => setIsDarkMode(!isDarkMode)} className="hidden sm:block p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 active:scale-95" title="Dark Mode umschalten">
+                    {isDarkMode ? <IconSun className="w-4 h-4" /> : <IconMoon className="w-4 h-4" />}
+                  </button>
+
+                  {/* 💎 NEU: Der gewünschte Gesamtdurchschnitt */}
+                  <div className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center shadow-inner shrink-0">
+                    <IconCalculator className="w-4 h-4 text-blue-400 mr-1.5" />
+                    <span className="text-xs text-slate-300 mr-1.5">Gesamt-Ø:</span>
+                    <span className={`text-sm font-bold ${totalAvg !== null ? 'text-blue-400' : 'text-slate-500'}`}>
+                      {totalAvg !== null ? `${totalAvg}` : '–'}
+                    </span>
+                  </div>
+
+                  <div className="flex bg-slate-800 rounded-lg p-1 flex-1 sm:flex-none shadow-inner relative z-10">
+                    <button onClick={() => { if(activeExam !== 'muendlich') requestConfirm("Prüfungstyp wechseln?", "Protokoll, Noten und Editor-Texte werden komplett geleert.", () => { setActiveExam('muendlich'); executeResetAll(); }) }}
+                      className={`flex-1 sm:flex-none flex justify-center items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all active:scale-95 ${activeExam === 'muendlich' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-700'}`}>
+                      <IconPresentation className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" /> Mündl.
+                    </button>
+                    <button onClick={() => { if(activeExam !== 'praktisch') requestConfirm("Prüfungstyp wechseln?", "Protokoll, Noten und Editor-Texte werden komplett geleert.", () => { setActiveExam('praktisch'); executeResetAll(); }) }}
+                      className={`flex-1 sm:flex-none flex justify-center items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all active:scale-95 ${activeExam === 'praktisch' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-700'}`}>
+                      <IconBookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" /> Prakt.
+                    </button>
+                  </div>
+                </div>
+              </header>
+
+              {/* SAUBERE TAB-NAVIGATION */}
+              <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-2 sm:px-4 flex justify-center sm:justify-start shadow-sm z-10 shrink-0">
+                  <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-lg w-full sm:w-auto overflow-x-auto hide-scrollbar gap-1 relative z-10">
+                      <button onClick={() => setActiveTab('protokoll')} className={`flex-1 sm:flex-none min-w-[110px] px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-md transition-colors flex items-center justify-center whitespace-nowrap active:scale-95 ${activeTab === 'protokoll' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                          <IconClock className="w-4 h-4 mr-1.5" /> 1. Protokoll <span className="ml-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full">{formatTime(timerSeconds)}</span>
+                      </button>
+                      <button onClick={() => setActiveTab('raster')} className={`flex-1 sm:flex-none min-w-[110px] px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-md transition-colors flex items-center justify-center whitespace-nowrap active:scale-95 ${activeTab === 'raster' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                          <IconList className="w-4 h-4 mr-1.5" /> 2. Bewerten <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${isComplete ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>{answeredIndicators}/{totalIndicators}</span>
+                      </button>
+                      <button onClick={() => setActiveTab('editor')} className={`md:hidden flex-1 sm:flex-none min-w-[110px] px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold rounded-md transition-colors flex items-center justify-center whitespace-nowrap active:scale-95 ${activeTab === 'editor' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                          <IconType className="w-4 h-4 mr-1.5" /> 3. Editor
+                      </button>
+                  </div>
+              </div>
+
+              {/* MAIN CONTENT AREA */}
+              <main className="flex-1 overflow-hidden flex flex-col md:flex-row relative bg-slate-200 dark:bg-slate-900">
+                
+                {/* === LEFT PANE === */}
+                <div className={`w-full md:w-1/2 lg:w-3/5 overflow-y-auto p-4 md:p-6 bg-slate-50 dark:bg-[#15171e] border-r border-slate-200 dark:border-slate-800 transition-all ${activeTab === 'editor' ? 'hidden md:block' : 'block'}`}>
+                  
+                  {/* --- VIEW: PROTOKOLL --- */}
+                  {activeTab === 'protokoll' && (
+                  <div className="fade-in max-w-2xl mx-auto flex flex-col h-full">
+                          
+                          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 shrink-0 relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+                              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                  <div className="text-center sm:text-left">
+                                      <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Lehrproben-Timer</div>
+                                      <div className="text-4xl sm:text-5xl font-mono font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                                          {formatTime(timerSeconds)}
+                                      </div>
+                                  </div>
+                                  <div className="flex flex-wrap justify-center gap-2">
+                                      {!timerIsRunning ? (
+                                          <button onClick={() => setTimerIsRunning(true)} className="flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-all text-xs sm:text-sm">
+                                              <IconPlay className="w-4 h-4 sm:w-5 sm:h-5 mr-1" /> Start
+                                          </button>
+                                      ) : (
+                                          <button onClick={() => setTimerIsRunning(false)} className="flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-amber-500 text-white rounded-lg font-bold shadow-md hover:bg-amber-600 active:scale-95 transition-all text-xs sm:text-sm">
+                                              <IconPause className="w-4 h-4 sm:w-5 sm:h-5 mr-1" /> Pause
+                                          </button>
+                                      )}
+                                      <button onClick={() => requestConfirm("Timer zurücksetzen?", "Möchten Sie die Stoppuhr wirklich auf 00:00 zurücksetzen und anhalten?", () => { setTimerIsRunning(false); setTimerSeconds(0); setConfirmDialog(null); })} className="flex items-center px-3 sm:px-4 py-2 sm:py-2.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg font-bold hover:bg-red-200 dark:hover:bg-red-900/50 active:scale-95 transition-all shadow-sm text-xs sm:text-sm" title="Stopp & Reset">
+                                          <IconSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-1" /> Stopp & Reset
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 shrink-0 flex flex-col overflow-hidden">
+                              <textarea 
+                                  value={currentNote}
+                                  onChange={(e) => setCurrentNote(e.target.value)}
+                                  onKeyDown={handleNoteKeyDown}
+                                  placeholder="Beobachtung tippen (Enter zum Speichern)..."
+                                  className="w-full p-4 bg-transparent resize-none h-24 focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400"
+                              />
+                              <div className="bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                  <div className="flex flex-wrap gap-1.5">
+                                      {currentCategories.map(cat => (
+                                          <button 
+                                              type="button"
+                                              key={`tag-${cat.id}`}
+                                              onClick={() => toggleTagOnCurrentNote(cat.id)}
+                                              className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full font-bold transition-colors border shadow-sm active:scale-95 ${currentTags.includes(cat.id) ? 'bg-blue-600 border-blue-600 text-white dark:bg-blue-500 dark:border-blue-500' : 'bg-white border-slate-300 text-slate-600 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                                          >
+                                              {cat.shortName}
+                                          </button>
+                                      ))}
+                                  </div>
+                                  <button onClick={addProtocolEntry} disabled={!currentNote.trim()} className="w-full sm:w-auto px-4 py-1.5 bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-800 rounded-lg text-sm font-bold disabled:opacity-50 transition-transform active:scale-95 shrink-0">
+                                      Hinzufügen
+                                  </button>
+                              </div>
+                          </div>
+
+                          <div className="flex-1 overflow-y-auto space-y-3 pb-8 pr-1">
+                              {protocolEntries.length === 0 ? (
+                                  <div className="text-center py-10 text-slate-400 dark:text-slate-500 flex flex-col items-center">
+                                      <IconClock className="w-10 h-10 mb-3 opacity-50" />
+                                      <p>Noch keine Einträge vorhanden.</p>
+                                      <p className="text-xs mt-1">Starten Sie den Timer und tippen Sie Ihre erste Beobachtung.</p>
+                                  </div>
+                              ) : (
+                                  protocolEntries.map(entry => {
+                                      const safeTags = Array.isArray(entry.tags) ? entry.tags : [];
+                                      return (
+                                      <div key={entry.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 relative fade-in group">
+                                          <button onClick={() => requestConfirm("Eintrag löschen?", "Möchten Sie diese Notiz aus dem Protokoll entfernen?", () => { setProtocolEntries(entries => entries.filter(e => e.id !== entry.id)); setConfirmDialog(null); })} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                          </button>
+                                          <div className="flex items-start gap-3">
+                                              <div className="bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-mono text-xs font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 shrink-0">
+                                                  {formatTime(entry.time)}
+                                              </div>
+                                              <div className="flex-1">
+                                                  <p className="text-sm text-slate-800 dark:text-slate-200 mb-2 leading-relaxed">{entry.text}</p>
+                                                  <div className="flex flex-wrap gap-1">
+                                                      {currentCategories.map(cat => (
+                                                          <button 
+                                                              type="button"
+                                                              key={`etag-${entry.id}-${cat.id}`}
+                                                              onClick={() => toggleTagOnExistingEntry(entry.id, cat.id)}
+                                                              className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold transition-colors ${safeTags.includes(cat.id) ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/50 dark:border-blue-700 dark:text-blue-300' : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-500 hover:border-slate-300'}`}
+                                                          >
+                                                              {cat.shortName}
+                                                          </button>
+                                                      ))}
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  )})
+                              )}
+                          </div>
+                  </div>
+                  )}
+
+                  {/* --- VIEW: RASTER --- */}
+                  {activeTab === 'raster' && (
+                  <div className="fade-in max-w-2xl mx-auto pb-12">
+                          
+                          <div className="flex flex-wrap justify-between items-end mb-4 gap-2">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Raster & Noten</h2>
+                            </div>
+                            
+                            <div className="flex gap-2 items-center">
+                                <button onClick={() => setFocusMode(!focusMode)} className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center transition-all active:scale-95 shadow-sm border ${focusMode ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`} title="Unbewertete filtern">
+                                    <IconFilter className="w-3.5 h-3.5 mr-1.5" /> Lücken-Finder
+                                </button>
+                                <button onClick={() => requestConfirm("Raster zurücksetzen?", "Möchten Sie alle Eingaben komplett löschen?", executeResetAll)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-red-600 flex items-center transition-colors active:scale-95 shadow-sm">
+                                  <IconRefreshCcw className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Reset</span>
+                                </button>
+                            </div>
+                          </div>
+
+                          <div className={`bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 flex flex-col gap-5 ${focusMode ? 'hidden' : ''}`}>
+                            <div className="flex flex-col sm:flex-row gap-5">
+                              <div className="flex-1">
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Prüflingstyp</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-lg shadow-inner">
+                                  <button onClick={() => setExamineeType('laa')} className={`flex-1 text-sm py-1.5 rounded-md transition-all active:scale-95 ${examineeType === 'laa' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>LAA</button>
+                                  <button onClick={() => setExamineeType('nq')} className={`flex-1 text-sm py-1.5 rounded-md transition-all active:scale-95 ${examineeType === 'nq' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>NQ</button>
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Geschlecht</label>
+                                <div className="flex bg-slate-100 dark:bg-slate-900/80 p-1.5 rounded-lg shadow-inner">
+                                  <button onClick={() => setGender('m')} className={`flex-1 text-sm py-1.5 rounded-md transition-all active:scale-95 ${gender === 'm' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>Männlich</button>
+                                  <button onClick={() => setGender('w')} className={`flex-1 text-sm py-1.5 rounded-md transition-all active:scale-95 ${gender === 'w' ? 'bg-white dark:bg-slate-700 shadow-sm font-bold text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}>Weiblich</button>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Name des Prüflings</label>
+                              <input type="text" value={examineeName} onChange={(e) => setExamineeName(e.target.value)} placeholder="Name des Prüflings" className="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 placeholder-slate-400" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 md:space-y-5 pb-12">
+                            {currentCategories.map((category) => {
+                              const visibleIndicators = focusMode ? category.indicators.filter(ind => selections[ind.id] === undefined) : category.indicators;
+                              
+                              if (focusMode && visibleIndicators.length === 0) {
+                                  return (
+                                      <div key={category.id} className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-xl px-4 py-3 flex items-center text-green-700 dark:text-green-400 fade-in shadow-sm">
+                                          <IconCheckCircle className="w-5 h-5 mr-2" />
+                                          <span className="font-semibold text-sm">{category.title}: Alles bewertet!</span>
+                                      </div>
+                                  );
+                              }
+
+                              const catAvg = calculateCategoryAverage(category);
+                              
+                              const taggedEntries = Array.isArray(protocolEntries) ? protocolEntries.filter(e => {
+                                  const eTags = Array.isArray(e.tags) ? e.tags : [];
+                                  return eTags.includes(category.id);
+                              }) : [];
+
+                              return (
+                                <div key={category.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden fade-in">
+                                  
+                                  <div className="w-full px-4 py-3 sm:py-4 bg-slate-50 dark:bg-slate-800/80 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
+                                    <button type="button" onClick={() => toggleCategory(category.id)} className="flex-1 flex justify-between items-center text-left hover:opacity-80 transition-opacity mr-3 focus:outline-none cursor-pointer">
+                                      <div className="pointer-events-none flex flex-wrap items-center gap-2">
+                                          <h3 className="font-bold text-sm md:text-base text-slate-800 dark:text-slate-100 tracking-tight">{category.title}</h3>
+                                          {taggedEntries.length > 0 && <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400 text-[10px] px-2 py-0.5 rounded-full flex items-center"><IconTag className="w-3 h-3 mr-1" />{taggedEntries.length} Notiz{taggedEntries.length > 1 ? 'en' : ''}</span>}
+                                      </div>
+                                      <div className="p-1 rounded-full bg-slate-200/50 dark:bg-slate-700/50 ml-2 pointer-events-none shrink-0">
+                                        {openCategories[category.id] ? <IconChevronUp className="w-4 h-4 text-slate-600 dark:text-slate-300"/> : <IconChevronDown className="w-4 h-4 text-slate-600 dark:text-slate-300"/>}
+                                      </div>
+                                    </button>
+                                    <div className="text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 px-3 py-1.5 rounded-lg shadow-sm text-slate-600 dark:text-slate-300 flex items-center shrink-0">
+                                      <span className="text-slate-400 dark:text-slate-500 mr-1.5 hidden sm:inline">Ø:</span>
+                                      <span className={catAvg !== null ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}>
+                                        {catAvg !== null ? `${catAvg}` : '–'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  {openCategories[category.id] && (
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-700 fade-in">
+                                      
+                                      {taggedEntries.length > 0 && (
+                                          <div className="p-4 sm:p-5 bg-yellow-50/50 dark:bg-yellow-900/10 border-b border-yellow-100 dark:border-yellow-900/30">
+                                              <h5 className="text-xs font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider mb-3 flex items-center">
+                                                 <IconClock className="w-4 h-4 mr-1.5" /> Aus dem Protokoll ({category.shortName})
+                                              </h5>
+                                              <ul className="space-y-3">
+                                                  {taggedEntries.map(e => (
+                                                      <li key={`show-${e.id}`} className="text-sm text-slate-800 dark:text-slate-200 flex items-start bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-yellow-200/50 dark:border-yellow-700/30">
+                                                          <span className="font-mono text-xs font-bold text-slate-400 dark:text-slate-500 mr-3 mt-0.5 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded shrink-0">[{formatTime(e.time)}]</span>
+                                                          <span className="leading-relaxed">{e.text}</span>
+                                                      </li>
+                                                  ))}
+                                              </ul>
+                                          </div>
+                                      )}
+
+                                      {visibleIndicators.map((indicator) => {
+                                        const selectedVal = selections[indicator.id];
+                                        return (
+                                        <div key={indicator.id} className={`p-4 sm:p-5 transition-colors duration-300 ${selectedVal !== undefined ? 'bg-slate-50/50 dark:bg-slate-800/50' : 'bg-white dark:bg-slate-800'}`}>
+                                          <div className="mb-4">
+                                            <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-snug">{parseDynamicText(indicator.name)}</h4>
+                                          </div>
+                                          
+                                          <div className="flex flex-wrap gap-2 mb-3">
+                                            {POINT_GROUPS.map((group, groupIndex) => (
+                                                <div key={groupIndex} className="flex p-1 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-inner">
+                                                    {group.map((point) => {
+                                                      const isSelected = selectedVal === point;
+                                                      const colIndex = POINT_MAPPING[point];
+                                                      const baseColor = COLUMN_COLORS[colIndex];
+                                                      
+                                                      return (
+                                                        <button type="button" key={point} onClick={() => handleSelect(indicator.id, point)} title={`${point} Punkte`}
+                                                          className={`
+                                                            relative w-8 h-8 sm:w-10 sm:h-10 rounded-full font-bold text-xs sm:text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center active:scale-90
+                                                            ${isSelected 
+                                                              ? baseColor + ' scale-110 shadow-lg ring-2 ring-offset-2 ring-slate-400 dark:ring-slate-500 dark:ring-offset-slate-900 z-10' 
+                                                              : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm'
+                                                            }
+                                                          `}
+                                                        >{point}</button>
+                                                      );
+                                                    })}
+                                                </div>
+                                            ))}
+                                          </div>
+                                          
+                                          <div className="mt-3 min-h-[3rem] flex items-center">
+                                            {selectedVal !== undefined ? (
+                                              <div className="w-full text-xs sm:text-sm p-3 rounded-lg bg-white dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm fade-in">
+                                                <span className="font-bold mr-2 text-slate-900 dark:text-white px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600">{selectedVal} P.</span>
+                                                {parseDynamicText(indicator.grades[POINT_MAPPING[selectedVal]])}
+                                              </div>
+                                            ) : (
+                                               <div className="text-xs font-medium text-slate-400 dark:text-slate-500 py-2 px-2">Klicken Sie auf einen Wert, um den Textbaustein auszuwählen.</div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )})}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                      </div>
+                  )}
+
+                </div>
+
+                {/* === RIGHT PANE: OUTPUT / EDITOR === */}
+                <div className={`w-full md:w-1/2 lg:w-2/5 md:border-l border-slate-200 dark:border-slate-700 bg-slate-200 dark:bg-[#0f1115] flex-col ${activeTab === 'editor' ? 'flex' : 'hidden md:flex'}`}>
+                  
+                  {showWarning && (
+                      <div className="bg-orange-500 text-white p-2.5 flex items-center justify-center text-xs font-bold shadow-md animate-pulse">
+                          <IconAlertTriangle className="w-4 h-4 mr-2 shrink-0" />
+                          <span>Achtung: Es sind erst {answeredIndicators} von {totalIndicators} Kriterien bewertet!</span>
+                      </div>
+                  )}
+
+                  <div className="">
+                    <div onClick={() => setShowProfile(!showProfile)} className="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 p-3 flex justify-between items-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors">
+                        <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center"><IconBarChart className="w-4 h-4 mr-2 text-blue-500" />Auswertungsprofil ansehen</h3>
+                        {showProfile ? <IconChevronUp className="w-4 h-4 text-slate-500"/> : <IconChevronDown className="w-4 h-4 text-slate-500"/>}
+                    </div>
+                    {showProfile && (
+                        <div className="bg-white dark:bg-[#1a1c23] p-5 border-b border-slate-200 dark:border-slate-800 shadow-sm fade-in">
+                          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center tracking-wide uppercase">
+                              <IconBarChart className="w-4 h-4 mr-2 text-blue-500" /> Auswertungsprofil
+                          </h3>
+                          <div className="space-y-4">
+                              {currentCategories.map(cat => {
+                                  const avgStr = calculateCategoryAverage(cat);
+                                  const avgNum = avgStr ? parseFloat(avgStr) : 0;
+                                  const percentage = avgStr ? (avgNum / 15) * 100 : 0;
+                                  const colorClass = avgStr ? getColorClassForAvg(avgNum) : 'bg-slate-300 dark:bg-slate-600';
+                                  return (
+                                      <div key={`chart-${cat.id}`}>
+                                          <div className="flex justify-between text-xs mb-1.5 items-end">
+                                              <span className="font-semibold text-slate-600 dark:text-slate-400">{cat.shortName}</span>
+                                              <span className="font-bold text-slate-800 dark:text-slate-200">{avgStr ? `${avgStr} P.` : '–'}</span>
+                                          </div>
+                                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 shadow-inner overflow-hidden">
+                                              <div className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${colorClass}`} style={{width: `${percentage}%`}}></div>
+                                          </div>
+                                      </div>
+                                  )
+                              })}
+                          </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3 sm:p-4 border-b border-slate-300 dark:border-slate-800 flex flex-col gap-3 bg-slate-100 dark:bg-slate-800 shadow-sm z-10">
+                    <div className="flex justify-between items-center w-full">
+                        <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider flex items-center">
+                            <IconType className="w-4 h-4 mr-1.5 opacity-70" /> Dokument
+                        </h2>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleExportAction(exportToWord)} className="flex justify-center items-center px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-md font-medium text-xs transition-colors shadow-sm active:scale-95" title="Als MS Word Datei laden">
+                                <IconFileWord className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Word</span>
+                            </button>
+                            <button onClick={() => handleExportAction(triggerPrint)} className="flex justify-center items-center px-3 py-1.5 bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-800 dark:hover:bg-slate-500 rounded-md font-medium text-xs transition-colors shadow-sm active:scale-95" title="Drucken / PDF">
+                                <IconPrinter className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Druck / PDF</span>
+                            </button>
+                            <button onClick={() => handleExportAction(copyToClipboard)} className={`flex justify-center items-center px-3 py-1.5 rounded-md font-medium text-xs transition-colors shadow-sm active:scale-95 ${copied ? 'bg-green-600 text-white' : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-slate-400 dark:hover:bg-slate-600'}`}>
+                                {copied ? <><IconCheckCircle className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Kopiert</span></> : <><IconClipboard className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Kopieren</span></>}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                        <select value={editorFont} onChange={(e) => setEditorFont(e.target.value)} className="text-xs px-2 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-blue-500 outline-none hover:border-slate-400">
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Calibri">Calibri</option>
+                        </select>
+                        <select value={editorSize} onChange={(e) => setEditorSize(e.target.value)} className="text-xs px-2 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-blue-500 outline-none hover:border-slate-400">
+                            <option value="10pt">10 pt</option><option value="11pt">11 pt</option><option value="12pt">12 pt</option><option value="14pt">14 pt</option>
+                        </select>
+                    </div>
+                  </div>
+                  
+                  {backupText !== "" && (
+                      <div className="bg-blue-600 text-white p-2.5 flex flex-col sm:flex-row gap-2 items-center justify-between shadow-md fade-in z-20 relative">
+                          <span className="text-xs font-medium text-center sm:text-left">Manuelle Anpassung wurde soeben durch das Raster überschrieben.</span>
+                          <button onClick={restoreBackup} className="text-xs flex items-center justify-center bg-white text-blue-700 font-bold px-3 py-1.5 rounded hover:bg-blue-50 transition-colors active:scale-95 shadow-sm">
+                              <IconUndo className="w-3.5 h-3.5 mr-1" /> Text wiederherstellen
+                          </button>
+                      </div>
+                  )}
+                  
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-8 relative">
+                    <div className="w-full min-h-full mx-auto max-w-3xl bg-white dark:bg-[#1e2029] shadow-xl rounded border border-slate-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
+                        <textarea
+                          value={editableText}
+                          onChange={(e) => setEditableText(e.target.value)}
+                          style={{ fontFamily: editorFont, fontSize: editorSize }}
+                          className="w-full h-full min-h-[70vh] p-8 sm:p-10 resize-none focus:outline-none bg-transparent text-black dark:text-slate-200 leading-relaxed text-justify placeholder-slate-300 dark:placeholder-slate-600"
+                          placeholder="Wählen Sie links Bewertungen aus. Der Fließtext wird hier generiert..."
+                        />
+                    </div>
+                  </div>
+                </div>
+              </main>
+            </div>
+            
+            {/* === KUGELSICHERES DRUCK-LAYOUT === */}
+            <div className="print-only" style={{ fontFamily: editorFont, fontSize: editorSize }}>
+                {editableText || "Kein Text generiert."}
+            </div>
+
+            </React.Fragment>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <AppContent />
+            </ErrorBoundary>
+        );
+    </script>
+</body>
+</html>
+
+

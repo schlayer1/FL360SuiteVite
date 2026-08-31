@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Fachleiter 360° Suite Pro | Thüringer Ausbildungs- &amp; Prüfungsmanagement</title>
+
+  <!-- Google Fonts & External Libraries -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js, PDFLib & PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/niederschrift.css" />
+</head>
+<body>
+
+<!-- APPLICATION HEADER -->
+<header>
+  <div class="logo-group">
+    <div class="logo-icon">⚖️</div>
+    <div>
+      <h1>Fachleiter 360° Suite <span class="logo-badge">PRO v6.0</span></h1>
+      <div style="font-size:0.7rem; color:rgba(255,255,255,0.7); margin-top:-2px;">ThürAZStPLVO • Seminar &amp; Staatsprüfung</div>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <!-- Active LAA Selector -->
+    <div class="laa-selector-wrap">
+      <select id="laaSelect" class="laa-selector" onchange="handleLAAChange(this.value)">
+        <option value="laa_1" selected>Frau Sarah Könitzer [LAA] (Mathematik/Physik)</option>
+        <option value="laa_nq">Herr Dr. Thomas Weber [NQ] (Informatik/Mathematik)</option>
+        <option value="laa_wb">Frau Elena Bergmann [WB] (Chemie/Biologie)</option>
+      </select>
+    </div>
+
+    <!-- Quick Profile Actions -->
+    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="openAddLAAModal()" title="Neues Kandidatenprofil anlegen">
+      ➕ Profil
+    </button>
+    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="openEditLAAModal()" title="Aktuelles Profil bearbeiten">
+      ✏️ Bearbeiten
+    </button>
+    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="confirmDeleteLAA()" title="Aktuelles Profil löschen">
+      🗑️
+    </button>
+    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="exportDataJSON()" title="Komplettes Suite-Backup herunterladen">
+      💾 Backup
+    </button>
+    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="triggerJSONImport()" title="Backup-Datei wiederherstellen">
+      📥 Import
+    </button>
+  </div>
+</header>
+
+<input type="file" id="importFileInput" accept=".json" onchange="importDataJSON(event)" />
+
+<!-- MAIN NAVIGATION TABS -->
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('tab-dashboard')">
+    <span>📊 Dashboard &amp; Profil</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-live')">
+    <span>⏱️ Live-Hospitation</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-niederschrift')">
+    <span>📝 Niederschrift (15 Pkt.)</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-progression')">
+    <span>📈 Progression &amp; Radar</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-seminar')">
+    <span>📚 Seminarplaner</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-reflexion')">
+    <span>🪞 Reflexionsabgleich</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-fristen')">
+    <span>📅 Fristen &amp; Noten</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('tab-gutachten')">
+    <span>📄 Formular-Cockpit</span>
+  </button>
+</nav>
+
+<!-- MAIN APP CONTAINER -->
+<main class="app-container">
+
+  <!-- =========================================================================
+       TAB 1: DASHBOARD & KANDIDATENPROFIL
+       ========================================================================= -->
+  <div id="tab-dashboard" class="tab-content active">
+    <!-- Upcoming Appointment Alert Banner -->
+    <div id="dashboardUpcomingBanner" class="upcoming-banner" style="display:none;"></div>
+
+    <div class="grid-2col">
+      <!-- Left Column: Stammdaten & Entwicklungsziele -->
+      <div>
+        <!-- Stammdaten Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">👤 Ausbildungsstammdaten</span>
+              <div class="card-subtitle">Offizielle Ausbildungsdaten nach ThürAZStPLVO</div>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()">✏️ Ändern</button>
+          </div>
+          <div id="dashboardProfileGrid" class="profile-grid"></div>
+        </div>
+
+        <!-- Entwicklungsziele Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">🎯 Vereinbarte Entwicklungsziele</span>
+              <div class="card-subtitle">Schwerpunkte für nachfolgende Unterrichtsbesuche</div>
+            </div>
+            <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()">+ Neues Ziel</button>
+          </div>
+          <ul id="dashboardGoalsList" class="goal-list"></ul>
+        </div>
+      </div>
+
+      <!-- Right Column: Kompetenz-Radar, UB-Historie & Termine -->
+      <div>
+        <!-- Kompetenzprofil Radar Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">🕸️ Aktuelles Kompetenzprofil (6 Dimensionen)</span>
+              <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
+            </div>
+            <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')">Verlauf ▶</button>
+          </div>
+          <div class="chart-wrapper" style="height:260px;">
+            <canvas id="radarCanvasDashboard"></canvas>
+          </div>
+        </div>
+
+        <!-- Bisherige Unterrichtsbesuche Table -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">📋 Dokumentierte Unterrichtsbesuche (UBs)</span>
+              <div class="card-subtitle">Historie &amp; Entwicklung über die Ausbildungsphasen</div>
+            </div>
+            <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')">⏱️ Neue Hospitation</button>
+          </div>
+          <div class="table-responsive">
+            <table class="standard-table">
+              <thead>
+                <tr>
+                  <th>Nr.</th>
+                  <th>Datum</th>
+                  <th>Phase</th>
+                  <th>Thema der Stunde</th>
+                  <th>Note</th>
+                  <th>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardVisitsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Anstehende Termine List -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <span class="card-title">📅 Anstehende Termine &amp; Prüfungen</span>
+              <div class="card-subtitle">Terminierte Hospitationen, Beratungen &amp; Staatsprüfungen</div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Termine als .ics exportieren">📅 Alle .ics</button>
+              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()">+ Termin</button>
+            </div>
+          </div>
+          <ul id="dashboardAppointmentsList" class="goal-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 2: LIVE-HOSPITATION COCKPIT
+       ========================================================================= -->
+  <div id="tab-live" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">⏱️ Live-Hospitationscockpit</span>
+          <div class="card-subtitle">Echtzeit-Mitschrift, Phasensteuerung, Kriterien-Schnellbewertung &amp; Diktierfunktion</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-outline" onclick="confirmClearLog()">🗑️ Protokoll leeren</button>
+          <button class="btn btn-success" onclick="openFinishVisitModal()">🏁 Hospitation abschließen</button>
+        </div>
+      </div>
+
+      <!-- Live Timer & Phase Banner -->
+      <div class="timer-banner">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div id="liveTimerDisplay" class="timer-display">00:00</div>
+          <div style="display:flex; gap:6px;">
+            <button id="btnToggleTimer" class="btn btn-primary" onclick="toggleTimer()">▶ Start</button>
+            <button class="btn btn-outline" onclick="resetTimer()">↺ Reset</button>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px;">
+          <label style="font-size:0.82rem; font-weight:700;">Unterrichtsphase:</label>
+          <select id="livePhaseSelect" class="phase-select">
+            <option value="Einstieg">Einstieg / Problemaufriss</option>
+            <option value="Erarbeitung" selected>Erarbeitungsphase (EA/PA/GA)</option>
+            <option value="Sicherung">Ergebnissicherung / Tafelbild</option>
+            <option value="Vertiefung">Vertiefung &amp; Transfer</option>
+            <option value="Reflexion">Schüler- &amp; Lernreflexion</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Kriterien-Schnellbewertung (1-5 Buttons) -->
+      <div style="margin-bottom:12px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
+        🎯 Kriterien-Schnellbewertung während des Unterrichts:
+      </div>
+      <div id="liveCriteriaGrid" class="criteria-grid"></div>
+
+      <!-- Textbaustein-Schnellklicker (Phrasen) -->
+      <div style="margin-bottom:8px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
+        ⚡ Formulierungshilfen &amp; Phrasen-Baukasten (Klick fügt ein):
+      </div>
+      <div class="phrase-tags">
+        <button type="button" class="tag-btn" onclick="insertPhrase('Problemorientierter Einstieg mit hohem Alltagsbezug.')">+ Problemorientierter Einstieg</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Strukturierte Arbeitsanweisung mit klarem Zeithorizont.')">+ Klare Zeitvorgabe</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Differenzierte Aufgabenstellungen unterstützen lernschwächere SuS.')">+ Differenzierung</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Wartezeit nach Impulsfragen konsequent einhalten (>3 Sek.).')">+ Wartezeit einhalten</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Kognitive Aktivierung gelingt durch offene Impulsfragen.')">+ Kognitive Aktivierung</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Übersichtliches, lesbares und strukturiertes Tafelbild.')">+ Strukturiertes Tafelbild</button>
+        <button type="button" class="tag-btn" onclick="insertPhrase('Souveräne Klassenführung und hohe Präsenz im Raum.')">+ Hohe Präsenz</button>
+      </div>
+
+      <!-- Live Note Input with Speech-to-Text -->
+      <div class="note-input-group">
+        <input id="liveNoteInput" class="note-input" placeholder="Beobachtung tippen oder einsprechen (Enter zum Absenden)..." onkeydown="if(event.key==='Enter') addLiveNote()" />
+        <button id="btnLiveMic" class="btn btn-mic" onclick="toggleDictation()" title="Spracheingabe starten/stoppen">🎤 Diktieren</button>
+        <button class="btn btn-primary" onclick="addLiveNote()">➕ Protokollieren</button>
+      </div>
+
+      <!-- Live Log Stream -->
+      <div style="margin-bottom:8px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
+        📜 Live-Protokollstrom (Zeitstempel &amp; Phasen):
+      </div>
+      <div id="liveLogStream" class="log-container"></div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 3: AUTHENTISCHE NIEDERSCHRIFT (15-PUNKTE-SYSTEM)
+       ========================================================================= -->
+  <div id="tab-niederschrift" class="tab-content">
+    
+    <!-- Top Header Bar (High-Contrast Navy Card) -->
+    <div class="card" style="padding:16px 20px; background:#1e293b; color:#ffffff; border:none; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:1.8rem;">🎓</span>
+          <div>
+            <h2 style="font-size:1.15rem; font-weight:700; color:#f8fafc; margin:0;">Prüfungs-Niederschrift &amp; Bewertungsraster</h2>
+            <div style="font-size:0.75rem; color:#94a3b8;">Thüringer 15-Punkte-System • Amtliche Deskriptoren nach ThürAZStPLVO</div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <!-- Exam Type Selector -->
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label style="font-size:0.78rem; font-weight:600; color:#cbd5e1;">Prüfungsart:</label>
+            <select id="nsActiveExamSelect" class="phase-select" style="background:#334155; color:#ffffff; border:1px solid #64748b; font-size:0.84rem; padding:6px 12px; border-radius:6px;" onchange="nsChangeActiveExam(this.value)">
+              <option value="praktisch">Praktische Prüfung (Lehrprobe)</option>
+              <option value="muendlich">Mündliche Prüfung</option>
+            </select>
+          </div>
+
+          <!-- Total Average Badge (15-Punkte System) -->
+          <div id="nsTotalAverageBadge" style="background:#0f172a; border:1px solid #3b82f6; color:#38bdf8; padding:6px 16px; border-radius:20px; font-weight:700; font-size:0.9rem; display:flex; align-items:center; gap:6px;">
+            <span>Gesamt-Ø:</span>
+            <span id="nsTotalAverageVal" style="font-size:1.05rem; color:#38bdf8;">–</span>
+          </div>
+
+          <button class="ns-btn-action-dark" onclick="nsToggleProfileView()" id="btnNsProfile">
+            📊 Auswertungsprofil
+          </button>
+          <button class="ns-btn-reset-dark" onclick="nsResetAllConfirm()" title="Alles zurücksetzen">
+            🗑️ Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Candidate Metadata Bar with Gender/Type & Lückenfinder controls -->
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:#0f172a; border:1px solid #334155; padding:10px 14px; border-radius:8px; margin-top:12px; font-size:0.82rem;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div>
+            <span style="color:#94a3b8;">Kandidat/in:</span>
+            <strong id="nsExamineeNameDisplay" style="color:#f8fafc; margin-left:4px;">-</strong>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="color:#94a3b8;">Status:</span>
+            <select id="nsExamineeTypeSelect" class="phase-select" style="background:#1e293b; color:#93c5fd; border:1px solid #3b82f6; font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleTypeChange(this.value)">
+              <option value="laa">Lehramtsanwärter/in (LAA)</option>
+              <option value="quereinsteiger">Quereinsteiger/in</option>
+              <option value="anwaerter">Anwärter/in</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="color:#94a3b8;">Geschlecht:</span>
+            <select id="nsExamineeGenderSelect" class="phase-select" style="background:#1e293b; color:#f8fafc; border:1px solid #64748b; font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleGenderChange(this.value)">
+              <option value="f">Weiblich (Frau)</option>
+              <option value="m">Männlich (Herr)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button id="nsBtnGapFinder" class="ns-btn-gapfinder inactive" onclick="nsToggleGapFinder()" title="Klappt alle vollständig bepunkteten Bereiche ein, um fehlende Bepunktungen sofort zu sehen">
+            🔍 Lücken-Finder: AUS
+          </button>
+          <span class="badge-pill" style="background:#065f46; color:#a7f3d0; font-weight:700;">Live-Erfassung aktiv</span>
+        </div>
+      </div>
+
+      <!-- 3 Internal Sub-Tabs Navigation -->
+      <div style="display:flex; gap:6px; margin-top:14px; background:#0f172a; padding:5px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
+        <button class="ns-btn-subnav active" id="btnNsTabProtokoll" onclick="nsSwitchTab('protokoll', this)">
+          ⏱️ 1. Mitschrift &amp; Beobachtung
+        </button>
+        <button class="ns-btn-subnav" id="btnNsTabRaster" onclick="nsSwitchTab('raster', this)">
+          📊 2. Bewerten (15-Punkte-Raster)
+        </button>
+        <button class="ns-btn-subnav" id="btnNsTabEditor" onclick="nsSwitchTab('editor', this)">
+          📝 3. Niederschrift-Editor (Anhang)
+        </button>
+      </div>
+    </div>
+
+    <!-- AUSWERTUNGSPROFIL (BAR VISUALIZATION DER KATEGORIEN) -->
+    <div id="nsProfileCard" class="card" style="display:none; background:#ffffff; border:1px solid #cbd5e1; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <div class="card-header" style="border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+        <span class="card-title" style="font-size:0.92rem; text-transform:uppercase; letter-spacing:0.4px; color:#0f172a;">📊 Auswertungsprofil nach Anforderungen</span>
+        <button class="ns-btn-light" style="padding:2px 8px; min-height:26px;" onclick="nsToggleProfileView()">✕ Schließen</button>
+      </div>
+      <div id="nsProfileBarsContainer" style="display:flex; flex-direction:column; gap:12px; padding-top:12px;"></div>
+    </div>
+
+    <!-- VIEW 1: MIT记载 & PROTOKOLL -->
+    <div id="nsView-protokoll" class="ns-view-pane active">
+      <div class="card" style="background:#ffffff; border:1px solid #cbd5e1;">
+        <div class="timer-banner" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="timer-display" id="nsTimerDisplay" style="font-size:1.8rem; font-family:monospace; font-weight:800; color:#0f172a;">00:00</div>
+            <button class="btn btn-primary" id="btnNsTimerToggle" style="padding:6px 14px; font-weight:700;" onclick="nsToggleTimer()">▶ Start</button>
+            <button class="ns-btn-light" onclick="nsResetTimer()">↺ Reset</button>
+          </div>
+          <div style="font-size:0.82rem; color:#64748b;">
+            Kategorien anklicken, um die Notiz direkt zuzuordnen:
+          </div>
+        </div>
+
+        <!-- Tag Selection Chips -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Anforderungs-Tags:</div>
+          <div id="nsCategoryTagsWrap" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+
+        <div class="note-input-group" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="text" id="nsNoteInput" class="note-input" style="flex:1; min-width:260px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.88rem; outline:none;" placeholder="Beobachtung eintragen und [Enter] drücken..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); nsAddProtocolEntry();}">
+          <button class="btn btn-primary" style="padding:8px 16px; font-weight:700;" onclick="nsAddProtocolEntry()">+ Notiz erfassen</button>
+          <button id="btnNsDictate" class="btn btn-mic" onclick="nsToggleDictation()" title="Spracheingabe / Diktat">🎤 Diktat</button>
+        </div>
+
+        <div class="card-header" style="margin-top:16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span class="card-title" style="font-size:0.88rem; color:#0f172a;">📜 Protokoll-Stream der Prüfungsstunde:</span>
+          <button class="ns-btn-light" style="font-size:0.75rem; padding:4px 8px; color:#dc2626;" onclick="nsClearLogConfirm()" title="Mitschrift leeren">🗑️ Leeren</button>
+        </div>
+        <div id="nsProtocolStream" class="log-container" style="max-height:380px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px;"></div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: 15-PUNKTE BEWERTUNGSRASTER MIT FILTER & LÜCKENFINDER -->
+    <div id="nsView-raster" class="ns-view-pane" style="display:none;">
+      
+      <!-- Filter Bar: Alle Anforderungen vs. Einzelkategorie + Lücken-Finder Status -->
+      <div class="card" style="padding:12px 16px; margin-bottom:12px; background:#ffffff; border:1px solid #cbd5e1; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; border-radius:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:0.78rem; font-weight:700; color:#64748b; text-transform:uppercase;">🔍 Filter:</span>
+          <div id="nsCategoryFilterPillsWrap" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="ns-btn-gapfinder inactive" id="nsBtnGapFinderRaster" onclick="nsToggleGapFinder()">
+            🔍 Lücken-Finder: AUS
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend for the 6 Columns -->
+      <div class="card" style="padding:10px 16px; margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+        <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Notenstufen &amp; Thüringer Punkteskala:</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:6px; font-size:0.76rem;">
+          <div style="background:#dcfce7; color:#166534; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">15, 14 Pkt. • Sehr gut</div>
+          <div style="background:#d1fae5; color:#065f46; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">13, 12, 11 Pkt. • Gut</div>
+          <div style="background:#fef9c3; color:#854d0e; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">10, 9, 8 Pkt. • Befriedigend</div>
+          <div style="background:#ffedd5; color:#9a3412; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">7, 6, 5 Pkt. • Ausreichend</div>
+          <div style="background:#fee2e2; color:#991b1b; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">4, 3, 2 Pkt. • Mangelhaft</div>
+          <div style="background:#f1f5f9; color:#475569; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">1, 0 Pkt. • Ungenügend</div>
+        </div>
+      </div>
+
+      <div id="nsCategoriesRasterContainer"></div>
+    </div>
+
+    <!-- VIEW 3: NIEDERSCHRIFT-EDITOR & ANHANG-EXPORT -->
+    <div id="nsView-editor" class="ns-view-pane" style="display:none;">
+      <div class="card" style="background:#ffffff; border:1px solid #cbd5e1;">
+        <div class="card-header" style="flex-wrap:wrap; gap:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
+          <div>
+            <span class="card-title" style="font-size:1.05rem; font-weight:700; color:#0f172a;">📝 Fließtext-Niederschrift (Anhang zur Niederschrift)</span>
+            <div class="card-subtitle" style="font-size:0.75rem; color:#64748b;">Wird als eigenständiger Anhang beigefügt und ausgedruckt / exportiert</div>
+          </div>
+          
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <!-- Font & Size Controls -->
+            <select id="nsEditorFont" class="phase-select" style="font-size:0.8rem; padding:5px 8px; background:#ffffff; color:#1e293b; border:1px solid #cbd5e1; border-radius:6px;" onchange="nsApplyEditorTypography()">
+              <option value="Arial">Arial</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Calibri">Calibri</option>
+            </select>
+            <select id="nsEditorSize" class="phase-select" style="font-size:0.8rem; padding:5px 8px; background:#ffffff; color:#1e293b; border:1px solid #cbd5e1; border-radius:6px;" onchange="nsApplyEditorTypography()">
+              <option value="10pt">10 pt</option>
+              <option value="11pt" selected>11 pt</option>
+              <option value="12pt">12 pt</option>
+              <option value="14pt">14 pt</option>
+            </select>
+
+            <button class="ns-btn-light" onclick="nsCopyToClipboard()" id="btnNsCopy">
+              📋 Kopieren
+            </button>
+            <button class="btn btn-primary" style="font-size:0.8rem; padding:6px 14px; font-weight:700;" onclick="nsExportWordRTF()">
+              📄 Word-Export (.rtf)
+            </button>
+            <button class="ns-btn-light" onclick="nsPrintEditorText()">
+              🖨️ Drucken
+            </button>
+          </div>
+        </div>
+
+        <div id="nsBackupRestoreBanner" style="display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:8px 12px; margin-bottom:10px; justify-content:space-between; align-items:center; font-size:0.8rem;">
+          <span style="color:#92400e; font-weight:600;">⚠️ Es gibt gesicherte manuelle Textanpassungen.</span>
+          <button class="ns-btn-light" style="font-size:0.75rem; padding:2px 8px;" onclick="nsRestoreBackupText()">Backup wiederherstellen</button>
+        </div>
+
+        <textarea id="nsEditableTextarea" style="width:100%; height:480px; padding:16px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; font-family:Arial, sans-serif; font-size:11pt; line-height:1.6; outline:none; resize:vertical;" oninput="nsHandleManualTextInput(this.value)"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       TAB 4: PROGRESSIONS-VERGLEICH & MULTI-RADAR
+       ========================================================================= -->
+  <div id="tab-progression" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">📈 Kompetenzprogression über mehrere Unterrichtsbesuche</span>
+          <div class="card-subtitle">Vergleich der 6 Kompetenzdimensionen über Zeitverlauf &amp; UBs</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline progression-filter-btn active" onclick="setProgressionFilter('all')">Alle UBs</button>
+          <button class="btn btn-outline progression-filter-btn" onclick="setProgressionFilter('latest')">Letzter UB</button>
+          <button class="btn btn-outline progression-filter-btn" onclick="setProgressionFilter('first_vs_last')">1. vs. Letzter UB</button>
+        </div>
+      </div>
+
+      <div class="grid-split">
+        <div class="chart-wrapper" style="height:350px;">
+          <canvas id="radarCanvasProgression"></canvas>
+        </div>
+        <div id="progressionHistoryTableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 5: SEMINARPLANER & KMK-KOMPETENZEN
+       ========================================================================= -->
+  <div id="tab-seminar" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">📚 Fachdidaktischer Seminarcurriculum-Planer</span>
+          <div class="card-subtitle">Verknüpfung der KMK-Standards mit dem Unterrichtstransfer</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddSeminarModal()">+ Neues Modul</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="standard-table">
+          <thead>
+            <tr>
+              <th>Modul &amp; Fachdidaktisches Thema</th>
+              <th>KMK-Bereich</th>
+              <th>Sitzungsdatum</th>
+              <th>Status</th>
+              <th>Unterrichtstransfer &amp; Nachweis</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="seminarModuleTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 6: REFLEXIONSABGLEICH (SELBST VS. FREMD)
+       ========================================================================= -->
+  <div id="tab-reflexion" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="card-title">🪞 Reflexionsabgleich: Selbsteinschätzung vs. Fachleitung</span>
+          <div class="card-subtitle">Erkennen von Wahrnehmungsdiskrepanzen zur gezielten Beratung</div>
+        </div>
+        <button class="btn btn-accent" onclick="saveReflectionComparison()">💾 Abgleich speichern</button>
+      </div>
+
+      <div class="grid-split">
+        <div class="chart-wrapper" style="height:350px;">
+          <canvas id="radarCanvasReflection"></canvas>
+        </div>
+        <div id="reflectionInputsWrap" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 7: FRISTEN, TERMINE & NOTENRECHNER
+       ========================================================================= -->
+  <div id="tab-fristen" class="tab-content">
+    <div class="grid-split">
+      <!-- Left: Thüringer Fristenrechner -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">📅 Gesetzliche Ausbildungsfristen (ThürAZStPLVO)</span>
+            <div class="card-subtitle">Berechnet anhand des Ausbildungsbeginns</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="profile-item">
+            <span class="profile-label">Eingangsberatung &amp; Ausbildungsplan (Monat 3)</span>
+            <span id="deadline_eb" class="profile-value">–</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Zwischenbilanz Hauptphase 1 (Monat 6)</span>
+            <span id="deadline_hp1" class="profile-value">–</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Entwicklungsgespräch Hauptphase 2 (Monat 12)</span>
+            <span id="deadline_hp2" class="profile-value">–</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">Abgabe Schriftliche Hausarbeit (Monat 16)</span>
+            <span id="deadline_ha" class="profile-value">–</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">2. Staatsprüfung / Prüfungszeitraum (Monat 18)</span>
+            <span id="deadline_exam" class="profile-value">–</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Thüringer Prüfungsnoten-Rechner -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="card-title">🧮 Gesamtergebnis-Rechner (2. Staatsprüfung)</span>
+            <div class="card-subtitle">Offizielle Gewichtung nach Thüringer Prüfungsverordnung</div>
+          </div>
+        </div>
+
+        <div class="calc-box">
+          <div class="calc-row">
+            <span>Vornote (Schule + Seminar) [30%]:</span>
+            <input id="calc_vornote" type="number" step="0.1" class="calc-input" value="2.0" onchange="calculateFinalGrade()" />
+          </div>
+          <div class="calc-row">
+            <span>1. Prüfungslehrprobe [25%]:</span>
+            <input id="calc_lp1" type="number" step="0.1" class="calc-input" value="1.7" onchange="calculateFinalGrade()" />
+          </div>
+          <div class="calc-row">
+            <span>2. Prüfungslehrprobe [25%]:</span>
+            <input id="calc_lp2" type="number" step="0.1" class="calc-input" value="2.0" onchange="calculateFinalGrade()" />
+          </div>
+          <div class="calc-row">
+            <span>Mündliche Prüfung [10%]:</span>
+            <input id="calc_mp" type="number" step="0.1" class="calc-input" value="1.3" onchange="calculateFinalGrade()" />
+          </div>
+          <div class="calc-row">
+            <span>Kolloquium / Reflexion [10%]:</span>
+            <input id="calc_koll" type="number" step="0.1" class="calc-input" value="1.7" onchange="calculateFinalGrade()" />
+          </div>
+
+          <div style="border-top:2px solid var(--border); padding-top:12px; margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+            <strong>Gesamtnote der Staatsprüfung:</strong>
+            <strong id="calcResultDisplay" style="font-size:1.3rem; color:var(--primary); font-family:'JetBrains Mono',monospace;">1.84 (Gut)</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TAB 8: FORMULAR-COCKPIT & INTERAKTIVE PDF ENGINE (MIT SYNCHRONISIERTEM ORDNER)
+       ========================================================================= -->
+  <div id="tab-gutachten" class="tab-content">
+    <div class="card">
+      <div class="card-header" style="flex-wrap:wrap; gap:12px;">
+        <div>
+          <span class="card-title">📝 Amtliches Formular-Cockpit &amp; PDF-Ausfüllung</span>
+          <div class="card-subtitle">8 amtliche Formulare nach ThürAZStPLVO + Ordner-Synchronisation</div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="connectLocalFolder()" title="Verbindet einen Ordner auf dem Dienst-Laptop für automatischen PDF-Scan">
+            📁 Ordner verknüpfen
+          </button>
+          <button id="btnSyncFolder" class="btn btn-outline" style="display:none; font-size:0.8rem; padding:6px 12px;" onclick="resyncConnectedFolder()" title="Aktualisiert alle PDFs aus dem verknüpften Ordner">
+            🔄 Ordner neu laden
+          </button>
+          <span id="connectedFolderBadge" class="badge-pill" style="display:none; background:#065f46; color:#a7f3d0; font-size:0.75rem; padding:6px 12px;"></span>
+        </div>
+      </div>
+
+      <!-- Controls Toolbar -->
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:var(--bg-card-subtle); border:1px solid var(--border); padding:12px 16px; border-radius:8px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1; min-width:280px;">
+          <label style="font-weight:700; font-size:0.85rem;">Formular-Vorlage:</label>
+          <select id="pdfTemplateSelect" class="phase-select" style="max-width:400px;" onchange="loadPdfTemplate(this.value)"></select>
+          <span id="templateCountBadge" class="badge-pill" style="background:var(--primary-light); color:white;">8 Vorlagen</span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="applyAutofill()">
+            ⚡ Stammdaten übertragen
+          </button>
+          <button class="btn btn-outline" onclick="downloadFilledPdf()">
+            💾 PDF speichern
+          </button>
+          <button class="btn btn-outline" onclick="printFilledPdf()">
+            🖨️ Drucken
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF Canvas View -->
+      <div style="background:#525659; border-radius:8px; padding:20px; display:flex; flex-direction:column; align-items:center; overflow-x:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:800px; color:white; margin-bottom:10px;">
+          <strong id="pdfDocTitle">F 230 • Niederschrift der Prüfungslehrprobe</strong>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem; color:white; background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.4);" onclick="prevPdfPage()">◀ Vorherige</button>
+            <span id="pdfPageIndicator" style="font-size:0.8rem;">Seite 1 von 1</span>
+            <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem; color:white; background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.4);" onclick="nextPdfPage()">Nächste ▶</button>
+          </div>
+        </div>
+
+        <div style="box-shadow:0 8px 24px rgba(0,0,0,0.4); border-radius:4px; overflow:hidden; background:white;">
+          <canvas id="pdfCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- GLOBAL MODAL OVERLAY -->
+<div id="appModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modalTitle">Modal Titel</h3>
+      <button class="btn btn-ghost btn-icon-only" style="color:white;" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div id="modalFooter" class="modal-footer"></div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION CONTAINER -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- PRIVACY & COMPLIANCE FOOTER -->
+<footer class="privacy-footer">
+  <div>
+    🔒 <strong>100% Lokale Datenhaltung:</strong> Alle Personen- und Bewertungsdaten verbleiben verschlüsselt auf diesem Dienstgerät. Keine Serverübertragung.
+  </div>
+  <div>
+    Entwickelt für Fachleiterinnen &amp; Fachleiter in Thüringen (ThürAZStPLVO / TMBJS)
+  </div>
+</footer>
+
+<!-- Application Scripts (Resilient Loading Order) -->
+<script src="js/state.js"></script>
+<script src="js/rubric_data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/niederschrift.js"></script>
+<script src="js/pdf_engine.js"></script>
+<script src="js/templates_data.js"></script>
+
+</body>
+</html>
