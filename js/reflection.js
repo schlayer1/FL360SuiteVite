@@ -261,6 +261,29 @@ function renderReflectionInputs() {
       </div>
     `;
   }).join('');
+
+  // Append Synchronized Colloquium / Reflection Questions from Entwurfsbegutachtung
+  const questions = cur.colloquiumQuestions || [];
+  container.innerHTML += `
+    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 16px; margin-top:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="font-size:0.88rem; color:#1e40af;">❓ Vorbereitete Prüferfragen aus der Entwurfs-Begutachtung</strong>
+        <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; background:#fff;" onclick="switchTab('tab-niederschrift'); switchTab3Mode('entwurf');">
+          📑 Zur Entwurfsmaske
+        </button>
+      </div>
+      <div style="font-size:0.74rem; color:#3b82f6; margin-bottom:10px;">
+        💡 Diese Fragen wurden bei der Sichtung des schriftlichen Unterrichtsentwurfs erfasst und dienen als Leitfaden für das Auswertungsgespräch:
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        ${questions.map(q => `
+          <div style="background:#ffffff; border:1px solid #dbeafe; border-radius:6px; padding:6px 10px; font-size:0.8rem; color:#1e293b;">
+            • <strong>Frage:</strong> ${q}
+          </div>
+        `).join('') || '<div style="font-size:0.78rem; color:#94a3b8; font-style:italic;">Keine Vorbereitungsfragen in der Entwurfsbegutachtung erfasst.</div>'}
+      </div>
+    </div>
+  `;
 }
 
 function updateSelfScoreLive(dimIdx, val) {
@@ -473,8 +496,15 @@ function printReflectionSheet() {
 
       <div class="section-box">
         <div class="section-title">2. Vereinbarte Entwicklungsziele &amp; Schwerpunkte für den nächsten Unterrichtsbesuch</div>
-        <div style="font-size:10pt; color:#475569; min-height:60px;">
+        <div style="font-size:10pt; color:#475569; min-height:50px;">
           ${(cur.goals || []).map((g, i) => `<div>• <strong>Ziel ${i+1}:</strong> ${g.text}</div>`).join('') || '<em>Im Gespräch vereinbarte Schwerpunkte hier handschriftlich ergänzen...</em>'}
+        </div>
+      </div>
+
+      <div class="section-box" style="background:#f8fafc;">
+        <div class="section-title">3. Vorbereitete Prüferfragen &amp; Reflexionsimpulse aus der Entwurfsbegutachtung</div>
+        <div style="font-size:9.5pt; color:#334155; min-height:40px;">
+          ${(cur.colloquiumQuestions || []).map(q => `<div>• ${q}</div>`).join('') || '<em>Keine gesonderten Vorbereitungsfragen erfasst.</em>'}
         </div>
       </div>
 

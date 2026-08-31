@@ -646,6 +646,72 @@ canvas { max-width: 100%; height: auto !important; }
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
+/* ==========================================================================
+   ENTWURF SPLIT-SCREEN WORKSPACE
+   ========================================================================== */
+.entwurf-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .entwurf-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.entwurf-pane-header {
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.entwurf-pdf-container {
+  background: #475569;
+  min-height: 520px;
+  max-height: calc(100vh - 270px);
+  overflow: auto;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entwurf-dim-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.entwurf-dim-card:hover {
+  background: #ffffff;
+  border-color: #93c5fd;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.question-row {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 @media print {
   header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container { display: none !important; }
   .app-container { padding: 0 !important; }

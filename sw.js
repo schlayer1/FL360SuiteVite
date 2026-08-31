@@ -17,6 +17,7 @@ const PRECACHE_ASSETS = [
   './js/cohort.js',
   './js/seminar.js',
   './js/reflection.js',
+  './js/entwurf.js',
   './js/calculator.js',
   './js/pwa.js',
   './js/niederschrift.js',
