@@ -601,9 +601,31 @@ async function generateFilledPdfDoc() {
   const pdfDoc = await PDFLib.PDFDocument.load(pdfDocBytes.slice(0), { ignoreEncryption: true });
   const form = pdfDoc.getForm();
 
-  // Force PDF Viewers (Apple Preview, Adobe Reader, Browsers) to display filled values
+  let standardFont = null;
+  try {
+    standardFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  } catch(e) {}
+
+  // Force PDF Viewers (Apple Preview, Adobe Reader, Chrome, Edge) to render fresh values
   try {
     form.acroForm.dict.set(PDFLib.PDFName.of('NeedAppearances'), PDFLib.PDFBool.True);
+  } catch(e) {}
+
+  // Clean stale pre-compiled appearance streams (/AP) on all fields & widgets so viewers never show cached "Bitte wählen"
+  try {
+    const allFields = form.getFields();
+    allFields.forEach(f => {
+      try {
+        if (f.acroField && f.acroField.dict) {
+          f.acroField.dict.delete(PDFLib.PDFName.of('AP'));
+        }
+        if (f.acroField && f.acroField.getWidgets) {
+          f.acroField.getWidgets().forEach(w => {
+            if (w.dict) w.dict.delete(PDFLib.PDFName.of('AP'));
+          });
+        }
+      } catch(e) {}
+    });
   } catch(e) {}
 
   if (appState.pdfFormValues) {
@@ -613,41 +635,64 @@ async function generateFilledPdfDoc() {
       try {
         const field = form.getField(fieldName);
         const type = field.constructor.name;
+        const strVal = String(val).trim();
 
         if (type === 'PDFCheckBox') {
           if (val === true || val === 'On') field.check();
           else field.uncheck();
         } else if (type === 'PDFDropdown') {
-          const strVal = String(val);
+          let selected = false;
+
+          // 1. Try exact selection
           try {
             const existingOpts = field.getOptions();
             if (!existingOpts.includes(strVal)) {
               field.addOptions([strVal]);
             }
             field.select(strVal);
-          } catch(err) {
+            selected = true;
+          } catch(err) {}
+
+          // 2. Try matching display or export value
+          if (!selected) {
             try {
               const opts = field.getOptions();
               const match = opts.find(o => o.toLowerCase() === strVal.toLowerCase() || o.toLowerCase().includes(strVal.toLowerCase()) || strVal.toLowerCase().includes(o.toLowerCase()));
-              if (match) field.select(match);
-              else {
+              if (match) {
+                field.select(match);
+                selected = true;
+              } else {
                 field.addOptions([strVal]);
                 field.select(strVal);
+                selected = true;
               }
-            } catch(err2) {
-              console.warn("Dropdown select notice:", fieldName, strVal, err2);
-            }
+            } catch(err2) {}
           }
+
+          // 3. Directly set /V and /DV in AcroForm dictionary as bulletproof fallback
+          try {
+            if (field.acroField && field.acroField.dict) {
+              field.acroField.dict.set(PDFLib.PDFName.of('V'), PDFLib.PDFString.of(strVal));
+              field.acroField.dict.set(PDFLib.PDFName.of('DV'), PDFLib.PDFString.of(strVal));
+            }
+          } catch(err3) {}
+
         } else if (type === 'PDFTextField' || field.setText) {
-          field.setText(String(val || ''));
+          field.setText(strVal);
         }
-      } catch(e) {}
+      } catch(e) {
+        console.warn("Field export notice:", fieldName, e);
+      }
     }
   }
 
-  // Synchronize visual appearance streams
+  // Generate clean, sharp appearance streams for all updated fields
   try {
-    form.updateFieldAppearances();
+    if (standardFont) {
+      form.updateFieldAppearances(standardFont);
+    } else {
+      form.updateFieldAppearances();
+    }
   } catch(e) {}
 
   return await pdfDoc.save();
