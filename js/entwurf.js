@@ -206,7 +206,7 @@ function renderEntwurfWorkspace() {
         <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
           ${(evalData.dims || ENTWURF_CRITERIA_DIMS).map((dim, idx) => `
             <div class="entwurf-dim-card">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
                 <div>
                   <strong style="font-size:0.86rem; color:#0f172a;">${dim.title}</strong>
                   <div style="font-size:0.74rem; color:#64748b;">${dim.desc}</div>
@@ -227,14 +227,13 @@ function renderEntwurfWorkspace() {
                   </select>
                 </div>
               </div>
-              <input 
-                type="text" 
-                class="form-control" 
-                style="font-size:0.78rem; padding:3px 8px;" 
-                placeholder="Gutachtliche Würdigung &amp; Belege..." 
-                value="${dim.note || ''}" 
-                onchange="updateEntwurfDimNote(${idx}, this.value)"
-              />
+              <textarea 
+                class="form-control auto-expand-textarea" 
+                style="font-size:0.82rem; padding:6px 10px; line-height:1.45; resize:vertical; min-height:46px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; transition:height 0.1s ease;" 
+                placeholder="Gutachtliche Würdigung, Belege &amp; Beobachtungen eintragen..." 
+                rows="2"
+                oninput="autoResizeEntwurfTextarea(this); updateEntwurfDimNote(${idx}, this.value)"
+              >${dim.note || ''}</textarea>
             </div>
           `).join('')}
         </div>
@@ -250,11 +249,18 @@ function renderEntwurfWorkspace() {
           <div style="font-size:0.74rem; color:#3b82f6; margin-bottom:8px;">
             💡 Diese Fragen werden automatisch in <strong>Tab 6 (Reflexionsabgleich)</strong> und den <strong>Beratungs-Druckbogen</strong> synchronisiert.
           </div>
-          <div id="entwurfQuestionsList" style="display:flex; flex-direction:column; gap:6px;">
+          <div id="entwurfQuestionsList" style="display:flex; flex-direction:column; gap:8px;">
             ${questions.map((q, qIdx) => `
-              <div class="question-row">
-                <span style="font-size:0.8rem; color:#1e293b; flex:1;">• ${q}</span>
-                <button class="btn btn-ghost btn-icon-only" style="padding:0 4px; color:#ef4444; font-size:0.75rem;" onclick="deleteColloquiumQuestion(${qIdx})">✕</button>
+              <div class="question-row" style="align-items:flex-start; gap:8px; padding:6px 10px; background:#ffffff; border:1px solid #bfdbfe; border-radius:6px;">
+                <span style="font-weight:700; color:#1e40af; font-size:0.82rem; margin-top:4px; flex-shrink:0;">Q${qIdx + 1}:</span>
+                <textarea 
+                  class="form-control auto-expand-textarea" 
+                  style="flex:1; font-size:0.82rem; padding:4px 8px; line-height:1.4; resize:vertical; min-height:34px; border:1px solid #e2e8f0; border-radius:4px; font-family:inherit;" 
+                  rows="1"
+                  placeholder="Prüferfrage eingeben..."
+                  oninput="autoResizeEntwurfTextarea(this); updateColloquiumQuestion(${qIdx}, this.value)"
+                >${q}</textarea>
+                <button class="btn btn-ghost btn-icon-only" style="padding:2px 6px; color:#ef4444; font-size:0.85rem; margin-top:2px;" onclick="deleteColloquiumQuestion(${qIdx})" title="Frage löschen">✕</button>
               </div>
             `).join('') || '<div style="font-size:0.78rem; color:#94a3b8; font-style:italic;">Keine Fragen hinterlegt.</div>'}
           </div>
@@ -268,6 +274,13 @@ function renderEntwurfWorkspace() {
       </div>
     </div>
   `;
+
+  // Auto-resize all textareas based on their initial content
+  setTimeout(() => {
+    document.querySelectorAll('.auto-expand-textarea').forEach(el => {
+      autoResizeEntwurfTextarea(el);
+    });
+  }, 50);
 
   // If a pdf blob exists or was previously rendered, render current page
   if (currentPdfDoc) {
@@ -389,6 +402,22 @@ function saveEntwurfEvaluation() {
   showToast("Entwurfsbegutachtung & Prüfernotizen gespeichert!", "💾");
 }
 
+function autoResizeEntwurfTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.max(34, el.scrollHeight + 2) + 'px';
+}
+
+function updateColloquiumQuestion(qIdx, val) {
+  const cur = getCurrentLAA();
+  if (!cur || !cur.colloquiumQuestions) return;
+  cur.colloquiumQuestions[qIdx] = val;
+  if (cur.entwurfEval && Array.isArray(cur.entwurfEval.questions)) {
+    cur.entwurfEval.questions[qIdx] = val;
+  }
+  saveState();
+}
+
 /**
  * COLLOQUIUM QUESTIONS MANAGEMENT
  */
@@ -396,7 +425,7 @@ function openAddColloquiumQuestionModal() {
   const bodyHTML = `
     <div class="form-group">
       <label>Prüferfrage / Reflexionsimpuls zur Unterrichtsstunde</label>
-      <textarea id="newColloquium_text" class="form-control" rows="3" placeholder="z. B. Aus welchem didaktischen Grund wurde in der Erarbeitungsphase Partnerarbeit statt Gruppenarbeit gewählt?"></textarea>
+      <textarea id="newColloquium_text" class="form-control auto-expand-textarea" rows="3" style="font-size:0.85rem; line-height:1.45; resize:vertical;" placeholder="z. B. Aus welchem didaktischen Grund wurde in der Erarbeitungsphase Partnerarbeit statt Gruppenarbeit gewählt?" oninput="autoResizeEntwurfTextarea(this)"></textarea>
     </div>
   `;
 
@@ -424,6 +453,9 @@ function saveNewColloquiumQuestion() {
   if (!cur.colloquiumQuestions) cur.colloquiumQuestions = [];
 
   cur.colloquiumQuestions.push(text);
+  if (cur.entwurfEval && Array.isArray(cur.entwurfEval.questions)) {
+    cur.entwurfEval.questions.push(text);
+  }
   saveState();
   closeModal();
   renderEntwurfWorkspace();
@@ -434,6 +466,9 @@ function deleteColloquiumQuestion(qIdx) {
   const cur = getCurrentLAA();
   if (!cur || !cur.colloquiumQuestions) return;
   cur.colloquiumQuestions.splice(qIdx, 1);
+  if (cur.entwurfEval && Array.isArray(cur.entwurfEval.questions)) {
+    cur.entwurfEval.questions.splice(qIdx, 1);
+  }
   saveState();
   renderEntwurfWorkspace();
 }
