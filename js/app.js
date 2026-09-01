@@ -64,8 +64,6 @@ function switchTab(tabId) {
   try {
     if (tabId === "tab-dashboard") {
       renderDashboard();
-    } else if (tabId === "tab-entwurf") {
-      if (typeof renderEntwurfWorkspace === "function") renderEntwurfWorkspace();
     } else if (tabId === "tab-live") {
       renderLiveCockpitUI();
     } else if (tabId === "tab-niederschrift") {

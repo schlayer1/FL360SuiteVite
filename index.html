@@ -83,14 +83,11 @@
   <button class="tab-btn active" onclick="switchTab('tab-dashboard')">
     <span>📊 Dashboard &amp; Profil</span>
   </button>
-  <button class="tab-btn" onclick="switchTab('tab-entwurf')">
-    <span>📑 Entwurfs-Begutachtung</span>
-  </button>
   <button class="tab-btn" onclick="switchTab('tab-live')">
     <span>⏱️ Live-Hospitation</span>
   </button>
   <button class="tab-btn" onclick="switchTab('tab-niederschrift')">
-    <span>📝 15-Pkt. Niederschrift</span>
+    <span>📝 Niederschrift &amp; Entwurf</span>
   </button>
   <button class="tab-btn" onclick="switchTab('tab-progression')">
     <span>📈 Progression &amp; Radar</span>
@@ -217,14 +214,7 @@
   </div>
 
   <!-- =========================================================================
-       TAB 2: ENTWURFS-BEGUTACHTUNG (SPLIT-SCREEN & PDF)
-       ========================================================================= -->
-  <div id="tab-entwurf" class="tab-content">
-    <div id="tab3ContentEntwurf"></div>
-  </div>
-
-  <!-- =========================================================================
-       TAB 3: LIVE-HOSPITATION COCKPIT
+       TAB 2: LIVE-HOSPITATION COCKPIT
        ========================================================================= -->
   <div id="tab-live" class="tab-content">
     <div class="card">
@@ -297,7 +287,7 @@
   </div>
 
   <!-- =========================================================================
-       TAB 4: AUTHENTISCHE 15-PUNKTE NIEDERSCHRIFT & BEWERTUNGSRASTER
+       TAB 3: NIEDERSCHRIFT, 15-PUNKTE BEWERTUNG & ENTWURFS-BEGUTACHTUNG
        ========================================================================= -->
   <div id="tab-niederschrift" class="tab-content">
     
@@ -369,18 +359,26 @@
         </div>
       </div>
 
-      <!-- 3 Sub-Tabs Navigation (Raster, Mitschrift, Editor) -->
+      <!-- 4 Chronological Sub-Tabs Navigation (Entwurf, Mitschrift, Raster, Editor) -->
       <div style="display:flex; gap:6px; margin-top:14px; background:#0f172a; padding:6px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
-        <button class="ns-btn-subnav active" id="btnNsTabRaster" onclick="nsSwitchTab('raster', this)">
-          📊 1. 15-Punkte-Bewertungsraster
+        <button class="ns-btn-subnav" id="btnNsTabEntwurf" onclick="nsSwitchTab('entwurf', this)">
+          📑 1. Entwurfs-Begutachtung &amp; PDF
         </button>
         <button class="ns-btn-subnav" id="btnNsTabProtokoll" onclick="nsSwitchTab('protokoll', this)">
           ⏱️ 2. Mitschrift &amp; Beobachtung
         </button>
+        <button class="ns-btn-subnav active" id="btnNsTabRaster" onclick="nsSwitchTab('raster', this)">
+          📊 3. 15-Punkte-Bewertungsraster
+        </button>
         <button class="ns-btn-subnav" id="btnNsTabEditor" onclick="nsSwitchTab('editor', this)">
-          📝 3. Niederschrift-Editor (Anhang)
+          📝 4. Niederschrift-Editor (Anhang)
         </button>
       </div>
+    </div>
+
+    <!-- VIEW 0: ENTWURFS-BEGUTACHTUNG (SPLIT-SCREEN & PDF) -->
+    <div id="nsView-entwurf" class="ns-view-pane" style="display:none;">
+      <div id="tab3ContentEntwurf"></div>
     </div>
 
     <!-- AUSWERTUNGSPROFIL (BAR VISUALIZATION DER KATEGORIEN) -->

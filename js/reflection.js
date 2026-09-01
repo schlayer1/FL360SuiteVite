@@ -268,7 +268,7 @@ function renderReflectionInputs() {
     <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px 16px; margin-top:6px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <strong style="font-size:0.88rem; color:#1e40af;">❓ Vorbereitete Prüferfragen aus der Entwurfs-Begutachtung</strong>
-        <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; background:#fff;" onclick="switchTab('tab-entwurf');">
+        <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; background:#fff;" onclick="switchTab('tab-niederschrift'); nsSwitchTab('entwurf');">
           📑 Zur Entwurfsmaske
         </button>
       </div>
