@@ -138,7 +138,7 @@ function updateHeaderPhaseBadge(cur) {
 
   badge.innerHTML = `
     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.7rem] font-bold border ${typeBadgeClass}">${type}</span>
-    <span class="inline-flex items-center text-slate-300"><i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>
+    <span class="inline-flex items-center text-slate-300"><i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>
   `;
   badge.style.display = "inline-flex";
   updateHeaderBreadcrumbs();
@@ -175,7 +175,7 @@ function updateHeaderBreadcrumbs() {
 
     html = `
       <span class="breadcrumb-item clickable" onclick="switchTab('tab-dashboard')" title="Zum Profil von ${cur.name}">
-        <i data-lucide="user" class="w-3.5 h-3.5 inline text-cyan-400"></i>
+        <i data-lucide="user" class="w-3.5 h-3.5 inline text-blue-500"></i>
         <span>${cur.name}</span>
       </span>
       <span class="breadcrumb-sep">›</span>
@@ -191,7 +191,7 @@ function updateHeaderBreadcrumbs() {
   } else {
     html = `
       <span class="breadcrumb-item clickable" onclick="switchTab('tab-dashboard')">
-        <i data-lucide="users" class="w-3.5 h-3.5 inline text-cyan-400"></i>
+        <i data-lucide="users" class="w-3.5 h-3.5 inline text-blue-500"></i>
         <span>Kandidaten</span>
       </span>
       <span class="breadcrumb-sep">›</span>
@@ -802,7 +802,7 @@ function renderDashboard() {
     if (profileContainer) {
       profileContainer.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 16px; border: 2px dashed rgba(255,255,255,0.15);">
-          <div style="margin-bottom: 14px;" class="inline-flex p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+          <div style="margin-bottom: 14px;" class="inline-flex p-4 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-500">
             <i data-lucide="users" class="w-10 h-10"></i>
           </div>
           <h2 style="font-size: 1.3rem; margin-bottom: 8px; color: #f8fafc;">Herzlich willkommen in Ihrer Fachleiter 360° Suite</h2>
@@ -1050,7 +1050,7 @@ function renderDashboardStatusHub(cur) {
       <div>
         <div class="status-hub-header">
           <span class="status-hub-label">Fokus-Zielvereinbarung</span>
-          <span class="badge-pill text-cyan-400" style="font-size:0.7rem; font-weight:700;">${openGoals.length} offen</span>
+          <span class="badge-pill text-blue-500" style="font-size:0.7rem; font-weight:700;">${openGoals.length} offen</span>
         </div>
         <div class="status-hub-value" style="font-size:0.92rem; font-weight:600; line-height:1.3; min-height:42px;">
           ${activeGoal ? activeGoal.text : '<span style="color:var(--text-muted); font-style:italic;">Kein Entwicklungsziel hinterlegt</span>'}
@@ -1130,12 +1130,12 @@ function renderDashboardRadar(cur) {
           {
             label: `Aktueller Stand (${cur.name})`,
             data: scores,
-            backgroundColor: "rgba(56, 189, 248, 0.22)",
-            borderColor: "#38bdf8",
-            pointBackgroundColor: "#38bdf8",
+            backgroundColor: "rgba(37, 99, 235, 0.2)",
+            borderColor: "#3b82f6",
+            pointBackgroundColor: "#2563eb",
             pointBorderColor: "#ffffff",
             pointHoverBackgroundColor: "#ffffff",
-            pointHoverBorderColor: "#38bdf8",
+            pointHoverBorderColor: "#2563eb",
             borderWidth: 2
           }
         ]
@@ -1282,7 +1282,7 @@ function renderDashboardVisits(cur) {
         <td>${v.date ? new Date(v.date).toLocaleDateString('de-DE') : '-'}</td>
         <td>${v.phase || '-'}</td>
         <td><strong>${v.topic || '-'}</strong></td>
-        <td><span class="badge-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-weight:700;">${v.grade || '–'}</span></td>
+        <td><span class="badge-pill" style="background:rgba(37,99,235,0.15); color:#60a5fa; border:1px solid rgba(37,99,235,0.3); font-weight:700;">${v.grade || '–'}</span></td>
         <td>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-outline" style="font-size:0.74rem; padding:3px 8px; min-height:28px;" onclick="viewVisitDetails('${v.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i><span>Details</span></button>
@@ -1305,7 +1305,7 @@ function viewVisitDetails(visitId) {
     logHtml = `
       <div style="margin-top:14px;">
         <strong style="font-size:0.84rem; display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-          <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+          <i data-lucide="clock" class="w-4 h-4 text-blue-500"></i>
           <span>Protokollierte Beobachtungen:</span>
         </strong>
         <div class="log-container" style="max-height:180px;">
@@ -1411,7 +1411,7 @@ function renderDashboardAppointments(cur) {
             </span>
           </div>
           <div class="goal-meta" style="margin-top:3px;">
-            <i data-lucide="calendar" class="w-3 h-3 inline mr-1 text-cyan-400"></i>
+            <i data-lucide="calendar" class="w-3 h-3 inline mr-1 text-blue-500"></i>
             <span class="font-mono tabular-nums font-semibold">${new Date(item.date).toLocaleDateString('de-DE')}</span>
             ${item.time ? ` um ${item.time} Uhr` : ''} • 
             <i data-lucide="map-pin" class="w-3 h-3 inline mr-1 text-slate-400"></i>${item.location || (isCustom ? 'Ausbildungsplan' : 'Schule')}
@@ -1643,11 +1643,11 @@ function renderLiveActiveGoalBanner() {
     banner.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; width:100%;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:260px;">
-          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-blue-500 flex items-center justify-center shrink-0">
             <i data-lucide="target" class="w-4 h-4"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#38bdf8; display:flex; align-items:center; gap:8px;">
+            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#60a5fa; display:flex; align-items:center; gap:8px;">
               <span>Aktueller Beratungsschwerpunkt (Fokus der Hospitation):</span>
             </div>
             <div id="liveFocusDisplay" style="font-size:0.92rem; font-weight:600; color:var(--text-main); margin-top:2px;">
@@ -1662,7 +1662,7 @@ function renderLiveActiveGoalBanner() {
             <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1 inline"></i>
             <span>${liveSessionFocus ? 'Ändern / Wählen' : 'Schwerpunkt festlegen'}</span>
           </button>
-          <span class="badge-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:0.7rem; white-space:nowrap;">
+          <span class="badge-pill" style="background:rgba(37,99,235,0.15); color:#60a5fa; border:1px solid rgba(37,99,235,0.3); font-size:0.7rem; white-space:nowrap;">
             Fokus-Beobachtung
           </span>
         </div>
@@ -1678,7 +1678,7 @@ function renderLiveActiveGoalBanner() {
     banner.innerHTML = `
       <div style="width:100%; display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#38bdf8;" class="inline-flex items-center gap-1.5">
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#60a5fa;" class="inline-flex items-center gap-1.5">
             <i data-lucide="target" class="w-3.5 h-3.5"></i>
             <span>Beratungsschwerpunkt für diese Hospitation anpassen:</span>
           </span>
@@ -2088,7 +2088,7 @@ function renderLiveLogStream() {
         <div class="log-item log-phase-divider">
           <span class="log-time">${l.time}</span>
           <span class="phase-divider-tag"><i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i>${l.phase}</span>
-          <span style="font-weight:600; color:#38bdf8;">${l.text}</span>
+          <span style="font-weight:600; color:#60a5fa;">${l.text}</span>
           <button class="btn btn-ghost btn-icon-only" style="padding:0 6px; font-size:0.75rem; margin-left:auto;" onclick="deleteLiveLogItem('${l.id}')">✕</button>
         </div>
       `;
@@ -2239,7 +2239,7 @@ function openFinishVisitModal() {
     </div>
     <div class="form-group">
       <label class="inline-flex items-center gap-1.5 font-semibold" style="color:var(--text-main); margin-bottom:6px;">
-        <i data-lucide="award" class="w-4 h-4 text-cyan-400"></i>
+        <i data-lucide="award" class="w-4 h-4 text-blue-500"></i>
         <span>Vorläufige Punktetendenz (1 bis 15 Punkte)</span>
       </label>
       <select id="finishVisit_points" class="form-control" style="font-weight:600; font-size:0.92rem;">
@@ -2338,19 +2338,19 @@ function openPostHospitationWorkflowModal(visit) {
     <div class="workflow-choice-grid">
       <!-- Option 1: Reflexionsabgleich -->
       <div class="workflow-choice-card" onclick="navigateToReflectionFromVisit('${visit.id}')">
-        <div class="workflow-choice-icon bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+        <div class="workflow-choice-icon bg-cyan-500/15 text-blue-500 border border-cyan-500/30">
           <i data-lucide="git-compare" class="w-5 h-5"></i>
         </div>
         <div style="flex:1;">
           <div style="font-size:0.92rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
             <span>Direkt zum Reflexionsabgleich</span>
-            <span class="badge-pill text-cyan-400" style="font-size:0.65rem;">Empfohlen</span>
+            <span class="badge-pill text-blue-500" style="font-size:0.65rem;">Empfohlen</span>
           </div>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Auswertungsgespräch führen: Fachleiter-Beobachtungen &amp; LAA-Selbsteinschätzung abgleichen.
           </div>
         </div>
-        <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-400"></i>
+        <i data-lucide="arrow-right" class="w-4 h-4 text-blue-500"></i>
       </div>
 
       <!-- Option 2: Entwicklungsziel vereinbaren -->

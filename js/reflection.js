@@ -131,10 +131,10 @@ function renderReflectionRadar() {
           {
             label: "Fremdeinschätzung (Fachleitung)",
             data: flScores,
-            backgroundColor: "rgba(56, 189, 248, 0.22)",
-            borderColor: "#38bdf8",
+            backgroundColor: "rgba(37, 99, 235, 0.22)",
+            borderColor: "#60a5fa",
             borderWidth: 2,
-            pointBackgroundColor: "#38bdf8",
+            pointBackgroundColor: "#60a5fa",
             pointRadius: 4
           },
           {
@@ -232,7 +232,7 @@ function renderReflectionInputs() {
                 onclick="createGoalFromDiscrepancy('${dim}', '${goalSuggestion.replace(/'/g, "\\'")}')"
                 title="Dieses Handlungsfeld als Zielvereinbarung ins Dashboard übernehmen"
               >
-                <i data-lucide="target" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i><span>Als Ziel vereinbaren</span>
+                <i data-lucide="target" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i><span>Als Ziel vereinbaren</span>
               </button>
             `}
           </div>
@@ -240,7 +240,7 @@ function renderReflectionInputs() {
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <label style="font-size:0.78rem; font-weight:700; color:#38bdf8;">FL-Wertung:</label>
+            <label style="font-size:0.78rem; font-weight:700; color:#60a5fa;">FL-Wertung:</label>
             <input 
               type="number" 
               min="1" max="5" step="0.1" 

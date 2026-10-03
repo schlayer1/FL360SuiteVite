@@ -64,8 +64,8 @@ async function triggerPWAInstall() {
               <li><strong>Safari auf Mac:</strong> Klicken Sie im Menü auf <em>Ablage</em> &rarr; <em>Zum Dock hinzufügen...</em></li>
               <li><strong>iPad &amp; iPhone (Safari):</strong> Tippen Sie auf das <strong>Teilen-Symbol (⎋)</strong> &rarr; <em>Zum Home-Bildschirm</em>.</li>
             </ul>
-            <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:12px; font-size:0.84rem; color:#38bdf8; display:flex; align-items:flex-start; gap:8px;">
-              <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0 text-cyan-400"></i>
+            <div style="background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.25); border-radius:8px; padding:12px; font-size:0.84rem; color:#60a5fa; display:flex; align-items:flex-start; gap:8px;">
+              <i data-lucide="info" class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500"></i>
               <div><strong>Vorteil:</strong> Die Suite läuft danach in einem eigenen, ablenkungsfreien Fenster und ist auch in Schulen ohne Internetverbindung zu 100% offline einsatzbereit.</div>
             </div>
           </div>

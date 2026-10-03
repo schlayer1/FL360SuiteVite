@@ -127,9 +127,9 @@ function nsRenderCategoryFilterPills() {
   const label = nsState.focusMode 
     ? '<i data-lucide="search" class="w-3.5 h-3.5"></i><span>Lücken-Finder: AKTIV</span>'
     : '<i data-lucide="search" class="w-3.5 h-3.5"></i><span>Lücken-Finder: AUS</span>';
-  const bg = nsState.focusMode ? 'rgba(56, 189, 248, 0.2)' : 'rgba(251, 191, 36, 0.12)';
-  const fg = nsState.focusMode ? '#38bdf8' : '#fbbf24';
-  const border = nsState.focusMode ? 'rgba(56, 189, 248, 0.45)' : 'rgba(251, 191, 36, 0.35)';
+  const bg = nsState.focusMode ? 'rgba(37, 99, 235, 0.2)' : 'rgba(251, 191, 36, 0.12)';
+  const fg = nsState.focusMode ? '#60a5fa' : '#fbbf24';
+  const border = nsState.focusMode ? 'rgba(37, 99, 235, 0.45)' : 'rgba(251, 191, 36, 0.35)';
   
   [b1, b2].forEach(b => {
     if (b) {
@@ -225,7 +225,7 @@ function nsUpdateCalculationsAndProgress() {
     if (totalAvg !== null) {
       avgValEl.style.color = nsGetColorForAvg(parseFloat(totalAvg));
     } else {
-      avgValEl.style.color = "#38bdf8";
+      avgValEl.style.color = "#60a5fa";
     }
   }
 
@@ -744,7 +744,7 @@ function nsRenderProtocolStream() {
           <span style="font-size:0.86rem; color:#0f172a;">${e.text}</span>
           ${e.tags && e.tags.length > 0 ? `
             <div style="display:flex; gap:4px; margin-top:6px;">
-              ${e.tags.map(t => `<span class="badge-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:0.7rem;"><i data-lucide="tag" class="w-3 h-3 inline mr-1"></i>${t}</span>`).join('')}
+              ${e.tags.map(t => `<span class="badge-pill" style="background:rgba(37,99,235,0.15); color:#60a5fa; font-size:0.7rem;"><i data-lucide="tag" class="w-3 h-3 inline mr-1"></i>${t}</span>`).join('')}
             </div>
           ` : ''}
         </div>

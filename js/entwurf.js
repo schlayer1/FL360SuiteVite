@@ -121,9 +121,9 @@ function renderEntwurfWorkspace() {
       <div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <h2 style="font-size:1.1rem; color:#f8fafc; margin:0; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="file-check-2" class="w-5 h-5 text-cyan-400"></i> Entwurfs-Begutachtung: ${cur.name}
+            <i data-lucide="file-check-2" class="w-5 h-5 text-blue-500"></i> Entwurfs-Begutachtung: ${cur.name}
           </h2>
-          <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:0.72rem; padding:2px 6px;">${cur.type || 'LAA'}</span>
+          <span class="badge" style="background:rgba(37,99,235,0.15); color:#60a5fa; font-size:0.72rem; padding:2px 6px;">${cur.type || 'LAA'}</span>
           <span class="badge" style="background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3); font-size:0.75rem; font-weight:700; padding:2px 8px;">Ø Entwurfsnote: ${avgStars} / 5.0</span>
         </div>
         <div style="font-size:0.76rem; color:#94a3b8; margin-top:2px;">
@@ -151,7 +151,7 @@ function renderEntwurfWorkspace() {
         <div class="entwurf-pane-header">
           <div style="display:flex; align-items:center; gap:8px;">
             <strong style="font-size:0.88rem; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-              <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i> PDF-Unterrichtsentwurf
+              <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i> PDF-Unterrichtsentwurf
             </strong>
             <span id="entwurfPdfNameBadge" style="font-size:0.75rem; color:#94a3b8; font-family:monospace;">${currentPdfFileName || (evalData.pdfName || 'Kein PDF geladen')}</span>
           </div>
@@ -202,7 +202,7 @@ function renderEntwurfWorkspace() {
         </div>
 
         <h3 style="font-size:0.95rem; color:#1e293b; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-          <span style="display:flex; align-items:center; gap:6px;"><i data-lucide="scale" class="w-4 h-4 text-cyan-400"></i><span>Begutachtungsraster nach ThürAZStPLVO</span></span>
+          <span style="display:flex; align-items:center; gap:6px;"><i data-lucide="scale" class="w-4 h-4 text-blue-500"></i><span>Begutachtungsraster nach ThürAZStPLVO</span></span>
           <span style="font-size:0.75rem; color:#64748b; font-weight:normal;">Skala 1.0 – 5.0 (Vornotenbezug)</span>
         </h3>
 
@@ -243,22 +243,22 @@ function renderEntwurfWorkspace() {
         </div>
 
         <!-- Colloquium & Reflection Questions -->
-        <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.2); border-radius:8px; padding:12px; margin-bottom:14px;">
+        <div style="background:rgba(37,99,235,0.05); border:1px solid rgba(37,99,235,0.2); border-radius:8px; padding:12px; margin-bottom:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="font-size:0.86rem; color:#38bdf8; display:flex; align-items:center; gap:6px;">
-              <i data-lucide="help-circle" class="w-4 h-4 text-cyan-400"></i> Prüferfragen für Kolloquium &amp; Nachbesprechung
+            <strong style="font-size:0.86rem; color:#60a5fa; display:flex; align-items:center; gap:6px;">
+              <i data-lucide="help-circle" class="w-4 h-4 text-blue-500"></i> Prüferfragen für Kolloquium &amp; Nachbesprechung
             </strong>
             <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; background:#fff;" onclick="openAddColloquiumQuestionModal()">
               <i data-lucide="plus" class="w-3.5 h-3.5 inline-block mr-1"></i> Neue Frage
             </button>
           </div>
           <div style="font-size:0.74rem; color:#94a3b8; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400"></i> Diese Fragen werden automatisch in <strong>Tab 6 (Reflexionsabgleich)</strong> und den <strong>Beratungs-Druckbogen</strong> synchronisiert.
+            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i> Diese Fragen werden automatisch in <strong>Tab 6 (Reflexionsabgleich)</strong> und den <strong>Beratungs-Druckbogen</strong> synchronisiert.
           </div>
           <div id="entwurfQuestionsList" style="display:flex; flex-direction:column; gap:8px;">
             ${questions.map((q, qIdx) => `
               <div class="question-row" style="align-items:flex-start; gap:8px; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px;">
-                <span style="font-weight:700; color:#38bdf8; font-size:0.82rem; margin-top:4px; flex-shrink:0;">Q${qIdx + 1}:</span>
+                <span style="font-weight:700; color:#60a5fa; font-size:0.82rem; margin-top:4px; flex-shrink:0;">Q${qIdx + 1}:</span>
                 <textarea 
                   class="form-control auto-expand-textarea" 
                   style="flex:1; font-size:0.82rem; padding:4px 8px; line-height:1.4; resize:vertical; min-height:34px; border:1px solid rgba(255,255,255,0.15); border-radius:4px; font-family:inherit;" 

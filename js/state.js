@@ -358,7 +358,7 @@ function showToast(msg, icon = "info") {
   const iconName = emojiMap[icon] || (typeof icon === 'string' && !icon.startsWith('<') ? icon : 'info');
   const iconHtml = typeof icon === 'string' && icon.startsWith('<')
     ? icon
-    : `<i data-lucide="${iconName}" class="w-4 h-4 text-cyan-400 shrink-0"></i>`;
+    : `<i data-lucide="${iconName}" class="w-4 h-4 text-blue-500 shrink-0"></i>`;
 
   // Strip any accidental emojis from the message text
   const cleanMsg = typeof msg === 'string' 

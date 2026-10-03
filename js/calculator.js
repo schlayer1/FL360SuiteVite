@@ -515,14 +515,14 @@ function renderCalculatorUI() {
     <div class="legal-doc-banner">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
         <div style="flex:1; min-width:280px;">
-          <div style="font-weight:700; font-size:0.88rem; color:#38bdf8; display:flex; align-items:center; gap:6px;">
-            <span><i data-lucide="scale" class="w-4 h-4 text-cyan-400 inline-block"></i></span> <span>${doc.title}</span> &ndash; <span>${doc.section}</span>
+          <div style="font-weight:700; font-size:0.88rem; color:#60a5fa; display:flex; align-items:center; gap:6px;">
+            <span><i data-lucide="scale" class="w-4 h-4 text-blue-500 inline-block"></i></span> <span>${doc.title}</span> &ndash; <span>${doc.section}</span>
           </div>
           <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">
             ${doc.fullTitle}
           </div>
           <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">
-            <i data-lucide="info" class="w-3.5 h-3.5 inline-block text-cyan-400 mr-1"></i> ${doc.infoText}
+            <i data-lucide="info" class="w-3.5 h-3.5 inline-block text-blue-500 mr-1"></i> ${doc.infoText}
           </div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -544,7 +544,7 @@ function renderCalculatorUI() {
       <div class="calc-result-box">
         <div>
           <div style="font-size:0.78rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Gesamtergebnis (${doc.title})</div>
-          <div id="calcFinalScoreDisplay" style="font-size:1.4rem; font-weight:800; color:#38bdf8; font-family:'JetBrains Mono',monospace; margin-top:2px;">
+          <div id="calcFinalScoreDisplay" style="font-size:1.4rem; font-weight:800; color:#60a5fa; font-family:'JetBrains Mono',monospace; margin-top:2px;">
             11.60 Pkt. (1,8 • Gut)
           </div>
           <div id="calcPassedBadge" style="margin-top:4px;">
