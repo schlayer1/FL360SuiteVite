@@ -554,11 +554,26 @@ function nsExportToWord() {
   const candidateName = cur.name ? cur.name.replace(/[^a-zA-Z0-9_äöüÄÖÜß]/g, '_') : 'Kandidat';
   const examLabel = nsState.activeExam === 'praktisch' ? 'Lehrprobe' : 'Muendliche_Pruefung';
 
-  let rtfBody = textToExport
-    .split(String.fromCharCode(92)).join(String.fromCharCode(92, 92))
-    .split('{').join(String.fromCharCode(92) + '{')
-    .split('}').join(String.fromCharCode(92) + '}')
-    .split(String.fromCharCode(10)).join(String.fromCharCode(92) + 'par' + String.fromCharCode(10));
+  // Robuste Unicode-Kodierung für alle deutschen Umlaute und Sonderzeichen in RTF
+  let rtfBody = "";
+  for (let i = 0; i < textToExport.length; i++) {
+    const char = textToExport[i];
+    const code = char.charCodeAt(0);
+    if (char === '\\') {
+      rtfBody += "\\\\";
+    } else if (char === '{') {
+      rtfBody += "\\{";
+    } else if (char === '}') {
+      rtfBody += "\\}";
+    } else if (char === '\n') {
+      rtfBody += "\\par\n";
+    } else if (code > 127) {
+      // RTF Unicode escape \uN?
+      rtfBody += `\\u${code}?`;
+    } else {
+      rtfBody += char;
+    }
+  }
 
   let rtfContent = "{\\rtf1\\ansi\\deff0\n{\\fonttbl{\\f0 Arial;}{\\f1 Times New Roman;}{\\f2 Calibri;}}\n{\\colortbl ;\\red0\\green0\\blue0;}\n\\viewkind4\\uc1\\pard\\cf1" + safeFont + "\\fs" + fSize + " \n" + rtfBody + "\n\\par\n}";
 

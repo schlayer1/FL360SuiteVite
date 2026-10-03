@@ -22,6 +22,7 @@ function initApp() {
     populateLAASelector();
     initActiveTab();
     initLiveCockpit();
+    restoreLiveSessionDraftIfPresent();
 
     // Auto-launch Setup Wizard on first start if no candidates exist
     if (appState && !appState.wizardCompleted && Object.keys(appState.laas || {}).length === 0) {
@@ -2017,7 +2018,40 @@ function addLiveNote() {
   liveLogs.unshift({ time, phase, text, id: "log_" + Date.now() });
   input.value = "";
   input.style.height = "auto";
+  persistLiveSessionDraft();
   renderLiveLogStream();
+}
+
+function persistLiveSessionDraft() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem("fl_live_session_draft", JSON.stringify({
+        logs: liveLogs,
+        seconds: liveTimerSeconds,
+        scores: liveScores,
+        focus: liveSessionFocus || ""
+      }));
+    }
+  } catch(e) {}
+}
+
+function restoreLiveSessionDraftIfPresent() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem("fl_live_session_draft");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.logs) && parsed.logs.length > 0) {
+          liveLogs = parsed.logs;
+          if (parsed.scores && Array.isArray(parsed.scores)) liveScores = parsed.scores;
+          if (parsed.focus) liveSessionFocus = parsed.focus;
+          renderLiveLogStream();
+          renderLiveCriteriaGrid();
+          showToast("Laufende Mitschrift aus letzter Sitzung wiederhergestellt.", "check-circle");
+        }
+      }
+    }
+  } catch(e) {}
 }
 
 function renderLiveLogStream() {
@@ -2251,6 +2285,7 @@ function saveFinishedVisit() {
   closeModal();
   resetTimer();
   liveLogs = [];
+  try { localStorage.removeItem("fl_live_session_draft"); } catch(e) {}
   showToast("Unterrichtsbesuch erfolgreich in Entwicklungsakte gesichert!", "check-circle-2");
 
   // Post-Hospitation Guided Workflow (Proposal 2)
