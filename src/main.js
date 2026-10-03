@@ -18,8 +18,18 @@ import { resilientStorage } from './storage/resilience';
 // Chart.js Registrierung
 Chart.register(...registerables);
 
+// Robuste createIcons-Bereitstellung mit allen Icons für bestehenden Code
+const robustCreateIcons = (options = {}) => {
+  return LucideIcons.createIcons({ icons: LucideIcons.icons, ...options });
+};
+
+const lucideFacade = {
+  ...LucideIcons,
+  createIcons: robustCreateIcons
+};
+
 // Bereitstellung auf dem globalen Window-Objekt für Rückwärtskompatibilität der Fachleiter-Module
-window.lucide = LucideIcons;
+window.lucide = lucideFacade;
 window.Chart = Chart;
 window.PDFLib = PDFLib;
 window.pdfjsLib = pdfjsLib;
