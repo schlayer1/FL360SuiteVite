@@ -165,8 +165,8 @@ function renderSeminarTab() {
 
     // Format badge
     let formatBadge = "Präsenz";
-    let formatBg = "rgba(56,189,248,0.15)";
-    let formatColor = "#38bdf8";
+    let formatBg = "rgba(37,99,235,0.15)";
+    let formatColor = "#60a5fa";
     if (mod.format === "Online") {
       formatBadge = "Online";
       formatBg = "rgba(74,222,128,0.15)";
@@ -208,7 +208,7 @@ function renderSeminarTab() {
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <strong style="color:#f8fafc; font-size:0.9rem;">${laaName}</strong>
-                <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:0.7rem; padding:1px 6px; margin-left:6px;">${laaType}</span>
+                <span class="badge" style="background:rgba(37,99,235,0.15); color:#60a5fa; font-size:0.7rem; padding:1px 6px; margin-left:6px;">${laaType}</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <div style="display:flex; align-items:center; gap:4px;">
@@ -274,12 +274,12 @@ function renderSeminarTab() {
               <span><strong>Kernkompetenz:</strong> ${mod.coreCompetence || 'Fachdidaktische Umsetzung'}</span>
             </div>
             <div style="font-size:0.75rem; color:#94a3b8; margin-top:3px; display:flex; gap:12px; flex-wrap:wrap;">
-              ${mod.date ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="calendar" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Datum:</strong> ${new Date(mod.date).toLocaleDateString('de-DE')}</span>` : ''}
-              ${timeDisplay ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Zeit:</strong> ${timeDisplay}</span>` : ''}
-              ${mod.location ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Ort:</strong> ${mod.location}</span>` : ''}
+              ${mod.date ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Datum:</strong> ${new Date(mod.date).toLocaleDateString('de-DE')}</span>` : ''}
+              ${timeDisplay ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="clock" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Zeit:</strong> ${timeDisplay}</span>` : ''}
+              ${mod.location ? `<span style="display:flex; align-items:center; gap:4px;"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Ort:</strong> ${mod.location}</span>` : ''}
             </div>
             ${mod.materialPath ? `
-              <div style="font-size:0.75rem; color:#38bdf8; margin-top:3px; display:flex; align-items:center; gap:6px;">
+              <div style="font-size:0.75rem; color:#60a5fa; margin-top:3px; display:flex; align-items:center; gap:6px;">
                 <i data-lucide="folder" class="w-3.5 h-3.5"></i> <span>Materialordner / Datei:</span> <code>${mod.materialPath}</code>
               </div>
             ` : ''}
@@ -474,7 +474,7 @@ function openEditSeminarModuleModal(modIdx) {
 
     <!-- Material Folder & Explorer Picker -->
     <div class="form-group">
-      <label style="display:flex; align-items:center; gap:6px;"><i data-lucide="folder" class="w-4 h-4 text-cyan-400"></i> Lokaler Materialordner / Dateipfad</label>
+      <label style="display:flex; align-items:center; gap:6px;"><i data-lucide="folder" class="w-4 h-4 text-blue-500"></i> Lokaler Materialordner / Dateipfad</label>
       <div style="display:flex; gap:6px;">
         <input id="mod_materialPath" class="form-control" value="${mod.materialPath || ''}" placeholder="z. B. Seminarmaterialien/M03_Differenzierung/" />
         <button type="button" class="btn btn-outline" style="white-space:nowrap; padding:6px 12px; font-size:0.8rem;" onclick="triggerSeminarFolderPicker()" title="Lokalen Ordner über Dateiexplorer auswählen">
@@ -485,7 +485,7 @@ function openEditSeminarModuleModal(modIdx) {
         </button>
       </div>
       <div style="font-size:0.72rem; color:#94a3b8; margin-top:3px; display:flex; align-items:center; gap:6px;">
-        <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400"></i> Wählen Sie einen Ordner (z. B. <code>Seminarmaterialien/</code>) oder eine Datei auf Ihrem Dienstgerät aus.
+        <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i> Wählen Sie einen Ordner (z. B. <code>Seminarmaterialien/</code>) oder eine Datei auf Ihrem Dienstgerät aus.
       </div>
     </div>
 

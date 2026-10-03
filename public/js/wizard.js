@@ -56,7 +56,7 @@ function renderWizardModal() {
       <!-- Wizard Header -->
       <div class="wizard-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div class="wizard-icon"><i data-lucide="sparkles" class="w-6 h-6 text-cyan-400"></i></div>
+          <div class="wizard-icon"><i data-lucide="sparkles" class="w-6 h-6 text-blue-500"></i></div>
           <div>
             <h2 style="margin:0; font-size:1.25rem; color:#f8fafc;">Einrichtungsassistent</h2>
             <div style="font-size:0.8rem; color:#94a3b8;">Fachleiter 360° Suite • In 5 Schritten startklar</div>
@@ -113,7 +113,7 @@ function getWizardStepHtml(step) {
       <div class="wizard-step-content">
         <div class="wizard-intro-box">
           <h3 style="margin:0 0 6px; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i> Ihre Fachleiter-Stammdaten
+            <i data-lucide="user" class="w-4 h-4 text-blue-500"></i> Ihre Fachleiter-Stammdaten
           </h3>
           <p style="margin:0; font-size:0.85rem; color:#94a3b8;">
             Diese Angaben werden automatisch in amtliche Gutachten, Prüfungsniederschriften und PDF-Formulare als Erstgutachter/Ausschussvorsitz eingetragen.
@@ -155,7 +155,7 @@ function getWizardStepHtml(step) {
       <div class="wizard-step-content">
         <div class="wizard-intro-box">
           <h3 style="margin:0 0 6px; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="users" class="w-4 h-4 text-cyan-400"></i> Erstes Kandidatenprofil anlegen
+            <i data-lucide="users" class="w-4 h-4 text-blue-500"></i> Erstes Kandidatenprofil anlegen
           </h3>
           <p style="margin:0; font-size:0.85rem; color:#94a3b8;">
             Erfassen Sie Ihren ersten Referendar (LAA), Seiteneinsteiger (NQ) oder Weiterbildungsteilnehmer (WB). Sie können später jederzeit weitere Profile hinzufügen.
@@ -222,7 +222,7 @@ function getWizardStepHtml(step) {
       <div class="wizard-step-content">
         <div class="wizard-intro-box">
           <h3 style="margin:0 0 6px; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="scale" class="w-4 h-4 text-cyan-400"></i> Ausbildungs- &amp; Prüfungsstandards (Thüringen)
+            <i data-lucide="scale" class="w-4 h-4 text-blue-500"></i> Ausbildungs- &amp; Prüfungsstandards (Thüringen)
           </h3>
           <p style="margin:0; font-size:0.85rem; color:#94a3b8;">
             Konfigurieren Sie die Standard-Notenskalen und Rechtsvorschriften gemäß ThürAZStPLVO.
@@ -263,7 +263,7 @@ function getWizardStepHtml(step) {
       <div class="wizard-step-content">
         <div class="wizard-intro-box">
           <h3 style="margin:0 0 6px; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-            <i data-lucide="folder" class="w-4 h-4 text-cyan-400"></i> PDF-Formulare &amp; Lokaler Ordner
+            <i data-lucide="folder" class="w-4 h-4 text-blue-500"></i> PDF-Formulare &amp; Lokaler Ordner
           </h3>
           <p style="margin:0; font-size:0.85rem; color:#94a3b8;">
             Die Suite enthält bereits alle 8 amtlichen Thüringer Prüfungsformulare (F 230, F 010, F 030, F 050, F 220, F 240, F 242, F 250). Optional können Sie einen lokalen Ordner mit eigenen Vorlagen verknüpfen.
@@ -271,7 +271,7 @@ function getWizardStepHtml(step) {
         </div>
 
         <div style="text-align:center; padding: 24px 16px; background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.12); border-radius: 10px; margin-top:14px;">
-          <div style="margin-bottom: 8px; display:flex; justify-content:center;"><i data-lucide="folder-open" class="w-12 h-12 text-cyan-400 opacity-80"></i></div>
+          <div style="margin-bottom: 8px; display:flex; justify-content:center;"><i data-lucide="folder-open" class="w-12 h-12 text-blue-500 opacity-80"></i></div>
           <h4 style="margin:0 0 4px; color:#f8fafc;">Eigenen Formular-Ordner verknüpfen</h4>
           <p style="font-size:0.82rem; color:#94a3b8; margin:0 0 14px;">
             Verknüpfen Sie einen Ordner auf Ihrem Mac/PC, um Seminar-eigene PDF-Vorlagen direkt im Formular-Cockpit auszufüllen.
@@ -310,14 +310,14 @@ function getWizardStepHtml(step) {
 
         <div style="font-size:0.85rem; font-weight:700; color:#cbd5e1; margin-bottom:8px;">Ihre 8 integrierten Werkzeuge:</div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:0.8rem; color:#94a3b8;">
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 1:</strong> Dashboard &amp; Profil</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="play-circle" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 2:</strong> Live-Hospitationsprotokoll</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="file-check-2" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 3:</strong> Niederschrift</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="trending-up" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 4:</strong> Progression &amp; Radar-Analyse</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="book-open" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 5:</strong> Seminar- &amp; Modulplaner</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="git-compare" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 6:</strong> Reflexions- &amp; Zielabgleich</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="calendar" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 7:</strong> Fristen- &amp; Ausbildungsmatrix</div>
-          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i> <strong>Tab 8:</strong> Formular-Cockpit &amp; PDF-Export</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 1:</strong> Dashboard &amp; Profil</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="play-circle" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 2:</strong> Live-Hospitationsprotokoll</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="file-check-2" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 3:</strong> Niederschrift</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="trending-up" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 4:</strong> Progression &amp; Radar-Analyse</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 5:</strong> Seminar- &amp; Modulplaner</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="git-compare" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 6:</strong> Reflexions- &amp; Zielabgleich</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 7:</strong> Fristen- &amp; Ausbildungsmatrix</div>
+          <div style="display:flex; align-items:center; gap:6px;"><i data-lucide="folder" class="w-3.5 h-3.5 text-blue-500"></i> <strong>Tab 8:</strong> Formular-Cockpit &amp; PDF-Export</div>
         </div>
       </div>
     `;

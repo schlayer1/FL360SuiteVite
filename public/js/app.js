@@ -127,8 +127,19 @@ function updateHeaderPhaseBadge(cur) {
     return;
   }
   const visitsCount = (cur.visits || []).length;
-  const phase = cur.phase || "Hauptphase";
-  badge.innerHTML = `<i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i><span>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>`;
+  const phase = cur.currentPhase || cur.phase || "Hauptphase";
+  const type = cur.type || "LAA";
+  const typeColors = {
+    LAA: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+    NQ: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+    WB: "bg-purple-500/20 text-purple-300 border-purple-500/40"
+  };
+  const typeBadgeClass = typeColors[type] || "bg-slate-500/20 text-slate-300 border-slate-500/40";
+
+  badge.innerHTML = `
+    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.7rem] font-bold border ${typeBadgeClass}">${type}</span>
+    <span class="inline-flex items-center text-slate-300"><i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>
+  `;
   badge.style.display = "inline-flex";
   updateHeaderBreadcrumbs();
   if (window.lucide) lucide.createIcons();
@@ -164,7 +175,7 @@ function updateHeaderBreadcrumbs() {
 
     html = `
       <span class="breadcrumb-item clickable" onclick="switchTab('tab-dashboard')" title="Zum Profil von ${cur.name}">
-        <i data-lucide="user" class="w-3.5 h-3.5 inline text-cyan-400"></i>
+        <i data-lucide="user" class="w-3.5 h-3.5 inline text-blue-500"></i>
         <span>${cur.name}</span>
       </span>
       <span class="breadcrumb-sep">›</span>
@@ -180,7 +191,7 @@ function updateHeaderBreadcrumbs() {
   } else {
     html = `
       <span class="breadcrumb-item clickable" onclick="switchTab('tab-dashboard')">
-        <i data-lucide="users" class="w-3.5 h-3.5 inline text-cyan-400"></i>
+        <i data-lucide="users" class="w-3.5 h-3.5 inline text-blue-500"></i>
         <span>Kandidaten</span>
       </span>
       <span class="breadcrumb-sep">›</span>
@@ -223,16 +234,21 @@ function updateQuickDockState() {
     dot.style.display = (typeof liveTimerRunning !== "undefined" && liveTimerRunning) ? "block" : "none";
   }
 
-  try {
-    if (localStorage.getItem("fachleiter_dock_collapsed") === "1") {
-      const dock = document.getElementById("appQuickDock");
-      const icon = document.getElementById("quickDockCollapseIcon");
-      if (dock && !dock.classList.contains("collapsed")) {
-        dock.classList.add("collapsed");
-        if (icon) icon.setAttribute("data-lucide", "chevron-right");
-      }
-    }
-  } catch(e) {}
+  const dock = document.getElementById("appQuickDock");
+  const icon = document.getElementById("quickDockCollapseIcon");
+  if (!dock) return;
+
+  // Auto-expand in live hospitation for quick control, otherwise respect collapsed state (default: collapsed)
+  const savedState = localStorage.getItem("fachleiter_dock_collapsed");
+  const shouldCollapse = activeTabId === "tab-live" ? false : (savedState === "0" ? false : true);
+
+  if (shouldCollapse) {
+    dock.classList.add("collapsed");
+    if (icon) icon.setAttribute("data-lucide", "chevron-right");
+  } else {
+    dock.classList.remove("collapsed");
+    if (icon) icon.setAttribute("data-lucide", "chevron-left");
+  }
 }
 
 function toggleGlobalSplitScreen() {
@@ -357,10 +373,18 @@ function handleLAAChange(laaId) {
   appState.selectedLAA = laaId;
   liveSessionFocus = "";
   isEditingLiveFocus = false;
+
+  const targetLAA = appState.laas[laaId];
+  if (targetLAA && targetLAA.type && ['LAA', 'NQ', 'WB'].includes(targetLAA.type)) {
+    if (typeof activeCalcMode !== 'undefined') {
+      activeCalcMode = targetLAA.type;
+    }
+  }
+
   saveState();
-  updateHeaderPhaseBadge(appState.laas[laaId]);
+  updateHeaderPhaseBadge(targetLAA);
   switchTab(activeTabId);
-  showToast(`Profil gewechselt: ${appState.laas[laaId]?.name}`, "👤");
+  showToast(`Profil gewechselt: ${targetLAA?.name}`, "👤");
 }
 
 function openAddLAAModal() {
@@ -783,7 +807,7 @@ function renderDashboard() {
     if (profileContainer) {
       profileContainer.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 16px; border: 2px dashed rgba(255,255,255,0.15);">
-          <div style="margin-bottom: 14px;" class="inline-flex p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+          <div style="margin-bottom: 14px;" class="inline-flex p-4 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-500">
             <i data-lucide="users" class="w-10 h-10"></i>
           </div>
           <h2 style="font-size: 1.3rem; margin-bottom: 8px; color: #f8fafc;">Herzlich willkommen in Ihrer Fachleiter 360° Suite</h2>
@@ -855,38 +879,47 @@ function renderDashboard() {
   // Ausbildungs-Leitstand Status Hub (Proposal 5)
   renderDashboardStatusHub(cur);
 
-  // Profile Grid
-  if (profileContainer) {
-    profileContainer.innerHTML = `
-      <div class="profile-item">
-        <span class="profile-label">Kandidat / Status</span>
-        <span class="profile-value">${cur.name} (${getRoleTitle(cur.type, cur.gender)})</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Ausbildungsfächer</span>
-        <span class="profile-value">${cur.subject1 || '-'} / ${cur.subject2 || '-'}</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Ausbildungsschule</span>
-        <span class="profile-value">${cur.school || '-'}</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Schulische/r Mentor/in</span>
-        <span class="profile-value">${cur.mentor || '-'}</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Ausbildungszeitraum</span>
-        <span class="profile-value">${calcDurationString(cur.startDate, cur.endDate)}</span>
-      </div>
-      <div class="profile-item">
-        <span class="profile-label">Aktuelle Phase</span>
-        <span class="profile-value">${cur.currentPhase || 'Hauptphase'}</span>
+  // Compact Candidate Summary Banner (Proposal 2: Entrümpelung)
+  const candidateBannerEl = document.getElementById("dashboardCandidateBanner");
+  if (candidateBannerEl) {
+    const roleTitle = getRoleTitle ? getRoleTitle(cur.type, cur.gender) : (cur.type || 'LAA');
+    const typeBadge = cur.type === 'NQ' ? 'badge-neon-warning' : (cur.type === 'WB' ? 'badge-neon-info' : 'badge-neon-success');
+    candidateBannerEl.innerHTML = `
+      <div class="candidate-summary-inner">
+        <div class="candidate-summary-identity">
+          <div class="candidate-avatar-icon">
+            <i data-lucide="user" class="w-5 h-5 text-blue-500"></i>
+          </div>
+          <div>
+            <div class="candidate-summary-name">
+              <strong>${cur.name}</strong>
+              <span class="badge-pill ${typeBadge}" style="font-size:0.72rem; padding:2px 7px;">${cur.type || 'LAA'}</span>
+              <span style="font-size:0.82rem; color:var(--text-muted); font-weight:500;">(${roleTitle})</span>
+            </div>
+            <div class="candidate-summary-meta">
+              <span><i data-lucide="book" class="w-3.5 h-3.5"></i> ${cur.subject1 || 'Fach 1'}${cur.subject2 ? ' / ' + cur.subject2 : ''}</span>
+              <span class="meta-dot">•</span>
+              <span><i data-lucide="building" class="w-3.5 h-3.5"></i> ${cur.school || 'Ausbildungsschule'}${cur.mentor ? ' (Mentor/in: ' + cur.mentor + ')' : ''}</span>
+              <span class="meta-dot">•</span>
+              <span><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${cur.currentPhase || cur.phase || 'Hauptphase'}</span>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-summary-actions">
+          <button class="btn btn-outline" style="font-size:0.76rem; padding:4px 10px;" onclick="openEditLAAModal()" title="Stammdaten &amp; Schule bearbeiten">
+            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            <span>Stammdaten</span>
+          </button>
+        </div>
       </div>
     `;
   }
 
-  // Render Radar Chart
-  renderDashboardRadar(cur);
+  // Render Radar Chart if container is visible
+  const radarContainer = document.getElementById("dashboardRadarContainer");
+  if (radarContainer && radarContainer.style.display !== "none") {
+    renderDashboardRadar(cur);
+  }
 
   // Render Goals List
   renderDashboardGoals(cur);
@@ -896,6 +929,36 @@ function renderDashboard() {
 
   // Render Appointments List
   renderDashboardAppointments(cur);
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function toggleDashboardRadar(forceState) {
+  const container = document.getElementById("dashboardRadarContainer");
+  const toggleBtn = document.getElementById("toggleRadarBtn");
+  if (!container) return;
+
+  const isCurrentlyOpen = container.style.display !== "none";
+  const shouldOpen = forceState !== undefined ? forceState : !isCurrentlyOpen;
+
+  if (shouldOpen) {
+    container.style.display = "block";
+    if (toggleBtn) {
+      toggleBtn.classList.add("active");
+      toggleBtn.innerHTML = `<i data-lucide="activity" class="w-3.5 h-3.5 text-blue-400"></i><span>Netz ausblenden</span>`;
+    }
+    const cur = getCurrentLAA();
+    if (cur) renderDashboardRadar(cur);
+  } else {
+    container.style.display = "none";
+    if (toggleBtn) {
+      toggleBtn.classList.remove("active");
+      toggleBtn.innerHTML = `<i data-lucide="activity" class="w-3.5 h-3.5 text-blue-400"></i><span>Kompetenznetz</span>`;
+    }
+  }
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderDashboardStatusHub(cur) {
@@ -1031,7 +1094,7 @@ function renderDashboardStatusHub(cur) {
       <div>
         <div class="status-hub-header">
           <span class="status-hub-label">Fokus-Zielvereinbarung</span>
-          <span class="badge-pill text-cyan-400" style="font-size:0.7rem; font-weight:700;">${openGoals.length} offen</span>
+          <span class="badge-pill text-blue-500" style="font-size:0.7rem; font-weight:700;">${openGoals.length} offen</span>
         </div>
         <div class="status-hub-value" style="font-size:0.92rem; font-weight:600; line-height:1.3; min-height:42px;">
           ${activeGoal ? activeGoal.text : '<span style="color:var(--text-muted); font-style:italic;">Kein Entwicklungsziel hinterlegt</span>'}
@@ -1111,12 +1174,12 @@ function renderDashboardRadar(cur) {
           {
             label: `Aktueller Stand (${cur.name})`,
             data: scores,
-            backgroundColor: "rgba(56, 189, 248, 0.22)",
-            borderColor: "#38bdf8",
-            pointBackgroundColor: "#38bdf8",
+            backgroundColor: "rgba(37, 99, 235, 0.2)",
+            borderColor: "#3b82f6",
+            pointBackgroundColor: "#2563eb",
             pointBorderColor: "#ffffff",
             pointHoverBackgroundColor: "#ffffff",
-            pointHoverBorderColor: "#38bdf8",
+            pointHoverBorderColor: "#2563eb",
             borderWidth: 2
           }
         ]
@@ -1263,9 +1326,10 @@ function renderDashboardVisits(cur) {
         <td>${v.date ? new Date(v.date).toLocaleDateString('de-DE') : '-'}</td>
         <td>${v.phase || '-'}</td>
         <td><strong>${v.topic || '-'}</strong></td>
-        <td><span class="badge-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-weight:700;">${v.grade || '–'}</span></td>
+        <td><span class="badge-pill" style="background:rgba(37,99,235,0.15); color:#60a5fa; border:1px solid rgba(37,99,235,0.3); font-weight:700;">${v.grade || '–'}</span></td>
         <td>
           <div style="display:flex; gap:6px;">
+            <button class="btn btn-outline" style="font-size:0.74rem; padding:3px 8px; min-height:28px;" onclick="printConsultationSheet('${v.id}')" title="1-Klick Beratungsnachweis als 1-Seiter drucken / PDF"><i data-lucide="printer" class="w-3.5 h-3.5 text-blue-500"></i><span>Nachweis</span></button>
             <button class="btn btn-outline" style="font-size:0.74rem; padding:3px 8px; min-height:28px;" onclick="viewVisitDetails('${v.id}')"><i data-lucide="eye" class="w-3.5 h-3.5"></i><span>Details</span></button>
             <button class="btn btn-ghost" style="font-size:0.74rem; padding:3px 8px; min-height:28px; color:#f87171;" onclick="deleteVisit('${v.id}')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
           </div>
@@ -1286,7 +1350,7 @@ function viewVisitDetails(visitId) {
     logHtml = `
       <div style="margin-top:14px;">
         <strong style="font-size:0.84rem; display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-          <i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i>
+          <i data-lucide="clock" class="w-4 h-4 text-blue-500"></i>
           <span>Protokollierte Beobachtungen:</span>
         </strong>
         <div class="log-container" style="max-height:180px;">
@@ -1319,7 +1383,14 @@ function viewVisitDetails(visitId) {
     ${logHtml}
   `;
 
-  openModal({ title: `Details: ${v.topic || 'Unterrichtsbesuch'}`, bodyHTML });
+  const footerHTML = `
+    <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+      <button class="btn btn-primary" onclick="printConsultationSheet('${v.id}')"><i data-lucide="printer" class="w-4 h-4 mr-1"></i><span>1-Klick-Beratungsnachweis drucken</span></button>
+      <button class="btn btn-outline" onclick="closeModal()">Schließen</button>
+    </div>
+  `;
+
+  openModal({ title: `Details: ${v.topic || 'Unterrichtsbesuch'}`, bodyHTML, footerHTML });
 }
 
 function deleteVisit(visitId) {
@@ -1392,7 +1463,7 @@ function renderDashboardAppointments(cur) {
             </span>
           </div>
           <div class="goal-meta" style="margin-top:3px;">
-            <i data-lucide="calendar" class="w-3 h-3 inline mr-1 text-cyan-400"></i>
+            <i data-lucide="calendar" class="w-3 h-3 inline mr-1 text-blue-500"></i>
             <span class="font-mono tabular-nums font-semibold">${new Date(item.date).toLocaleDateString('de-DE')}</span>
             ${item.time ? ` um ${item.time} Uhr` : ''} • 
             <i data-lucide="map-pin" class="w-3 h-3 inline mr-1 text-slate-400"></i>${item.location || (isCustom ? 'Ausbildungsplan' : 'Schule')}
@@ -1624,11 +1695,11 @@ function renderLiveActiveGoalBanner() {
     banner.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; width:100%;">
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:260px;">
-          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-blue-500 flex items-center justify-center shrink-0">
             <i data-lucide="target" class="w-4 h-4"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#38bdf8; display:flex; align-items:center; gap:8px;">
+            <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#60a5fa; display:flex; align-items:center; gap:8px;">
               <span>Aktueller Beratungsschwerpunkt (Fokus der Hospitation):</span>
             </div>
             <div id="liveFocusDisplay" style="font-size:0.92rem; font-weight:600; color:var(--text-main); margin-top:2px;">
@@ -1643,7 +1714,7 @@ function renderLiveActiveGoalBanner() {
             <i data-lucide="edit-3" class="w-3.5 h-3.5 mr-1 inline"></i>
             <span>${liveSessionFocus ? 'Ändern / Wählen' : 'Schwerpunkt festlegen'}</span>
           </button>
-          <span class="badge-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:0.7rem; white-space:nowrap;">
+          <span class="badge-pill" style="background:rgba(37,99,235,0.15); color:#60a5fa; border:1px solid rgba(37,99,235,0.3); font-size:0.7rem; white-space:nowrap;">
             Fokus-Beobachtung
           </span>
         </div>
@@ -1659,7 +1730,7 @@ function renderLiveActiveGoalBanner() {
     banner.innerHTML = `
       <div style="width:100%; display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#38bdf8;" class="inline-flex items-center gap-1.5">
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#60a5fa;" class="inline-flex items-center gap-1.5">
             <i data-lucide="target" class="w-3.5 h-3.5"></i>
             <span>Beratungsschwerpunkt für diese Hospitation anpassen:</span>
           </span>
@@ -2069,7 +2140,7 @@ function renderLiveLogStream() {
         <div class="log-item log-phase-divider">
           <span class="log-time">${l.time}</span>
           <span class="phase-divider-tag"><i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i>${l.phase}</span>
-          <span style="font-weight:600; color:#38bdf8;">${l.text}</span>
+          <span style="font-weight:600; color:#60a5fa;">${l.text}</span>
           <button class="btn btn-ghost btn-icon-only" style="padding:0 6px; font-size:0.75rem; margin-left:auto;" onclick="deleteLiveLogItem('${l.id}')">✕</button>
         </div>
       `;
@@ -2220,7 +2291,7 @@ function openFinishVisitModal() {
     </div>
     <div class="form-group">
       <label class="inline-flex items-center gap-1.5 font-semibold" style="color:var(--text-main); margin-bottom:6px;">
-        <i data-lucide="award" class="w-4 h-4 text-cyan-400"></i>
+        <i data-lucide="award" class="w-4 h-4 text-blue-500"></i>
         <span>Vorläufige Punktetendenz (1 bis 15 Punkte)</span>
       </label>
       <select id="finishVisit_points" class="form-control" style="font-weight:600; font-size:0.92rem;">
@@ -2319,19 +2390,19 @@ function openPostHospitationWorkflowModal(visit) {
     <div class="workflow-choice-grid">
       <!-- Option 1: Reflexionsabgleich -->
       <div class="workflow-choice-card" onclick="navigateToReflectionFromVisit('${visit.id}')">
-        <div class="workflow-choice-icon bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+        <div class="workflow-choice-icon bg-cyan-500/15 text-blue-500 border border-cyan-500/30">
           <i data-lucide="git-compare" class="w-5 h-5"></i>
         </div>
         <div style="flex:1;">
           <div style="font-size:0.92rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
             <span>Direkt zum Reflexionsabgleich</span>
-            <span class="badge-pill text-cyan-400" style="font-size:0.65rem;">Empfohlen</span>
+            <span class="badge-pill text-blue-500" style="font-size:0.65rem;">Empfohlen</span>
           </div>
           <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
             Auswertungsgespräch führen: Fachleiter-Beobachtungen &amp; LAA-Selbsteinschätzung abgleichen.
           </div>
         </div>
-        <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-400"></i>
+        <i data-lucide="arrow-right" class="w-4 h-4 text-blue-500"></i>
       </div>
 
       <!-- Option 2: Entwicklungsziel vereinbaren -->
@@ -2350,9 +2421,25 @@ function openPostHospitationWorkflowModal(visit) {
         <i data-lucide="arrow-right" class="w-4 h-4 text-amber-400"></i>
       </div>
 
-      <!-- Option 3: Zur Entwicklungsakte (Dashboard) -->
+      <!-- Option 3: 1-Klick Beratungsnachweis (1-Seiter PDF) -->
+      <div class="workflow-choice-card" onclick="closeModal(); printConsultationSheet('${visit.id}');">
+        <div class="workflow-choice-icon bg-blue-500/15 text-blue-400 border border-blue-500/30">
+          <i data-lucide="printer" class="w-5 h-5"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.92rem; font-weight:700; color:var(--text-main);">
+            1-Klick-Beratungsnachweis drucken (1-Seiter)
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
+            Druckreife DIN-A4-Bescheinigung für Schule &amp; Lehramtsanwärter direkt ausgeben.
+          </div>
+        </div>
+        <i data-lucide="arrow-right" class="w-4 h-4 text-blue-400"></i>
+      </div>
+
+      <!-- Option 4: Zur Entwicklungsakte (Dashboard) -->
       <div class="workflow-choice-card" onclick="closeModal(); switchTab('tab-dashboard');">
-        <div class="workflow-choice-icon bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+        <div class="workflow-choice-icon bg-slate-500/15 text-slate-400 border border-slate-500/30">
           <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
         </div>
         <div style="flex:1;">
@@ -2363,7 +2450,7 @@ function openPostHospitationWorkflowModal(visit) {
             Gesamte Übersicht, Notenübersicht und Kompetenzradar des Kandidaten einsehen.
           </div>
         </div>
-        <i data-lucide="arrow-right" class="w-4 h-4 text-indigo-400"></i>
+        <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400"></i>
       </div>
     </div>
   `;
@@ -2737,6 +2824,287 @@ function exportSingleAppointmentICS(appId) {
   link.download = `Termin_${a.title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
   link.click();
   showToast("Termin (.ics) exportiert!", "📅");
+}
+
+/**
+ * FEATURE 1: 1-KLICK-BERATUNGSNACHWEIS ALS 1-SEITIGER PDF-AUSDRUCK (UB-FEEDBACKBOGEN)
+ * Kompakter amtlicher Nachweis für Unterrichtsbesuche (UB 1-4) zur Weitergabe an Seminar, Schule & LAA.
+ */
+function printConsultationSheet(visitId) {
+  const cur = getCurrentLAA();
+  if (!cur || !cur.visits) return;
+  const v = cur.visits.find(item => item.id === visitId) || cur.visits[cur.visits.length - 1];
+  if (!v) {
+    showToast("Kein Unterrichtsbesuch zum Drucken gefunden!", "⚠️");
+    return;
+  }
+
+  const visitIdx = cur.visits.indexOf(v) + 1;
+  const mentorName = appState.mentor || "Frau Könitzer (Fachleiterin)";
+  const goals = (cur.goals || []).filter(g => g.status === 'open' || !g.status).slice(0, 3);
+
+  // Group logs or highlights
+  const logHighlights = (v.log || []).slice(0, 6);
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    showToast("Pop-up blockiert! Bitte Druckfenster im Browser zulassen.", "⚠️");
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="UTF-8">
+      <title>Beratungsnachweis UB ${visitIdx} – ${cur.name}</title>
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 12mm 15mm 12mm 15mm;
+        }
+        * { box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          color: #0f172a;
+          background: #ffffff;
+          margin: 0;
+          padding: 0;
+          font-size: 10pt;
+          line-height: 1.45;
+        }
+        .header-table {
+          width: 100%;
+          border-bottom: 2px solid #1e3a8a;
+          padding-bottom: 8px;
+          margin-bottom: 12px;
+        }
+        .header-title {
+          font-size: 14pt;
+          font-weight: 800;
+          color: #1e3a8a;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .header-sub {
+          font-size: 8.5pt;
+          color: #64748b;
+          margin-top: 2px;
+        }
+        .meta-grid {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 12px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+        }
+        .meta-grid td {
+          padding: 6px 10px;
+          border-bottom: 1px solid #e2e8f0;
+          font-size: 9pt;
+        }
+        .meta-label {
+          color: #475569;
+          font-weight: 600;
+          width: 22%;
+        }
+        .meta-val {
+          color: #0f172a;
+          font-weight: 700;
+        }
+        .section-title {
+          font-size: 10pt;
+          font-weight: 700;
+          color: #1e3a8a;
+          border-bottom: 1.5px solid #cbd5e1;
+          padding-bottom: 3px;
+          margin-top: 10px;
+          margin-bottom: 6px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .box-content {
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px 10px;
+          font-size: 9pt;
+          background: #ffffff;
+          min-height: 48px;
+        }
+        .log-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 4px;
+          font-size: 8.5pt;
+        }
+        .log-table th {
+          background: #f1f5f9;
+          text-align: left;
+          padding: 4px 6px;
+          border-bottom: 1px solid #cbd5e1;
+          color: #475569;
+        }
+        .log-table td {
+          padding: 4px 6px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .goal-item {
+          padding: 4px 0;
+          border-bottom: 1px dashed #e2e8f0;
+        }
+        .goal-item:last-child { border-bottom: none; }
+        .score-pill {
+          display: inline-block;
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 9pt;
+        }
+        .signatures {
+          margin-top: 24px;
+          width: 100%;
+          display: table;
+          page-break-inside: avoid;
+        }
+        .sign-cell {
+          display: table-cell;
+          width: 33.33%;
+          text-align: center;
+          padding: 0 10px;
+          vertical-align: bottom;
+        }
+        .sign-line {
+          border-top: 1px solid #475569;
+          padding-top: 4px;
+          font-size: 8pt;
+          color: #475569;
+        }
+        .footer-note {
+          margin-top: 14px;
+          font-size: 7.5pt;
+          color: #94a3b8;
+          text-align: center;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 4px;
+        }
+        @media print {
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      </style>
+    </head>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td>
+            <div class="header-title">Staatliches Studienseminar Gera</div>
+            <div class="header-sub">Schulpraktischer Beratungs- und Hospitationsnachweis gemäß ThürAZStPLVO / ThürNQVO</div>
+          </td>
+          <td style="text-align:right;">
+            <span class="score-pill">UB #${visitIdx} • ${v.grade || 'Bewertet'}</span>
+          </td>
+        </tr>
+      </table>
+
+      <table class="meta-grid">
+        <tr>
+          <td class="meta-label">Lehramtsanwärter/in:</td>
+          <td class="meta-val">${cur.name} (${cur.type || 'LAA'})</td>
+          <td class="meta-label">Fachleiter/in:</td>
+          <td class="meta-val">${mentorName}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Ausbildungsschule:</td>
+          <td class="meta-val">${cur.school || 'Staatliche Regelschule'}</td>
+          <td class="meta-label">Mentor/in Schule:</td>
+          <td class="meta-val">${cur.mentor || '–'}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Fach / Lerngruppe:</td>
+          <td class="meta-val">${cur.subject1 || 'Fachunterricht'} (${v.phase || cur.currentPhase || 'Hauptphase'})</td>
+          <td class="meta-label">Hospitationsdatum:</td>
+          <td class="meta-val">${v.date ? new Date(v.date).toLocaleDateString('de-DE') : new Date().toLocaleDateString('de-DE')}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Thema der Stunde:</td>
+          <td class="meta-val" colspan="3"><strong>${v.topic || 'Unterrichtsstunde'}</strong></td>
+        </tr>
+      </table>
+
+      <div class="section-title">
+        <span>1. Didaktischer Schwerpunkt &amp; Beobachtungsschwerpunkte</span>
+      </div>
+      <div class="box-content">
+        ${v.focus ? `<strong>Schwerpunkt:</strong> ${v.focus}<br>` : ''}
+        ${v.notes || 'Der Unterricht wurde kriteriengeleitet nach den Thüringer Ausbildungsstandards beobachtet und im anschließenden Fachleiter-Gespräch ausgewertet.'}
+      </div>
+
+      ${logHighlights.length > 0 ? `
+        <div class="section-title">
+          <span>2. Verlaufs- &amp; Beobachtungsprotokoll (Auszug)</span>
+        </div>
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th style="width:14%;">Zeit</th>
+              <th style="width:22%;">Phase</th>
+              <th>Didaktische Beobachtung / Impuls</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logHighlights.map(l => `
+              <tr>
+                <td><strong>${l.time || '–'}</strong></td>
+                <td>${l.phase || 'Unterricht'}</td>
+                <td>${l.text || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+
+      <div class="section-title">
+        <span>3. Verbindliche Entwicklungsziele &amp; Handlungsvereinbarungen</span>
+      </div>
+      <div class="box-content">
+        ${goals.length > 0 ? goals.map((g, i) => `
+          <div class="goal-item">
+            <strong>Ziel ${i + 1}:</strong> ${g.text}
+            <span style="font-size:8pt; color:#64748b;"> (Anlass: ${g.source || 'Auswertungsgespräch'})</span>
+          </div>
+        `).join('') : `
+          <div style="color:#64748b; font-style:italic;">Im Auswertungsgespräch wurden didaktisch-methodische Handlungsfelder für den nächsten Unterrichtsbesuch einvernehmlich festgelegt.</div>
+        `}
+      </div>
+
+      <div class="signatures">
+        <div class="sign-cell">
+          <br><br>
+          <div class="sign-line">Unterschrift Lehramtsanwärter/in</div>
+        </div>
+        <div class="sign-cell">
+          <br><br>
+          <div class="sign-line">Unterschrift schulische/r Mentor/in</div>
+        </div>
+        <div class="sign-cell">
+          <br><br>
+          <div class="sign-line">Unterschrift Fachleiter/in</div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        Fachleiter 360° Suite • Staatliches Studienseminar Gera • Dokument erstellt am ${new Date().toLocaleDateString('de-DE')} • Exakte 1-Seiten-Ausfertigung
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 350);
 }
 
 function calculateFinalGrade() {

@@ -929,6 +929,10 @@ function renderDashboard() {
 
   // Render Appointments List
   renderDashboardAppointments(cur);
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
 }
 
 function toggleDashboardRadar(forceState) {

@@ -174,7 +174,7 @@ function renderCohortOverview() {
     <!-- Cohort Summary Metrics -->
     <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom:22px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(56,189,248,0.15); color:#38bdf8;"><i data-lucide="users" class="w-5 h-5"></i></div>
+        <div class="stat-icon" style="background:rgba(37,99,235,0.15); color:#60a5fa;"><i data-lucide="users" class="w-5 h-5"></i></div>
         <div>
           <div class="stat-value">${totalCandidates}</div>
           <div class="stat-label">Betreute Lehrkräfte (${countLAA} LAA • ${countNQ} NQ • ${countWB} WB)</div>
@@ -207,7 +207,7 @@ function renderCohortOverview() {
     <div class="card" style="padding:0; overflow:hidden; margin-bottom:24px;">
       <div style="padding:16px 20px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
         <h3 style="margin:0; font-size:1.05rem; color:#f8fafc; display:flex; align-items:center; gap:8px;">
-          <i data-lucide="clipboard-list" class="w-4 h-4 text-cyan-400"></i>
+          <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-500"></i>
           Gesamtübersicht der Ausbildungsgruppe (${appState.seminarLocation || 'Studienseminar'})
         </h3>
         <span style="font-size:0.8rem; color:#94a3b8;">Stand: ${new Date().toLocaleDateString('de-DE')}</span>

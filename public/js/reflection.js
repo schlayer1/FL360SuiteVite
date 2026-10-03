@@ -131,10 +131,10 @@ function renderReflectionRadar() {
           {
             label: "Fremdeinschätzung (Fachleitung)",
             data: flScores,
-            backgroundColor: "rgba(56, 189, 248, 0.22)",
-            borderColor: "#38bdf8",
+            backgroundColor: "rgba(37, 99, 235, 0.22)",
+            borderColor: "#60a5fa",
             borderWidth: 2,
-            pointBackgroundColor: "#38bdf8",
+            pointBackgroundColor: "#60a5fa",
             pointRadius: 4
           },
           {
@@ -213,6 +213,7 @@ function renderReflectionInputs() {
     if (diffNum < -0.5) diffBadge = `<span class="badge-pill" style="background:#dbeafe; color:#1e40af; font-weight:700;">Unterschätzung (${diff})</span>`;
 
     const goalSuggestion = suggestedGoalTexts[idx] || `Entwicklungsaufgabe im Bereich ${dim} gezielt im nächsten UB verfolgen.`;
+    const alreadySavedGoal = (cur.goals || []).find(g => (g.text && g.text.includes(dim)) || (g.source && g.source.includes(dim)));
 
     return `
       <div class="reflection-dim-card">
@@ -220,20 +221,26 @@ function renderReflectionInputs() {
           <strong style="font-size:0.9rem; color:var(--text-main);">${dim}</strong>
           <div style="display:flex; align-items:center; gap:8px;">
             ${diffBadge}
-            <button 
-              class="btn btn-outline" 
-              style="font-size:0.72rem; padding:3px 8px;" 
-              onclick="createGoalFromDiscrepancy('${dim}', '${goalSuggestion.replace(/'/g, "\\'")}')"
-              title="Dieses Handlungsfeld als Zielvereinbarung ins Dashboard übernehmen"
-            >
-              <i data-lucide="target" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i><span>Als Ziel vereinbaren</span>
-            </button>
+            ${alreadySavedGoal ? `
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[0.7rem] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" title="Bereits als Entwicklungsziel im Dashboard erfasst">
+                <i data-lucide="check" class="w-3 h-3 mr-1 inline"></i>Ziel aktiv
+              </span>
+            ` : `
+              <button 
+                class="btn btn-outline" 
+                style="font-size:0.72rem; padding:3px 8px;" 
+                onclick="createGoalFromDiscrepancy('${dim}', '${goalSuggestion.replace(/'/g, "\\'")}')"
+                title="Dieses Handlungsfeld als Zielvereinbarung ins Dashboard übernehmen"
+              >
+                <i data-lucide="target" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i><span>Als Ziel vereinbaren</span>
+              </button>
+            `}
           </div>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <label style="font-size:0.78rem; font-weight:700; color:#38bdf8;">FL-Wertung:</label>
+            <label style="font-size:0.78rem; font-weight:700; color:#60a5fa;">FL-Wertung:</label>
             <input 
               type="number" 
               min="1" max="5" step="0.1" 
