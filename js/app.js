@@ -804,18 +804,31 @@ function renderDashboard() {
     const hub = document.getElementById("dashboardStatusHub");
     if (hub) hub.style.display = "none";
     if (bannerEl) bannerEl.style.display = "none";
-    if (profileContainer) {
-      profileContainer.innerHTML = `
-        <div style="grid-column: 1 / -1; padding: 40px 20px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 16px; border: 2px dashed rgba(255,255,255,0.15);">
-          <div style="margin-bottom: 14px;" class="inline-flex p-4 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-500">
-            <i data-lucide="users" class="w-10 h-10"></i>
+    const candidateBannerEl = document.getElementById("dashboardCandidateBanner");
+    if (candidateBannerEl) {
+      candidateBannerEl.innerHTML = `
+        <div style="padding: 32px 24px; text-align: center; background: rgba(15, 23, 42, 0.5); border-radius: 14px; border: 1.5px dashed rgba(255,255,255,0.15);">
+          <div style="margin-bottom: 12px;" class="inline-flex p-3 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-500">
+            <i data-lucide="compass" class="w-8 h-8"></i>
           </div>
-          <h2 style="font-size: 1.3rem; margin-bottom: 8px; color: #f8fafc;">Herzlich willkommen in Ihrer Fachleiter 360° Suite</h2>
-          <p style="color: #94a3b8; font-size: 0.95rem; max-width: 540px; margin: 0 auto 20px;">Es ist aktuell noch kein Ausbildungs- oder Prüfungskandidat angelegt. Starten Sie, indem Sie Ihr erstes Profil anlegen.</p>
-          <button class="btn btn-primary" onclick="openAddLAAModal()" style="padding: 10px 24px; font-size: 1rem;">
-            <i data-lucide="user-plus" class="w-5 h-5"></i>
-            <span>Erstes Kandidatenprofil anlegen</span>
-          </button>
+          <h2 style="font-size: 1.25rem; margin-bottom: 6px; color: #f8fafc; font-weight: 700;">Willkommen in Ihrer Fachleiter 360° Suite</h2>
+          <p style="color: #94a3b8; font-size: 0.88rem; max-width: 520px; margin: 0 auto 18px;">
+            Aktuell ist noch kein Kandidatenprofil geladen. Starten Sie direkt mit einem vorbereiteten Muster-Referendar oder legen Sie Ihr eigenes Profil an.
+          </p>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="loadDemoCandidate()" style="padding: 9px 18px; font-size: 0.88rem;">
+              <i data-lucide="flask-conical" class="w-4 h-4"></i>
+              <span>Muster-Kandidat laden (Sofort testen)</span>
+            </button>
+            <button class="btn btn-outline" onclick="openSetupWizard(true)" style="padding: 9px 18px; font-size: 0.88rem;">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+              <span>3-Minuten Schnellstart-Guide</span>
+            </button>
+            <button class="btn btn-outline" onclick="openAddLAAModal()" style="padding: 9px 18px; font-size: 0.88rem;">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>Neues Profil anlegen</span>
+            </button>
+          </div>
         </div>
       `;
     }
@@ -825,6 +838,7 @@ function renderDashboard() {
     if (goalsList) goalsList.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">Noch keine Entwicklungsziele vorhanden</div>';
     const appointmentsList = document.getElementById("dashboardAppointmentsList");
     if (appointmentsList) appointmentsList.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">Noch keine anstehenden Termine vorhanden</div>';
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
