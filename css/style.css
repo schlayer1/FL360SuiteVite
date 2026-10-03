@@ -3,34 +3,34 @@
    ========================================================================== */
 
 :root {
-  /* Brand Accents */
-  --primary: #38bdf8;
-  --primary-light: #7dd3fc;
-  --primary-dark: #0284c7;
-  --primary-glow: rgba(56, 189, 248, 0.25);
-  --primary-border: rgba(56, 189, 248, 0.35);
+  /* Brand Accents - Thüringen Slate & Deep Blue / Indigo Executive Look */
+  --primary: #2563eb;
+  --primary-light: #60a5fa;
+  --primary-dark: #1d4ed8;
+  --primary-glow: rgba(37, 99, 235, 0.25);
+  --primary-border: rgba(37, 99, 235, 0.35);
 
-  --accent-lime: #4ade80;
-  --accent-lime-glow: rgba(74, 222, 128, 0.25);
-  --accent-lime-border: rgba(74, 222, 128, 0.35);
+  --accent-lime: #059669;
+  --accent-lime-glow: rgba(5, 150, 105, 0.25);
+  --accent-lime-border: rgba(5, 150, 105, 0.35);
 
-  --accent: #2dd4bf;
-  --accent-light: #5eead4;
-  --accent-glow: rgba(45, 212, 191, 0.25);
-  --accent-border: rgba(45, 212, 191, 0.35);
+  --accent: #0284c7;
+  --accent-light: #38bdf8;
+  --accent-glow: rgba(2, 132, 199, 0.25);
+  --accent-border: rgba(2, 132, 199, 0.35);
 
-  /* Backgrounds & Glass Surfaces */
-  --bg-main: #060913;
-  --bg-card: rgba(255, 255, 255, 0.04);
-  --bg-card-hover: rgba(255, 255, 255, 0.06);
-  --bg-card-subtle: rgba(255, 255, 255, 0.02);
-  --bg-card-glass: rgba(11, 19, 41, 0.75);
-  --bg-header: rgba(11, 19, 41, 0.82);
+  /* Backgrounds & Glass Surfaces - Samtiger Schiefer & Dunkelblau */
+  --bg-main: #0b1120;
+  --bg-card: rgba(30, 41, 59, 0.65);
+  --bg-card-hover: rgba(30, 41, 59, 0.85);
+  --bg-card-subtle: rgba(15, 23, 42, 0.6);
+  --bg-card-glass: rgba(15, 23, 42, 0.88);
+  --bg-header: rgba(15, 23, 42, 0.92);
 
   /* Glass Borders */
-  --border: rgba(255, 255, 255, 0.10);
-  --border-hover: rgba(255, 255, 255, 0.20);
-  --border-focus: rgba(56, 189, 248, 0.50);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --border-focus: rgba(37, 99, 235, 0.50);
 
   /* Typography */
   --text-main: #f8fafc;
@@ -38,21 +38,21 @@
   --text-light: #64748b;
 
   /* Status Colors */
-  --success: #4ade80;
-  --success-bg: rgba(74, 222, 128, 0.12);
-  --success-border: rgba(74, 222, 128, 0.30);
+  --success: #059669;
+  --success-bg: rgba(5, 150, 105, 0.12);
+  --success-border: rgba(5, 150, 105, 0.30);
 
-  --warning: #fbbf24;
-  --warning-bg: rgba(251, 191, 36, 0.12);
-  --warning-border: rgba(251, 191, 36, 0.30);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.12);
+  --warning-border: rgba(217, 119, 6, 0.30);
 
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.12);
-  --danger-border: rgba(248, 113, 113, 0.30);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.12);
+  --danger-border: rgba(220, 38, 38, 0.30);
 
-  --info: #38bdf8;
-  --info-bg: rgba(56, 189, 248, 0.12);
-  --info-border: rgba(56, 189, 248, 0.30);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.12);
+  --info-border: rgba(37, 99, 235, 0.30);
 
   /* Shadows */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -1561,16 +1561,16 @@ body:not(.theme-light) span.badge-pill[style*="background: #f1f5f9"] {
    ========================================================================== */
 html.theme-light,
 body.theme-light {
-  --bg-main: #edf2f7;
+  --bg-main: #f1f5f9;
   --bg-card: #ffffff;
   --bg-card-hover: #ffffff;
   --bg-card-subtle: #f8fafc;
-  --bg-card-glass: rgba(255, 255, 255, 0.96);
-  --bg-header: rgba(243, 246, 251, 0.94);
+  --bg-card-glass: rgba(255, 255, 255, 0.98);
+  --bg-header: rgba(248, 250, 252, 0.96);
 
   --border: rgba(203, 213, 225, 0.85);
   --border-hover: rgba(148, 163, 184, 0.9);
-  --border-focus: rgba(2, 132, 199, 0.5);
+  --border-focus: rgba(37, 99, 235, 0.5);
 
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -1588,12 +1588,12 @@ body.theme-light {
   --danger-bg: rgba(220, 38, 38, 0.1);
   --danger-border: rgba(220, 38, 38, 0.25);
 
-  --info: #0284c7;
-  --info-bg: rgba(2, 132, 199, 0.1);
-  --info-border: rgba(2, 132, 199, 0.25);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.1);
+  --info-border: rgba(37, 99, 235, 0.25);
 
-  /* Augenschonender, feiner Pastell-Hintergrundverlauf (Soft Warm Slate & Cloud Tint) */
-  background: linear-gradient(135deg, #eef2f7 0%, #e5ecf4 50%, #e0e8f2 100%) !important;
+  /* Augenschonender, extrem ruhiger Papier-/Schieferverlauf für Tag- und Beamerbetrieb */
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
   background-attachment: fixed !important;
   color: #0f172a !important;
 }
