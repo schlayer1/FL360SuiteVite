@@ -1,0 +1,76 @@
+/* Integration bestehender Designsystem-Dateien */
+@import '../../css/style.css';
+@import '../../css/niederschrift.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   THÜRINGEN SLATE & INDIGO MODERN OVERRIDES (VITE EDITION)
+   ========================================================================== */
+
+:root {
+  /* Professionelle State & Accent Tokens */
+  --fl-brand-navy: #0f172a;
+  --fl-brand-surface: #1e293b;
+  --fl-brand-accent: #2563eb;
+  --fl-brand-accent-hover: #1d4ed8;
+  --fl-brand-accent-light: #dbeafe;
+  --fl-border-soft: rgba(255, 255, 255, 0.08);
+  --fl-border-subtle: rgba(255, 255, 255, 0.04);
+}
+
+/* Subtiles Card Polishing */
+.card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Storage Badge im Footer */
+.storage-resilience-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.storage-resilience-badge.persisted {
+  background: rgba(5, 150, 105, 0.12);
+  color: #34d399;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+/* Backup Sentinel Banner */
+.backup-sentinel-banner {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  border-left: 4px solid #d97706;
+  border-radius: 12px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  animation: slideDownFade 0.3s ease;
+}
+
+body.theme-light .backup-sentinel-banner {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: #d97706;
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

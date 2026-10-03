@@ -1,110 +1,232 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Fachleiter 360° Suite Pro | Thüringer Ausbildungs- &amp; Prüfungsmanagement</title>
 
-  <!-- Google Fonts & External Libraries -->
+  <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Chart.js, PDFLib & PDF.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Stylesheets & Vite Entry -->
+  <script type="module" src="/src/main.js"></script>
+
+  <!-- Early Theme Detection to prevent FOUC -->
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('fachleiter_theme');
+        if (saved === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('theme-light');
+        }
+      } catch(e) {}
+    })();
+  </script>
 
   <!-- PWA & Mobile Meta Tags -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#1e3a8a" />
+  <meta name="theme-color" content="#0b1329" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fachleiter 360°" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
   <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg" />
-
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/niederschrift.css" />
 </head>
-<body>
+<body class="bg-gradient-to-br from-slate-950 via-[#0b1329] to-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
 
 <!-- APPLICATION HEADER -->
-<header>
-  <div class="logo-group">
-    <div class="logo-icon">⚖️</div>
+<header class="sticky top-0 z-50 backdrop-blur-2xl bg-slate-950/75 border-b border-white/10 px-4 lg:px-6 py-3 shadow-2xl">
+  <div class="logo-group flex items-center gap-3">
+    <div class="logo-icon w-10 h-10 rounded-xl overflow-hidden border border-cyan-500/35 shadow-[0_0_15px_rgba(56,189,248,0.25)] flex items-center justify-center shrink-0">
+      <img src="icons/logo-sts-gera.jpg" alt="Fachleiter 360° Suite Logo" class="w-full h-full object-cover" />
+    </div>
     <div>
-      <h1>Fachleiter 360° Suite <span class="logo-badge">PRO v6.0</span></h1>
-      <div style="font-size:0.7rem; color:rgba(255,255,255,0.7); margin-top:-2px;">ThürAZStPLVO • Seminar &amp; Staatsprüfung</div>
+      <h1 class="text-base font-bold tracking-tight text-white leading-tight">
+        Fachleiter 360° Suite
+      </h1>
+      <div class="header-subtitle text-[0.72rem] text-slate-400 tracking-wide font-medium">digitale Anwärterverwaltung</div>
     </div>
   </div>
 
+  <!-- Dynamic Breadcrumb Navigation (Idee 7) -->
+  <nav id="headerBreadcrumb" class="header-breadcrumb hidden lg:inline-flex" aria-label="Brotkrümelnavigation"></nav>
+
   <div class="header-actions">
-    <!-- Active LAA Selector -->
-    <div class="laa-selector-wrap">
+    <!-- Active LAA Selector & Dynamic Phase Badge -->
+    <div class="laa-selector-wrap flex items-center gap-2">
       <select id="laaSelect" class="laa-selector" onchange="handleLAAChange(this.value)">
-        <option value="">➕ Kein Kandidat ausgewählt (+ Profil)</option>
+        <option value="">Kein Kandidat ausgewählt (+ Profil)</option>
       </select>
+      <span id="laaHeaderPhaseBadge" class="header-phase-badge"></span>
     </div>
 
-    <!-- Quick Profile Actions -->
-    <button id="pwaInstallBtn" class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px; border-color:#16a34a; color:#15803d; background:rgba(22,163,74,0.08);" onclick="triggerPWAInstall()" title="Fachleiter 360° Suite als native App auf Mac/iPad/PC installieren">
-      📲 App installieren
+    <!-- Neuer LAA (Primary Action) -->
+    <button class="btn btn-primary" onclick="openAddLAAModal()" title="Neues Kandidatenprofil anlegen">
+      <i data-lucide="user-plus" class="w-4 h-4"></i>
+      <span>+ Neuer LAA</span>
     </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px; border-color:#3b82f6; color:#1d4ed8; background:rgba(59,130,246,0.08);" onclick="openSetupWizard()" title="Einrichtungsassistent starten">
-      🧙‍♂️ Assistent
+
+    <!-- Theme Mode Switcher -->
+    <button id="themeToggleBtn" class="btn btn-outline" onclick="toggleTheme()" title="Design-Modus wechseln (Hell / Dunkel)">
+      <i data-lucide="sun" id="themeToggleIcon" class="w-4 h-4 text-amber-400"></i>
+      <span id="themeToggleText">Hell</span>
     </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="openAddLAAModal()" title="Neues Kandidatenprofil anlegen">
-      ➕ Profil
-    </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="openEditLAAModal()" title="Aktuelles Profil bearbeiten">
-      ✏️ Bearbeiten
-    </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="confirmDeleteLAA()" title="Aktuelles Profil löschen">
-      🗑️
-    </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="loadDemoCandidate()" title="Muster-Lehramtsanwärter 'Maximilian Weber' (Prüfungsphase) laden">
-      🧪 Demo-LAA
-    </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="exportDataJSON()" title="Komplettes Suite-Backup herunterladen">
-      💾 Backup
-    </button>
-    <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="triggerJSONImport()" title="Backup-Datei wiederherstellen">
-      📥 Import
-    </button>
+
+    <!-- Aktionen & Daten Dropdown Popover (Proposal 3) -->
+    <div class="header-dropdown-wrap">
+      <button id="headerActionsBtn" class="btn btn-outline flex items-center gap-2" onclick="toggleHeaderActionsDropdown(event)" title="Aktionen, Verwaltung &amp; Sicherung">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-cyan-400"></i>
+        <span>Aktionen &amp; Daten</span>
+        <i data-lucide="chevron-down" id="headerActionsChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+      </button>
+
+      <div id="headerActionsDropdown" class="header-dropdown-menu" style="display:none;" onclick="event.stopPropagation()">
+        <div class="dropdown-section-title">Kandidaten-Verwaltung</div>
+        <button class="dropdown-item" onclick="openEditLAAModal(); closeHeaderActionsDropdown();" title="Aktuelles Profil bearbeiten">
+          <i data-lucide="pencil" class="w-4 h-4 text-cyan-400"></i>
+          <span>Profil bearbeiten</span>
+        </button>
+        <button class="dropdown-item dropdown-item-danger" onclick="confirmDeleteLAA(); closeHeaderActionsDropdown();" title="Aktuelles Profil löschen">
+          <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i>
+          <span>Profil löschen</span>
+        </button>
+        <button class="dropdown-item" onclick="loadDemoCandidate(); closeHeaderActionsDropdown();" title="Muster-Lehramtsanwärter 'Maximilian Weber' laden">
+          <i data-lucide="flask-conical" class="w-4 h-4 text-cyan-400"></i>
+          <span>Muster-Kandidat laden (Demo)</span>
+        </button>
+
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-section-title">Daten &amp; Sicherung</div>
+        <button class="dropdown-item" onclick="exportDataJSON(); closeHeaderActionsDropdown();" title="Komplettes Suite-Backup herunterladen">
+          <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+          <span>Backup exportieren (JSON)</span>
+        </button>
+        <button class="dropdown-item" onclick="triggerJSONImport(); closeHeaderActionsDropdown();" title="Backup-Datei wiederherstellen">
+          <i data-lucide="upload" class="w-4 h-4 text-indigo-400"></i>
+          <span>Backup wiederherstellen</span>
+        </button>
+
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-section-title">System &amp; Tools</div>
+        <button class="dropdown-item" onclick="openSetupWizard(); closeHeaderActionsDropdown();" title="Einrichtungsassistent starten">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+          <span>Einrichtungsassistent</span>
+        </button>
+        <button id="pwaInstallBtn" class="dropdown-item" onclick="triggerPWAInstall(); closeHeaderActionsDropdown();" title="Fachleiter 360° Suite als native App auf Mac/iPad/PC installieren">
+          <i data-lucide="smartphone" class="w-4 h-4 text-lime-400"></i>
+          <span>Als App installieren (PWA)</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
-<input type="file" id="importFileInput" accept=".json" onchange="importDataJSON(event)" />
+<input type="file" id="importFileInput" accept=".json" onchange="importDataJSON(event)" style="display:none;" />
 
-<!-- MAIN NAVIGATION TABS -->
+<!-- MAIN NAVIGATION TABS (Proposal 1: Workflow-Zonen) -->
 <nav class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('tab-dashboard')">
-    <span>📊 Dashboard &amp; Profil</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-live')">
-    <span>⏱️ Live-Hospitation</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-niederschrift')">
-    <span>📝 Niederschrift &amp; Entwurf</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-progression')">
-    <span>📈 Progression &amp; Radar</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-seminar')">
-    <span>📚 Seminarplaner</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-reflexion')">
-    <span>🪞 Reflexionsabgleich</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-fristen')">
-    <span>📅 Fristen &amp; Noten</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('tab-gutachten')">
-    <span>📄 Formular-Cockpit</span>
-  </button>
+  <!-- Workflow-Zone 1: Ausbildung & Unterricht (UB-Zyklus) -->
+  <div class="nav-group">
+    <div class="nav-group-title">
+      <i data-lucide="compass" class="w-3 h-3 text-cyan-400"></i>
+      <span>Ausbildung &amp; Unterricht</span>
+    </div>
+    <div class="nav-group-buttons">
+      <button class="tab-btn active" onclick="switchTab('tab-dashboard')">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <span>Dashboard &amp; Profil</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-live')">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span>Live-Hospitation</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-reflexion')">
+        <i data-lucide="git-compare" class="w-4 h-4"></i>
+        <span>Reflexionsabgleich</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-progression')">
+        <i data-lucide="trending-up" class="w-4 h-4"></i>
+        <span>Progression &amp; Radar</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-group-divider"></div>
+
+  <!-- Workflow-Zone 2: Prüfung & Formulare (Staatsprüfung) -->
+  <div class="nav-group">
+    <div class="nav-group-title">
+      <i data-lucide="award" class="w-3 h-3 text-emerald-400"></i>
+      <span>Prüfung &amp; Formulare</span>
+    </div>
+    <div class="nav-group-buttons">
+      <button class="tab-btn" onclick="switchTab('tab-niederschrift')">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        <span>Niederschrift &amp; Entwurf</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-fristen')">
+        <i data-lucide="calendar" class="w-4 h-4"></i>
+        <span>Fristen &amp; Noten</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('tab-gutachten')">
+        <i data-lucide="files" class="w-4 h-4"></i>
+        <span>Formular-Cockpit</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-group-divider"></div>
+
+  <!-- Workflow-Zone 3: Seminar & Gruppe -->
+  <div class="nav-group">
+    <div class="nav-group-title">
+      <i data-lucide="users" class="w-3 h-3 text-indigo-400"></i>
+      <span>Seminar</span>
+    </div>
+    <div class="nav-group-buttons">
+      <button class="tab-btn" onclick="switchTab('tab-seminar')">
+        <i data-lucide="book-open" class="w-4 h-4"></i>
+        <span>Seminarplaner</span>
+      </button>
+    </div>
+  </div>
 </nav>
+
+<!-- LEFT FLOATING QUICK-DOCK (48PX ICON-RAIL) -->
+<aside id="appQuickDock" class="app-quick-dock" aria-label="Schnellzugriff-Dock">
+  <div class="quick-dock-inner">
+    <!-- 1. Live-Hospitation Schnellstart -->
+    <button type="button" class="quick-dock-btn" id="quickDockLiveBtn" onclick="switchTab('tab-live')" title="Live-Hospitation aufrufen">
+      <i data-lucide="play" class="w-4 h-4"></i>
+      <span class="quick-dock-tooltip">Live-Hospitation</span>
+      <span id="quickDockTimerDot" class="quick-dock-dot" style="display:none;"></span>
+    </button>
+    <!-- 2. Schnelles Ziel erfassen -->
+    <button type="button" class="quick-dock-btn" onclick="openAddGoalModal()" title="Zielvereinbarung erfassen">
+      <i data-lucide="target" class="w-4 h-4"></i>
+      <span class="quick-dock-tooltip">Ziel erfassen</span>
+    </button>
+    <!-- 3. Split-Screen Entwurf-Toggle -->
+    <button type="button" class="quick-dock-btn" id="quickDockSplitBtn" onclick="toggleGlobalSplitScreen()" title="Entwurf im Split-Screen umschalten">
+      <i data-lucide="columns-2" class="w-4 h-4"></i>
+      <span class="quick-dock-tooltip">Split-Screen Entwurf</span>
+    </button>
+    <!-- 4. Dashboard Leitstand -->
+    <button type="button" class="quick-dock-btn" onclick="switchTab('tab-dashboard')" title="Dashboard Leitstand">
+      <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+      <span class="quick-dock-tooltip">Dashboard Leitstand</span>
+    </button>
+    <div class="quick-dock-divider"></div>
+    <!-- 5. Einklappen / Minimieren -->
+    <button type="button" class="quick-dock-btn toggle-collapse" onclick="toggleQuickDockCollapse()" title="Dock ein-/ausklappen">
+      <i data-lucide="chevron-left" id="quickDockCollapseIcon" class="w-4 h-4"></i>
+      <span class="quick-dock-tooltip">Dock minimieren</span>
+    </button>
+  </div>
+</aside>
 
 <!-- MAIN APP CONTAINER -->
 <main class="app-container">
@@ -124,6 +246,9 @@
       <!-- Upcoming Appointment Alert Banner -->
       <div id="dashboardUpcomingBanner" class="upcoming-banner" style="display:none;"></div>
 
+      <!-- Ausbildungs-Leitstand Status Hub (Proposal 5) -->
+      <div id="dashboardStatusHub" class="status-hub-container"></div>
+
       <div class="grid-2col">
         <!-- Left Column: Stammdaten & Entwicklungsziele -->
         <div>
@@ -131,10 +256,10 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <span class="card-title">👤 Ausbildungsstammdaten</span>
+                <span class="card-title flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-cyan-400"></i><span>Ausbildungsstammdaten</span></span>
                 <div class="card-subtitle">Offizielle Ausbildungsdaten nach ThürAZStPLVO</div>
               </div>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()">✏️ Ändern</button>
+              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Ändern</span></button>
             </div>
             <div id="dashboardProfileGrid" class="profile-grid"></div>
           </div>
@@ -143,10 +268,10 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <span class="card-title">🎯 Vereinbarte Entwicklungsziele</span>
+                <span class="card-title flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-cyan-400"></i><span>Vereinbarte Entwicklungsziele</span></span>
                 <div class="card-subtitle">Schwerpunkte für nachfolgende Unterrichtsbesuche</div>
               </div>
-              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()">+ Neues Ziel</button>
+              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Neues Ziel</span></button>
             </div>
             <ul id="dashboardGoalsList" class="goal-list"></ul>
           </div>
@@ -158,10 +283,10 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <span class="card-title">🕸️ Aktuelles Kompetenzprofil (6 Dimensionen)</span>
+                <span class="card-title flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i><span>Aktuelles Kompetenzprofil (6 Dimensionen)</span></span>
                 <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
               </div>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')">Verlauf ▶</button>
+              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')"><span>Verlauf</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
             </div>
             <div class="chart-wrapper" style="height:260px;">
               <canvas id="radarCanvasDashboard"></canvas>
@@ -172,10 +297,10 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <span class="card-title">📋 Dokumentierte Unterrichtsbesuche (UBs)</span>
+                <span class="card-title flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4 text-cyan-400"></i><span>Dokumentierte Unterrichtsbesuche (UBs)</span></span>
                 <div class="card-subtitle">Historie &amp; Entwicklung über die Ausbildungsphasen</div>
               </div>
-              <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')">⏱️ Neue Hospitation</button>
+              <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')"><i data-lucide="clock" class="w-3.5 h-3.5"></i><span>Neue Hospitation</span></button>
             </div>
             <div class="table-responsive">
               <table class="standard-table">
@@ -198,12 +323,12 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <span class="card-title">📅 Anstehende Termine &amp; Prüfungen</span>
-                <div class="card-subtitle">Terminierte Hospitationen, Beratungen &amp; Staatsprüfungen</div>
+                <span class="card-title flex items-center gap-2"><i data-lucide="calendar-clock" class="w-4 h-4 text-cyan-400"></i><span>Anstehende Termine &amp; Fristen</span></span>
+                <div class="card-subtitle">Meilensteine aus dem Fristenkalender, Hospitationen &amp; Staatsprüfungen</div>
               </div>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Termine als .ics exportieren">📅 Alle .ics</button>
-                <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()">+ Termin</button>
+                <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Fristen &amp; Termine als .ics exportieren"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>Alle .ics</span></button>
+                <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Termin</span></button>
               </div>
             </div>
             <ul id="dashboardAppointmentsList" class="goal-list"></ul>
@@ -220,67 +345,103 @@
     <div class="card">
       <div class="card-header">
         <div>
-          <span class="card-title">⏱️ Live-Hospitationscockpit</span>
+          <span class="card-title flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-cyan-400"></i><span>Live-Hospitationscockpit</span></span>
           <div class="card-subtitle">Echtzeit-Mitschrift, Phasensteuerung, Kriterien-Schnellbewertung &amp; Diktierfunktion</div>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-outline" onclick="confirmClearLog()">🗑️ Protokoll leeren</button>
-          <button class="btn btn-success" onclick="openFinishVisitModal()">🏁 Hospitation abschließen</button>
+          <button id="btnToggleFocusMode" class="btn btn-outline" onclick="toggleLiveFocusMode()" title="Fokusmodus (blendet Menüs aus für maximale Mitschrift-Fläche)"><i data-lucide="maximize-2" id="focusModeIcon" class="w-4 h-4 text-cyan-400"></i><span id="focusModeText">Fokus-Modus</span></button>
+          <button class="btn btn-outline" onclick="confirmClearLog()"><i data-lucide="trash-2" class="w-4 h-4"></i><span>Protokoll leeren</span></button>
+          <button class="btn btn-success" onclick="openFinishVisitModal()"><i data-lucide="check-circle-2" class="w-4 h-4"></i><span>Hospitation abschließen</span></button>
         </div>
       </div>
+
+      <!-- Active Goal Reminder Banner (Proposal 4) -->
+      <div id="liveActiveGoalBanner" class="live-goal-banner" style="display:none;"></div>
 
       <!-- Live Timer & Phase Banner -->
       <div class="timer-banner">
         <div style="display:flex; align-items:center; gap:14px;">
           <div id="liveTimerDisplay" class="timer-display">00:00</div>
           <div style="display:flex; gap:6px;">
-            <button id="btnToggleTimer" class="btn btn-primary" onclick="toggleTimer()">▶ Start</button>
-            <button class="btn btn-outline" onclick="resetTimer()">↺ Reset</button>
+            <button id="btnToggleTimer" class="btn btn-primary" onclick="toggleTimer()"><i data-lucide="play" class="w-4 h-4"></i><span>Start</span></button>
+            <button class="btn btn-outline" onclick="resetTimer()"><i data-lucide="rotate-ccw" class="w-4 h-4"></i><span>Reset</span></button>
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:10px;">
-          <label style="font-size:0.82rem; font-weight:700;">Unterrichtsphase:</label>
-          <select id="livePhaseSelect" class="phase-select">
-            <option value="Einstieg">Einstieg / Problemaufriss</option>
-            <option value="Erarbeitung" selected>Erarbeitungsphase (EA/PA/GA)</option>
-            <option value="Sicherung">Ergebnissicherung / Tafelbild</option>
-            <option value="Vertiefung">Vertiefung &amp; Transfer</option>
-            <option value="Reflexion">Schüler- &amp; Lernreflexion</option>
-          </select>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:0.82rem; font-weight:700;">Phase:</label>
+            <select id="livePhaseSelect" class="phase-select" onchange="handlePhaseSelectChange(this.value)">
+              <option value="Einstieg">Einstieg / Problemaufriss</option>
+              <option value="Erarbeitung" selected>Erarbeitungsphase (EA/PA/GA)</option>
+              <option value="Sicherung">Ergebnissicherung / Tafelbild</option>
+              <option value="Vertiefung">Vertiefung &amp; Transfer</option>
+              <option value="Reflexion">Schüler- &amp; Lernreflexion</option>
+            </select>
+          </div>
+          <!-- 1-Click Quick Phase Pills (Proposal 4) -->
+          <div class="quick-phase-pills">
+            <button type="button" class="phase-pill-btn" data-phase="Einstieg" onclick="quickSwitchPhase('Einstieg')">Einstieg</button>
+            <button type="button" class="phase-pill-btn active" data-phase="Erarbeitung" onclick="quickSwitchPhase('Erarbeitung')">Erarbeitung</button>
+            <button type="button" class="phase-pill-btn" data-phase="Sicherung" onclick="quickSwitchPhase('Sicherung')">Sicherung</button>
+            <button type="button" class="phase-pill-btn" data-phase="Vertiefung" onclick="quickSwitchPhase('Vertiefung')">Vertiefung</button>
+            <button type="button" class="phase-pill-btn" data-phase="Reflexion" onclick="quickSwitchPhase('Reflexion')">Reflexion</button>
+          </div>
         </div>
       </div>
 
       <!-- Kriterien-Schnellbewertung (1-5 Buttons) -->
       <div style="margin-bottom:12px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
-        🎯 Kriterien-Schnellbewertung während des Unterrichts:
+        <span class="inline-flex items-center gap-1.5"><i data-lucide="target" class="w-4 h-4 text-cyan-400"></i> Kriterien-Schnellbewertung während des Unterrichts:</span>
       </div>
       <div id="liveCriteriaGrid" class="criteria-grid"></div>
 
-      <!-- Textbaustein-Schnellklicker (Phrasen) -->
-      <div style="margin-bottom:8px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
-        ⚡ Formulierungshilfen &amp; Phrasen-Baukasten (Klick fügt ein):
+      <!-- Textbaustein-Schnellklicker (Kategorisierte Phrasen nach Kriterien) -->
+      <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;" class="inline-flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+          <span>Formulierungshilfen &amp; Phrasen-Baukasten:</span>
+        </span>
       </div>
-      <div class="phrase-tags">
-        <button type="button" class="tag-btn" onclick="insertPhrase('Problemorientierter Einstieg mit hohem Alltagsbezug.')">+ Problemorientierter Einstieg</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Strukturierte Arbeitsanweisung mit klarem Zeithorizont.')">+ Klare Zeitvorgabe</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Differenzierte Aufgabenstellungen unterstützen lernschwächere SuS.')">+ Differenzierung</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Wartezeit nach Impulsfragen konsequent einhalten (>3 Sek.).')">+ Wartezeit einhalten</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Kognitive Aktivierung gelingt durch offene Impulsfragen.')">+ Kognitive Aktivierung</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Übersichtliches, lesbares und strukturiertes Tafelbild.')">+ Strukturiertes Tafelbild</button>
-        <button type="button" class="tag-btn" onclick="insertPhrase('Souveräne Klassenführung und hohe Präsenz im Raum.')">+ Hohe Präsenz</button>
-      </div>
+      
+      <!-- Category Filter Tabs (6 Kriterien) -->
+      <div id="livePhraseCategories" class="phrase-categories"></div>
 
-      <!-- Live Note Input with Speech-to-Text -->
+      <!-- Phrase Tags Container -->
+      <div id="livePhraseTags" class="phrase-tags" style="margin-bottom:14px;"></div>
+
+      <!-- Live Note Input with Auto-Resize Textarea & Speech-to-Text -->
       <div class="note-input-group">
-        <input id="liveNoteInput" class="note-input" placeholder="Beobachtung tippen oder einsprechen (Enter zum Absenden)..." onkeydown="if(event.key==='Enter') addLiveNote()" />
-        <button id="btnLiveMic" class="btn btn-mic" onclick="toggleDictation()" title="Spracheingabe starten/stoppen">🎤 Diktieren</button>
-        <button class="btn btn-primary" onclick="addLiveNote()">➕ Protokollieren</button>
+        <textarea 
+          id="liveNoteInput" 
+          class="note-input" 
+          rows="2"
+          placeholder="Beobachtung tippen oder per Diktierfunktion einsprechen (Enter zum Protokollieren, Shift+Enter für Zeilenumbruch)..." 
+          oninput="autoResizeLiveNote(this)"
+          onkeydown="handleLiveNoteKeydown(event)"
+        ></textarea>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
+            <span class="inline-flex items-center gap-1"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Enter</kbd> Protokollieren</span>
+            <span class="inline-flex items-center gap-1"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Shift + Enter</kbd> Neue Zeile</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button id="btnLiveMic" type="button" class="btn btn-mic" onclick="toggleDictation()" title="Spracheingabe starten/stoppen">
+              <i data-lucide="mic" class="w-4 h-4"></i>
+              <span>Diktieren</span>
+            </button>
+            <button type="button" class="btn btn-primary" onclick="addLiveNote()" style="padding:0 20px; min-height:38px;">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Protokollieren</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Live Log Stream -->
       <div style="margin-bottom:8px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
-        📜 Live-Protokollstrom (Zeitstempel &amp; Phasen):
+        <span class="inline-flex items-center gap-1.5"><i data-lucide="scroll" class="w-4 h-4 text-cyan-400"></i> Live-Protokollstrom (Zeitstempel &amp; Phasen):</span>
       </div>
       <div id="liveLogStream" class="log-container"></div>
     </div>
@@ -292,59 +453,63 @@
   <div id="tab-niederschrift" class="tab-content">
     
     <!-- Top Header Bar (High-Contrast Navy Card) -->
-    <div class="card" style="padding:16px 20px; background:#1e293b; color:#ffffff; border:none; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+    <div class="card" style="padding:16px 20px; background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.1); margin-bottom:16px;">
       <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px;">
-          <span style="font-size:1.8rem;">🎓</span>
+          <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(56,189,248,0.2)]">
+            <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+          </div>
           <div>
-            <h2 style="font-size:1.15rem; font-weight:700; color:#f8fafc; margin:0;">Prüfungs-Niederschrift &amp; Bewertungsraster</h2>
-            <div style="font-size:0.75rem; color:#94a3b8;">Thüringer 15-Punkte-System • Amtliche Deskriptoren nach ThürAZStPLVO</div>
+            <h2 class="card-title" style="font-size:1.15rem; font-weight:700; margin:0;">Prüfungs-Niederschrift &amp; Bewertungsraster</h2>
+            <div class="card-subtitle" style="font-size:0.75rem;">Thüringer 15-Punkte-System • Amtliche Deskriptoren nach ThürAZStPLVO</div>
           </div>
         </div>
 
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <!-- Exam Type Selector -->
           <div style="display:flex; align-items:center; gap:6px;">
-            <label style="font-size:0.78rem; font-weight:600; color:#cbd5e1;">Prüfungsart:</label>
-            <select id="nsActiveExamSelect" class="phase-select" style="background:#334155; color:#ffffff; border:1px solid #64748b; font-size:0.84rem; padding:6px 12px; border-radius:6px;" onchange="nsChangeActiveExam(this.value)">
+            <label style="font-size:0.78rem; font-weight:600; color:var(--text-muted);">Prüfungsart:</label>
+            <select id="nsActiveExamSelect" class="phase-select" style="font-size:0.84rem; padding:6px 12px; border-radius:6px;" onchange="nsChangeActiveExam(this.value)">
               <option value="praktisch">Praktische Prüfung (Lehrprobe)</option>
               <option value="muendlich">Mündliche Prüfung</option>
             </select>
           </div>
 
           <!-- Total Average Badge (15-Punkte System) -->
-          <div id="nsTotalAverageBadge" style="background:#0f172a; border:1px solid #3b82f6; color:#38bdf8; padding:6px 16px; border-radius:20px; font-weight:700; font-size:0.9rem; display:flex; align-items:center; gap:6px;">
-            <span>Gesamt-Ø:</span>
-            <span id="nsTotalAverageVal" style="font-size:1.05rem; color:#38bdf8;">–</span>
+          <div id="nsTotalAverageBadge" class="ns-total-average-badge">
+            <span style="opacity:0.85;">Gesamt-Ø:</span>
+            <span id="nsTotalAverageVal" class="font-mono tabular-nums font-bold" style="font-size:1.05rem;">–</span>
           </div>
 
           <button class="ns-btn-action-dark" onclick="nsToggleProfileView()" id="btnNsProfile">
-            📊 Auswertungsprofil
+            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            <span>Auswertungsprofil</span>
           </button>
           <button class="ns-btn-reset-dark" onclick="nsResetAllConfirm()" title="Alles zurücksetzen">
-            🗑️ Reset
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Reset</span>
           </button>
         </div>
       </div>
 
       <!-- Candidate Metadata Bar with Gender/Type & Lückenfinder controls -->
-      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:#0f172a; border:1px solid #334155; padding:10px 14px; border-radius:8px; margin-top:12px; font-size:0.82rem;">
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); padding:10px 14px; border-radius:8px; margin-top:12px; font-size:0.82rem;">
         <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
           <div>
-            <span style="color:#94a3b8;">Kandidat/in:</span>
-            <strong id="nsExamineeNameDisplay" style="color:#f8fafc; margin-left:4px;">-</strong>
+            <span style="color:var(--text-muted);">Kandidat/in:</span>
+            <strong id="nsExamineeNameDisplay" style="margin-left:4px;">-</strong>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="color:#94a3b8;">Status:</span>
-            <select id="nsExamineeTypeSelect" class="phase-select" style="background:#1e293b; color:#93c5fd; border:1px solid #3b82f6; font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleTypeChange(this.value)">
+            <span style="color:var(--text-muted);">Status:</span>
+            <select id="nsExamineeTypeSelect" class="phase-select" style="font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleTypeChange(this.value)">
               <option value="laa">Lehramtsanwärter/in (LAA)</option>
               <option value="quereinsteiger">Quereinsteiger/in</option>
               <option value="anwaerter">Anwärter/in</option>
             </select>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="color:#94a3b8;">Geschlecht:</span>
-            <select id="nsExamineeGenderSelect" class="phase-select" style="background:#1e293b; color:#f8fafc; border:1px solid #64748b; font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleGenderChange(this.value)">
+            <span style="color:var(--text-muted);">Geschlecht:</span>
+            <select id="nsExamineeGenderSelect" class="phase-select" style="font-size:0.78rem; padding:3px 8px; border-radius:4px;" onchange="nsHandleGenderChange(this.value)">
               <option value="f">Weiblich (Frau)</option>
               <option value="m">Männlich (Herr)</option>
             </select>
@@ -353,25 +518,30 @@
 
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <button id="nsBtnGapFinder" class="ns-btn-gapfinder inactive" onclick="nsToggleGapFinder()" title="Klappt alle vollständig bepunkteten Bereiche ein, um fehlende Bepunktungen sofort zu sehen">
-            🔍 Lücken-Finder: AUS
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>Lücken-Finder: AUS</span>
           </button>
-          <span class="badge-pill" style="background:#065f46; color:#a7f3d0; font-weight:700;">Live-Erfassung aktiv</span>
+          <span class="badge-pill badge-neon-success font-bold">Live-Erfassung aktiv</span>
         </div>
       </div>
 
       <!-- 4 Chronological Sub-Tabs Navigation (Entwurf, Mitschrift, Raster, Editor) -->
-      <div style="display:flex; gap:6px; margin-top:14px; background:#0f172a; padding:6px; border-radius:8px; border:1px solid #334155; flex-wrap:wrap;">
+      <div style="display:flex; gap:6px; margin-top:14px; background:rgba(0,0,0,0.3); padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); flex-wrap:wrap;">
         <button class="ns-btn-subnav" id="btnNsTabEntwurf" onclick="nsSwitchTab('entwurf', this)">
-          📑 1. Entwurfs-Begutachtung &amp; PDF
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>1. Entwurfs-Begutachtung &amp; PDF</span>
         </button>
         <button class="ns-btn-subnav" id="btnNsTabProtokoll" onclick="nsSwitchTab('protokoll', this)">
-          ⏱️ 2. Mitschrift &amp; Beobachtung
+          <i data-lucide="clock" class="w-4 h-4"></i>
+          <span>2. Mitschrift &amp; Beobachtung</span>
         </button>
         <button class="ns-btn-subnav active" id="btnNsTabRaster" onclick="nsSwitchTab('raster', this)">
-          📊 3. 15-Punkte-Bewertungsraster
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>3. 15-Punkte-Bewertungsraster</span>
         </button>
         <button class="ns-btn-subnav" id="btnNsTabEditor" onclick="nsSwitchTab('editor', this)">
-          📝 4. Niederschrift-Editor (Anhang)
+          <i data-lucide="edit-3" class="w-4 h-4"></i>
+          <span>4. Niederschrift-Editor (Anhang)</span>
         </button>
       </div>
     </div>
@@ -382,10 +552,16 @@
     </div>
 
     <!-- AUSWERTUNGSPROFIL (BAR VISUALIZATION DER KATEGORIEN) -->
-    <div id="nsProfileCard" class="card" style="display:none; background:#ffffff; border:1px solid #cbd5e1; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      <div class="card-header" style="border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-        <span class="card-title" style="font-size:0.92rem; text-transform:uppercase; letter-spacing:0.4px; color:#0f172a;">📊 Auswertungsprofil nach Anforderungen</span>
-        <button class="ns-btn-light" style="padding:2px 8px; min-height:26px;" onclick="nsToggleProfileView()">✕ Schließen</button>
+    <div id="nsProfileCard" class="card" style="display:none; margin-bottom:16px;">
+      <div class="card-header" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+        <span class="card-title flex items-center gap-2 text-xs uppercase tracking-wider text-slate-200">
+          <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+          <span>Auswertungsprofil nach Anforderungen</span>
+        </span>
+        <button class="ns-btn-light" style="padding:2px 8px; min-height:26px;" onclick="nsToggleProfileView()">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          <span>Schließen</span>
+        </button>
       </div>
       <div id="nsProfileBarsContainer" style="display:flex; flex-direction:column; gap:12px; padding-top:12px;"></div>
     </div>
@@ -393,87 +569,155 @@
     <!-- VIEW 1: 15-PUNKTE BEWERTUNGSRASTER (PRIMARY & ACTIVE BY DEFAULT) -->
     <div id="nsView-raster" class="ns-view-pane active">
       
-      <!-- Filter Bar: Alle Anforderungen vs. Einzelkategorie + Lücken-Finder Status -->
-      <div class="card" style="padding:12px 16px; margin-bottom:12px; background:#ffffff; border:1px solid #cbd5e1; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; border-radius:8px;">
+      <!-- Filter Bar: Alle Anforderungen vs. Einzelkategorie + Lücken-Finder Status + Split-Screen Toggle -->
+      <div class="card" style="padding:12px 16px; margin-bottom:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span style="font-size:0.78rem; font-weight:700; color:#64748b; text-transform:uppercase;">🔍 Filter:</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Filter:</span>
+          </span>
           <div id="nsCategoryFilterPillsWrap" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <!-- Split-Screen Toggle Button (Idee 6) -->
+          <button type="button" class="split-toggle-btn" id="btnToggleNsSplit" onclick="toggleNiederschriftSplitScreen()" title="Geteilte Ansicht: PDF-Entwurf links und 15-Punkte-Raster rechts parallel anzeigen">
+            <i data-lucide="columns-2" class="w-4 h-4"></i>
+            <span id="btnToggleNsSplitText">Split-Screen Entwurf</span>
+          </button>
+
           <button class="ns-btn-gapfinder inactive" id="nsBtnGapFinderRaster" onclick="nsToggleGapFinder()">
-            🔍 Lücken-Finder: AUS
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>Lücken-Finder: AUS</span>
           </button>
         </div>
       </div>
 
-      <!-- Legend for the 6 Columns -->
-      <div class="card" style="padding:10px 16px; margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
-        <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Notenstufen &amp; Thüringer Punkteskala:</div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:6px; font-size:0.76rem;">
-          <div style="background:#dcfce7; color:#166534; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">15, 14 Pkt. • Sehr gut</div>
-          <div style="background:#d1fae5; color:#065f46; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">13, 12, 11 Pkt. • Gut</div>
-          <div style="background:#fef9c3; color:#854d0e; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">10, 9, 8 Pkt. • Befriedigend</div>
-          <div style="background:#ffedd5; color:#9a3412; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">7, 6, 5 Pkt. • Ausreichend</div>
-          <div style="background:#fee2e2; color:#991b1b; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">4, 3, 2 Pkt. • Mangelhaft</div>
-          <div style="background:#f1f5f9; color:#475569; padding:5px 8px; border-radius:4px; font-weight:700; text-align:center;">1, 0 Pkt. • Ungenügend</div>
+      <!-- Split-Screen Grid Wrapper (Idee 6) -->
+      <div id="nsSplitGrid" class="split-screen-grid">
+        <!-- LEFT PANE: PDF Unterrichtsentwurf Viewer -->
+        <div id="nsSplitPdfPane" class="split-pane-pdf">
+          <div class="split-pdf-header">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+              <strong style="font-size:0.82rem; color:inherit;">PDF-Unterrichtsentwurf</strong>
+              <span id="nsSplitPdfNameBadge" class="badge-pill" style="font-size:0.7rem; font-family:monospace; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Kein PDF</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
+                <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
+              </button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="prevPdfPage()" title="Zurück"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+              <span id="nsSplitPdfPageIndicator" style="font-size:0.72rem; font-weight:700; color:var(--text-muted); min-width:40px; text-align:center;">1 / 1</span>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="nextPdfPage()" title="Weiter"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+          <div class="split-pdf-viewer" id="nsSplitPdfViewerContainer">
+            <div id="nsSplitPdfPlaceholder" style="text-align:center; padding:40px 16px; color:var(--text-muted);">
+              <div style="margin-bottom:8px; display:flex; justify-content:center;"><i data-lucide="file-text" class="w-12 h-12 text-slate-500 opacity-50"></i></div>
+              <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="font-size:0.78rem; padding:4px 12px;" onclick="triggerPdfUpload()"><i data-lucide="upload" class="w-3.5 h-3.5 inline mr-1"></i> PDF auswählen</button>
+                <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 12px;" onclick="loadSampleLessonPlanPdf()"><i data-lucide="sparkles" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i> Muster-Entwurf laden</button>
+              </div>
+            </div>
+            <canvas id="nsSplitPdfCanvas" style="display:none; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
+          </div>
+        </div>
+
+        <!-- RIGHT PANE: 15-PUNKTE BEWERTUNGSRASTER -->
+        <div id="nsSplitRasterPane" style="width:100%; min-width:0;">
+          <!-- Legend for the 6 Columns (Smart-Tonal Colors) -->
+          <div class="card" style="padding:10px 16px; margin-bottom:14px;">
+            <div style="font-size:0.74rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Notenstufen &amp; Thüringer Punkteskala:</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:6px; font-size:0.75rem;">
+              <div style="background:rgba(5,150,105,0.12); color:#059669; border:1px solid rgba(5,150,105,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">15, 14 Pkt. • Sehr gut</div>
+              <div style="background:rgba(2,132,199,0.12); color:#0284c7; border:1px solid rgba(2,132,199,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">13, 12, 11 Pkt. • Gut</div>
+              <div style="background:rgba(217,119,6,0.12); color:#d97706; border:1px solid rgba(217,119,6,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">10, 9, 8 Pkt. • Befriedigend</div>
+              <div style="background:rgba(234,88,12,0.12); color:#ea580c; border:1px solid rgba(234,88,12,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">7, 6, 5 Pkt. • Ausreichend</div>
+              <div style="background:rgba(220,38,38,0.12); color:#dc2626; border:1px solid rgba(220,38,38,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">4, 3, 2 Pkt. • Mangelhaft</div>
+              <div style="background:rgba(100,116,139,0.12); color:#64748b; border:1px solid rgba(100,116,139,0.3); padding:5px 8px; border-radius:6px; font-weight:700; text-align:center;">1, 0 Pkt. • Ungenügend</div>
+            </div>
+          </div>
+
+          <div id="nsCategoriesRasterContainer"></div>
         </div>
       </div>
-
-      <div id="nsCategoriesRasterContainer"></div>
     </div>
 
     <!-- VIEW 2: MITSCHRIFT & PROTOKOLL -->
     <div id="nsView-protokoll" class="ns-view-pane" style="display:none;">
-      <div class="card" style="background:#ffffff; border:1px solid #cbd5e1;">
-        <div class="timer-banner" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
+      <div class="card">
+        <div class="timer-banner" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
           <div style="display:flex; align-items:center; gap:12px;">
-            <div class="timer-display" id="nsTimerDisplay" style="font-size:1.8rem; font-family:monospace; font-weight:800; color:#0f172a;">00:00</div>
-            <button class="btn btn-primary" id="btnNsTimerToggle" style="padding:6px 14px; font-weight:700;" onclick="nsToggleTimer()">▶ Start</button>
-            <button class="ns-btn-light" onclick="nsResetTimer()">↺ Reset</button>
+            <div class="timer-display" id="nsTimerDisplay" style="font-size:1.8rem; font-family:monospace; font-weight:800; color:#38bdf8;">00:00</div>
+            <button class="btn btn-primary" id="btnNsTimerToggle" style="padding:6px 14px; font-weight:700;" onclick="nsToggleTimer()">
+              <i data-lucide="play" class="w-4 h-4"></i>
+              <span>Start</span>
+            </button>
+            <button class="ns-btn-light" onclick="nsResetTimer()">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Reset</span>
+            </button>
           </div>
-          <div style="font-size:0.82rem; color:#64748b;">
+          <div style="font-size:0.82rem; color:#94a3b8;">
             Kategorien anklicken, um die Notiz direkt zuzuordnen:
           </div>
         </div>
 
         <!-- Tag Selection Chips -->
         <div style="margin-bottom:12px;">
-          <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px;">Anforderungs-Tags:</div>
+          <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Anforderungs-Tags:</div>
           <div id="nsCategoryTagsWrap" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
         </div>
 
         <div class="note-input-group" style="display:flex; gap:8px; flex-wrap:wrap;">
-          <input type="text" id="nsNoteInput" class="note-input" style="flex:1; min-width:260px; padding:10px 14px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.88rem; outline:none;" placeholder="Beobachtung eintragen und [Enter] drücken..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); nsAddProtocolEntry();}">
-          <button class="btn btn-primary" style="padding:8px 16px; font-weight:700;" onclick="nsAddProtocolEntry()">+ Notiz erfassen</button>
-          <button id="btnNsDictate" class="btn btn-mic" onclick="nsToggleDictation()" title="Spracheingabe / Diktat">🎤 Diktat</button>
+          <input type="text" id="nsNoteInput" class="note-input" style="flex:1; min-width:260px;" placeholder="Beobachtung eintragen und [Enter] drücken..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); nsAddProtocolEntry();}">
+          <button class="btn btn-primary" style="padding:8px 16px; font-weight:700;" onclick="nsAddProtocolEntry()">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Notiz erfassen</span>
+          </button>
+          <button id="btnNsDictate" class="btn btn-mic" onclick="nsToggleDictation()" title="Spracheingabe / Diktat">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+            <span>Diktat</span>
+          </button>
         </div>
 
         <div class="card-header" style="margin-top:16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-          <span class="card-title" style="font-size:0.88rem; color:#0f172a;">📜 Protokoll-Stream der Prüfungsstunde:</span>
-          <button class="ns-btn-light" style="font-size:0.75rem; padding:4px 8px; color:#dc2626;" onclick="nsClearLogConfirm()" title="Mitschrift leeren">🗑️ Leeren</button>
+          <span class="card-title flex items-center gap-2 text-sm text-slate-200">
+            <i data-lucide="list" class="w-4 h-4 text-cyan-400"></i>
+            <span>Protokoll-Stream der Prüfungsstunde:</span>
+          </span>
+          <button class="ns-btn-light" style="font-size:0.75rem; padding:4px 8px; color:#f87171;" onclick="nsClearLogConfirm()" title="Mitschrift leeren">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Leeren</span>
+          </button>
         </div>
-        <div id="nsProtocolStream" class="log-container" style="max-height:380px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px;"></div>
+        <div id="nsProtocolStream" class="log-container" style="max-height:380px; overflow-y:auto; padding:10px;"></div>
       </div>
     </div>
 
     <!-- VIEW 3: NIEDERSCHRIFT-EDITOR & ANHANG-EXPORT -->
     <div id="nsView-editor" class="ns-view-pane" style="display:none;">
-      <div class="card" style="background:#ffffff; border:1px solid #cbd5e1;">
-        <div class="card-header" style="flex-wrap:wrap; gap:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
+      <div class="card">
+        <div class="card-header" style="flex-wrap:wrap; gap:10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:12px;">
           <div>
-            <span class="card-title" style="font-size:1.05rem; font-weight:700; color:#0f172a;">📝 Fließtext-Niederschrift (Anhang zur Niederschrift)</span>
-            <div class="card-subtitle" style="font-size:0.75rem; color:#64748b;">Wird als eigenständiger Anhang beigefügt und ausgedruckt / exportiert</div>
+            <span class="card-title flex items-center gap-2 text-base font-bold text-slate-100">
+              <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+              <span>Fließtext-Niederschrift (Anhang zur Niederschrift)</span>
+            </span>
+            <div class="card-subtitle" style="font-size:0.75rem; color:#94a3b8;">Wird als eigenständiger Anhang beigefügt und ausgedruckt / exportiert</div>
           </div>
           
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <!-- Font & Size Controls -->
-            <select id="nsEditorFont" class="phase-select" style="font-size:0.8rem; padding:5px 8px; background:#ffffff; color:#1e293b; border:1px solid #cbd5e1; border-radius:6px;" onchange="nsApplyEditorTypography()">
+            <select id="nsEditorFont" class="phase-select" style="font-size:0.8rem; padding:5px 8px;" onchange="nsApplyEditorTypography()">
               <option value="Arial">Arial</option>
               <option value="Times New Roman">Times New Roman</option>
               <option value="Calibri">Calibri</option>
             </select>
-            <select id="nsEditorSize" class="phase-select" style="font-size:0.8rem; padding:5px 8px; background:#ffffff; color:#1e293b; border:1px solid #cbd5e1; border-radius:6px;" onchange="nsApplyEditorTypography()">
+            <select id="nsEditorSize" class="phase-select" style="font-size:0.8rem; padding:5px 8px;" onchange="nsApplyEditorTypography()">
               <option value="10pt">10 pt</option>
               <option value="11pt" selected>11 pt</option>
               <option value="12pt">12 pt</option>
@@ -481,23 +725,29 @@
             </select>
 
             <button class="ns-btn-light" onclick="nsCopyToClipboard()" id="btnNsCopy">
-              📋 Kopieren
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Kopieren</span>
             </button>
             <button class="btn btn-primary" style="font-size:0.8rem; padding:6px 14px; font-weight:700;" onclick="nsExportWordRTF()">
-              📄 Word-Export (.rtf)
+              <i data-lucide="file-down" class="w-4 h-4"></i>
+              <span>Word-Export (.rtf)</span>
             </button>
             <button class="ns-btn-light" onclick="nsPrintEditorText()">
-              🖨️ Drucken
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>Drucken</span>
             </button>
           </div>
         </div>
 
-        <div id="nsBackupRestoreBanner" style="display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:8px 12px; margin-bottom:10px; justify-content:space-between; align-items:center; font-size:0.8rem;">
-          <span style="color:#92400e; font-weight:600;">⚠️ Es gibt gesicherte manuelle Textanpassungen.</span>
+        <div id="nsBackupRestoreBanner" style="display:none; background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); border-radius:6px; padding:8px 12px; margin-bottom:10px; justify-content:space-between; align-items:center; font-size:0.8rem;">
+          <span class="text-amber-300 font-semibold flex items-center gap-1.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+            <span>Es gibt gesicherte manuelle Textanpassungen.</span>
+          </span>
           <button class="ns-btn-light" style="font-size:0.75rem; padding:2px 8px;" onclick="nsRestoreBackupText()">Backup wiederherstellen</button>
         </div>
 
-        <textarea id="nsEditableTextarea" style="width:100%; height:480px; padding:16px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; font-family:Arial, sans-serif; font-size:11pt; line-height:1.6; outline:none; resize:vertical;" oninput="nsHandleManualTextInput(this.value)"></textarea>
+        <textarea id="nsEditableTextarea" style="width:100%; height:480px; padding:16px; background:rgba(0,0,0,0.25); color:#f8fafc; border:1px solid rgba(255,255,255,0.15); border-radius:8px; font-family:Arial, sans-serif; font-size:11pt; line-height:1.6; outline:none; resize:vertical;" oninput="nsHandleManualTextInput(this.value)"></textarea>
       </div>
     </div>
 
@@ -510,7 +760,7 @@
     <div class="card">
       <div class="card-header">
         <div>
-          <span class="card-title">📈 Kompetenzprogression über mehrere Unterrichtsbesuche</span>
+          <span class="card-title flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i><span>Kompetenzprogression über mehrere Unterrichtsbesuche</span></span>
           <div class="card-subtitle">Vergleich der 6 Kompetenzdimensionen über Zeitverlauf &amp; UBs</div>
         </div>
         <div style="display:flex; gap:6px;">
@@ -543,7 +793,7 @@
     <div class="card">
       <div class="card-header" style="flex-direction:column; align-items:stretch; gap:12px;">
         <div>
-          <span class="card-title">🪞 Reflexionsabgleich: Selbsteinschätzung vs. Fachleitung</span>
+          <span class="card-title flex items-center gap-2"><i data-lucide="git-compare" class="w-4 h-4 text-cyan-400"></i><span>Reflexionsabgleich: Selbsteinschätzung vs. Fachleitung</span></span>
           <div class="card-subtitle">Erkennen von Wahrnehmungsdiskrepanzen zur gezielten Beratung &amp; Zielvereinbarung</div>
         </div>
         <div id="reflectionHeaderControls"></div>
@@ -565,13 +815,14 @@
     <div style="display:flex; flex-direction:column; gap:20px;">
       <!-- Top Card: Individuell befüllbare Ausbildungsfristen & Seminar-Zeitschiene -->
       <div class="card" style="padding:0; overflow:hidden;">
-        <div style="padding:16px 20px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div class="card-header" style="padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:0;">
           <div>
-            <span class="card-title" style="font-size:1.05rem;">📅 Gesetzliche Ausbildungsfristen &amp; Seminar-Zeitschiene</span>
+            <span class="card-title flex items-center gap-2" style="font-size:1.05rem;"><i data-lucide="calendar" class="w-4 h-4 text-cyan-400"></i><span>Gesetzliche Ausbildungsfristen &amp; Seminar-Zeitschiene</span></span>
             <div class="card-subtitle">Thüringer gesetzliche Richtwerte + Individuell anpassbare Termine für dieses Kandidatenprofil</div>
           </div>
           <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()">
-            📅 Als Kalender (.ics)
+            <i data-lucide="calendar-arrow-down" class="w-4 h-4"></i>
+            <span>Als Kalender (.ics)</span>
           </button>
         </div>
         <div id="deadlinesTableContainer"></div>
@@ -581,7 +832,7 @@
       <div class="card">
         <div class="card-header" style="flex-wrap:wrap; gap:8px;">
           <div>
-            <span class="card-title">🧮 Amtlicher Gesamtergebnis-Rechner</span>
+            <span class="card-title flex items-center gap-2"><i data-lucide="calculator" class="w-4 h-4 text-cyan-400"></i><span>Amtlicher Gesamtergebnis-Rechner</span></span>
             <div class="card-subtitle">Offizielle Gewichtung &amp; Punktesystem für Lehramtsanwärter, Nachqualifizierer und Weiterbildner</div>
           </div>
         </div>
@@ -597,56 +848,108 @@
     <div class="card">
       <div class="card-header" style="flex-wrap:wrap; gap:12px;">
         <div>
-          <span class="card-title">📝 Amtliches Formular-Cockpit &amp; PDF-Ausfüllung</span>
+          <span class="card-title flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i><span>Amtliches Formular-Cockpit &amp; PDF-Ausfüllung</span></span>
           <div class="card-subtitle">8 amtliche Formulare nach ThürAZStPLVO + Ordner-Synchronisation</div>
         </div>
 
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-outline" style="font-size:0.8rem; padding:6px 12px;" onclick="connectLocalFolder()" title="Verbindet einen Ordner auf dem Dienst-Laptop für automatischen PDF-Scan">
-            📁 Ordner verknüpfen
+            <i data-lucide="folder" class="w-4 h-4"></i>
+            <span>Ordner verknüpfen</span>
           </button>
           <button id="btnSyncFolder" class="btn btn-outline" style="display:none; font-size:0.8rem; padding:6px 12px;" onclick="resyncConnectedFolder()" title="Aktualisiert alle PDFs aus dem verknüpften Ordner">
-            🔄 Ordner neu laden
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>Ordner neu laden</span>
           </button>
-          <span id="connectedFolderBadge" class="badge-pill" style="display:none; background:#065f46; color:#a7f3d0; font-size:0.75rem; padding:6px 12px;"></span>
+          <span id="connectedFolderBadge" class="badge-pill badge-neon-success" style="display:none; font-size:0.75rem; padding:6px 12px;"></span>
         </div>
       </div>
 
       <!-- Controls Toolbar -->
-      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:var(--bg-card-subtle); border:1px solid var(--border); padding:12px 16px; border-radius:8px; margin-bottom:16px;">
+      <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); padding:12px 16px; border-radius:12px; margin-bottom:16px;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1; min-width:280px;">
-          <label style="font-weight:700; font-size:0.85rem;">Formular-Vorlage:</label>
+          <label style="font-weight:700; font-size:0.85rem; color:#cbd5e1;">Formular-Vorlage:</label>
           <select id="pdfTemplateSelect" class="phase-select" style="max-width:400px;" onchange="loadPdfTemplate(this.value)"></select>
-          <span id="templateCountBadge" class="badge-pill" style="background:var(--primary-light); color:white;">8 Vorlagen</span>
+          <span id="templateCountBadge" class="badge-pill badge-neon-info">8 Vorlagen</span>
         </div>
 
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <!-- Split-Screen Toggle Button (Idee 6) -->
+          <button type="button" class="split-toggle-btn" id="btnToggleCockpitSplit" onclick="toggleCockpitSplitScreen()" title="Geteilte Ansicht: Unterrichtsentwurf links, Formular F 230 rechts">
+            <i data-lucide="columns-2" class="w-4 h-4"></i>
+            <span id="btnToggleCockpitSplitText">Split-Screen Entwurf</span>
+          </button>
+
           <button class="btn btn-primary" onclick="applyAutofill()">
-            ⚡ Stammdaten übertragen
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>Stammdaten übertragen</span>
           </button>
           <button class="btn btn-outline" onclick="downloadFilledPdf()">
-            💾 PDF speichern
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>PDF speichern</span>
           </button>
           <button class="btn btn-outline" onclick="printFilledPdf()">
-            🖨️ Drucken
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Drucken</span>
           </button>
         </div>
       </div>
 
-      <!-- PDF Canvas View -->
-      <div style="background:#525659; border-radius:8px; padding:20px; display:flex; flex-direction:column; align-items:center; overflow-x:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:800px; color:white; margin-bottom:10px;">
-          <strong id="pdfDocTitle">F 230 • Niederschrift der Prüfungslehrprobe</strong>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem; color:white; background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.4);" onclick="prevPdfPage()">◀ Vorherige</button>
-            <span id="pdfPageIndicator" style="font-size:0.8rem;">Seite 1 von 1</span>
-            <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem; color:white; background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.4);" onclick="nextPdfPage()">Nächste ▶</button>
+      <!-- Split-Screen Grid Wrapper in Formular-Cockpit (Idee 6) -->
+      <div id="cockpitSplitGrid" class="split-screen-grid">
+        <!-- LEFT PANE: Candidate PDF Entwurf Viewer -->
+        <div id="cockpitSplitPdfPane" class="split-pane-pdf">
+          <div class="split-pdf-header">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="file-text" class="w-4 h-4 text-cyan-400"></i>
+              <strong style="font-size:0.82rem; color:inherit;">PDF-Unterrichtsentwurf</strong>
+              <span id="cockpitSplitPdfNameBadge" class="badge-pill" style="font-size:0.7rem; font-family:monospace; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Kein PDF</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
+                <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
+              </button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="prevPdfPage()" title="Zurück"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+              <span id="cockpitSplitPdfPageIndicator" style="font-size:0.72rem; font-weight:700; color:var(--text-muted); min-width:40px; text-align:center;">1 / 1</span>
+              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="nextPdfPage()" title="Weiter"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+          <div class="split-pdf-viewer" id="cockpitSplitPdfViewerContainer">
+            <div id="cockpitSplitPdfPlaceholder" style="text-align:center; padding:40px 16px; color:var(--text-muted);">
+              <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="font-size:0.78rem; padding:4px 12px;" onclick="triggerPdfUpload()"><i data-lucide="upload" class="w-3.5 h-3.5 inline mr-1"></i> PDF auswählen</button>
+                <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 12px;" onclick="loadSampleLessonPlanPdf()"><i data-lucide="sparkles" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i> Muster-Entwurf laden</button>
+              </div>
+            </div>
+            <canvas id="cockpitSplitPdfCanvas" style="display:none; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
           </div>
         </div>
 
-        <div id="pdfPageWrapper" class="pdf-page-container">
-          <canvas id="pdfCanvas"></canvas>
-          <div id="pdfFormLayer" class="pdf-form-layer"></div>
+        <!-- RIGHT PANE: Formular F 230 PDF Canvas View -->
+        <div id="cockpitSplitFormPane" style="width:100%; min-width:0;">
+          <div class="cockpit-form-canvas-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; max-width:800px; color:white; margin-bottom:10px;">
+              <strong id="pdfDocTitle">F 230 • Niederschrift der Prüfungslehrprobe</strong>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem;" onclick="prevPdfPage()">
+                  <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                  <span>Vorherige</span>
+                </button>
+                <span id="pdfPageIndicator" style="font-size:0.8rem; color:#94a3b8;">Seite 1 von 1</span>
+                <button class="btn btn-outline" style="padding:2px 8px; min-height:28px; font-size:0.75rem;" onclick="nextPdfPage()">
+                  <span>Nächste</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="pdfPageWrapper" class="pdf-page-container">
+              <canvas id="pdfCanvas"></canvas>
+              <div id="pdfFormLayer" class="pdf-form-layer"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -662,7 +965,9 @@
   <div class="modal-card">
     <div class="modal-header">
       <h3 id="modalTitle">Modal Titel</h3>
-      <button class="btn btn-ghost btn-icon-only" style="color:white;" onclick="closeModal()">✕</button>
+      <button class="btn btn-ghost btn-icon-only" style="color:white;" onclick="closeModal()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
     </div>
     <div id="modalBody" class="modal-body"></div>
     <div id="modalFooter" class="modal-footer"></div>
@@ -675,10 +980,10 @@
 <!-- PRIVACY & COMPLIANCE FOOTER -->
 <footer class="privacy-footer">
   <div>
-    🔒 <strong>100% Lokale Datenhaltung:</strong> Alle Personen- und Bewertungsdaten verbleiben verschlüsselt auf diesem Dienstgerät. Keine Serverübertragung.
+    <span class="inline-flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-cyan-400"></i><strong>100% Lokale Datenhaltung:</strong></span> Alle Personen- und Bewertungsdaten verbleiben verschlüsselt auf diesem Dienstgerät. Keine Serverübertragung.
   </div>
   <div>
-    Entwickelt für Fachleiterinnen &amp; Fachleiter in Thüringen (ThürAZStPLVO / TMBJS)
+    Entwickelt mit ❤️ für Fachleiterinnen &amp; Fachleiter am StS RS Gera
   </div>
 </footer>
 
@@ -696,6 +1001,81 @@
 <script src="js/niederschrift.js?v=2.0.0"></script>
 <script src="js/pdf_engine.js?v=2.0.0"></script>
 <script src="js/templates_data.js?v=2.0.0"></script>
+
+<script>
+  // Theme Management (Dark & Light Mode)
+  function initTheme() {
+    const saved = localStorage.getItem('fachleiter_theme') || 'dark';
+    applyTheme(saved, false);
+  }
+
+  function toggleTheme() {
+    const isCurrentlyLight = document.body.classList.contains('theme-light') || document.documentElement.classList.contains('theme-light');
+    const targetTheme = isCurrentlyLight ? 'dark' : 'light';
+    applyTheme(targetTheme, true);
+    if (typeof showToast === 'function') {
+      showToast(targetTheme === 'light' ? 'Hellmodus aktiviert' : 'Dunkelmodus aktiviert', targetTheme === 'light' ? 'sun' : 'moon');
+    }
+  }
+
+  function applyTheme(theme, notify) {
+    const isLight = theme === 'light';
+    document.documentElement.classList.toggle('theme-light', isLight);
+    document.documentElement.classList.toggle('dark', !isLight);
+    document.body.classList.toggle('theme-light', isLight);
+    localStorage.setItem('fachleiter_theme', theme);
+
+    const btn = document.getElementById('themeToggleBtn');
+    const icon = document.getElementById('themeToggleIcon');
+    const text = document.getElementById('themeToggleText');
+
+    if (btn && icon && text) {
+      if (isLight) {
+        icon.setAttribute('data-lucide', 'moon');
+        icon.className = 'w-4 h-4 text-indigo-500';
+        text.innerText = 'Dunkel';
+        btn.title = 'Zu Dunkelmodus wechseln';
+      } else {
+        icon.setAttribute('data-lucide', 'sun');
+        icon.className = 'w-4 h-4 text-amber-400';
+        text.innerText = 'Hell';
+        btn.title = 'Zu Hellmodus wechseln';
+      }
+      refreshLucideIcons();
+    }
+
+    // Dynamic Chart color adjustments for radar diagrams
+    if (typeof updateChartsForTheme === 'function') {
+      updateChartsForTheme(theme);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initTheme);
+
+  // Automatic Lucide Icons initializer and dynamic DOM observer
+  function refreshLucideIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  }
+  document.addEventListener('DOMContentLoaded', refreshLucideIcons);
+  window.addEventListener('load', refreshLucideIcons);
+
+  // MutationObserver for continuous icon creation when JS updates dynamic content
+  const lucideObserver = new MutationObserver((mutations) => {
+    let hasAddedNodes = false;
+    for (let i = 0; i < mutations.length; i++) {
+      if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
+        hasAddedNodes = true;
+        break;
+      }
+    }
+    if (hasAddedNodes) {
+      requestAnimationFrame(refreshLucideIcons);
+    }
+  });
+  lucideObserver.observe(document.body, { childList: true, subtree: true });
+</script>
 
 </body>
 </html>

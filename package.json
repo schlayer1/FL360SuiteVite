@@ -1,0 +1,36 @@
+{
+  "name": "fl360suite-vite",
+  "version": "2.1.0",
+  "description": "Fachleiter 360° Suite Pro – Thüringer Ausbildungs- & Prüfungsmanagement für Fachleiterinnen und Fachleiter am Staatlichen Studienseminar Gera",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "fachleiter",
+    "studienseminar",
+    "gera",
+    "thueringen",
+    "laa",
+    "referendariat",
+    "lehrprobe"
+  ],
+  "author": "Fachleiter 360° Team",
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.4.7",
+    "idb-keyval": "^6.2.1",
+    "lucide": "^0.475.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^3.11.174"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.1.0",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}
