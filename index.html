@@ -246,61 +246,47 @@
       <!-- Upcoming Appointment Alert Banner -->
       <div id="dashboardUpcomingBanner" class="upcoming-banner" style="display:none;"></div>
 
+      <!-- Compact Candidate Header Banner (Replaces massive profile grid) -->
+      <div id="dashboardCandidateBanner" class="candidate-summary-banner"></div>
+
       <!-- Ausbildungs-Leitstand Status Hub (Proposal 5) -->
       <div id="dashboardStatusHub" class="status-hub-container"></div>
 
-      <div class="grid-2col">
-        <!-- Left Column: Stammdaten & Entwicklungsziele -->
-        <div>
-          <!-- Stammdaten Card -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <span class="card-title flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-blue-500"></i><span>Ausbildungsstammdaten</span></span>
-                <div class="card-subtitle">Offizielle Ausbildungsdaten nach ThürAZStPLVO</div>
-              </div>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="openEditLAAModal()"><i data-lucide="pencil" class="w-3.5 h-3.5"></i><span>Ändern</span></button>
-            </div>
-            <div id="dashboardProfileGrid" class="profile-grid"></div>
+      <!-- Foldable Kompetenz-Radar Drawer / Card -->
+      <div id="dashboardRadarContainer" class="card radar-collapsible-card" style="margin-bottom: 20px; display: none;">
+        <div class="card-header">
+          <div>
+            <span class="card-title flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-500"></i><span>Aktuelles Kompetenzprofil (6 Dimensionen)</span></span>
+            <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
           </div>
-
-          <!-- Entwicklungsziele Card -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <span class="card-title flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-blue-500"></i><span>Vereinbarte Entwicklungsziele</span></span>
-                <div class="card-subtitle">Schwerpunkte für nachfolgende Unterrichtsbesuche</div>
-              </div>
-              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Neues Ziel</span></button>
-            </div>
-            <ul id="dashboardGoalsList" class="goal-list"></ul>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')"><span>Historischer Verlauf</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            <button class="btn btn-ghost" style="font-size:0.75rem; padding:4px 8px;" onclick="toggleDashboardRadar(false)" title="Kompetenznetz zuklappen"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
+        <div class="chart-wrapper" style="height:250px;">
+          <canvas id="radarCanvasDashboard"></canvas>
+        </div>
+      </div>
 
-        <!-- Right Column: Kompetenz-Radar, UB-Historie & Termine -->
+      <!-- Main Dashboard Grid: Left: Visits History (Core Focus); Right: Goals & Upcoming Appointments -->
+      <div class="grid-2col dashboard-main-grid">
+        <!-- Primary Left Column: Dokumentierte Unterrichtsbesuche mit 1-Klick Beratungsnachweis -->
         <div>
-          <!-- Kompetenzprofil Radar Card -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <span class="card-title flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-blue-500"></i><span>Aktuelles Kompetenzprofil (6 Dimensionen)</span></span>
-                <div class="card-subtitle">Stand aus dem letzten dokumentierten Unterrichtsbesuch</div>
-              </div>
-              <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-progression')"><span>Verlauf</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
-            </div>
-            <div class="chart-wrapper" style="height:260px;">
-              <canvas id="radarCanvasDashboard"></canvas>
-            </div>
-          </div>
-
           <!-- Bisherige Unterrichtsbesuche Table -->
           <div class="card">
             <div class="card-header">
               <div>
                 <span class="card-title flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4 text-blue-500"></i><span>Dokumentierte Unterrichtsbesuche (UBs)</span></span>
-                <div class="card-subtitle">Historie &amp; Entwicklung über die Ausbildungsphasen</div>
+                <div class="card-subtitle">Hospitations-Historie &amp; 1-Klick Beratungsnachweis</div>
               </div>
-              <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')"><i data-lucide="clock" class="w-3.5 h-3.5"></i><span>Neue Hospitation</span></button>
+              <div style="display:flex; gap:6px;">
+                <button id="toggleRadarBtn" class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="toggleDashboardRadar()" title="Kompetenznetz ein-/ausblenden">
+                  <i data-lucide="activity" class="w-3.5 h-3.5 text-blue-400"></i>
+                  <span>Kompetenznetz</span>
+                </button>
+                <button class="btn btn-accent" style="font-size:0.75rem; padding:4px 10px;" onclick="switchTab('tab-live')"><i data-lucide="clock" class="w-3.5 h-3.5"></i><span>Neue Hospitation</span></button>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="standard-table">
@@ -318,16 +304,31 @@
               </table>
             </div>
           </div>
+        </div>
 
-          <!-- Anstehende Termine List -->
+        <!-- Secondary Right Column: Entwicklungsziele & Termine -->
+        <div>
+          <!-- Entwicklungsziele Card -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <div>
+                <span class="card-title flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-blue-500"></i><span>Vereinbarte Entwicklungsziele</span></span>
+                <div class="card-subtitle">Fokus für Beratungsgespräche &amp; Nachbesprechung</div>
+              </div>
+              <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddGoalModal()"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Neues Ziel</span></button>
+            </div>
+            <ul id="dashboardGoalsList" class="goal-list"></ul>
+          </div>
+
+          <!-- Anstehende Termine List mit .ics Export -->
           <div class="card">
             <div class="card-header">
               <div>
                 <span class="card-title flex items-center gap-2"><i data-lucide="calendar-clock" class="w-4 h-4 text-blue-500"></i><span>Anstehende Termine &amp; Fristen</span></span>
-                <div class="card-subtitle">Meilensteine aus dem Fristenkalender, Hospitationen &amp; Staatsprüfungen</div>
+                <div class="card-subtitle">Meilensteine, Hospitationen &amp; Staatsprüfungen</div>
               </div>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Fristen &amp; Termine als .ics exportieren"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>Alle .ics</span></button>
+                <button class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="exportAllAppointmentsICS()" title="Alle Termine als .ics Kalenderdatei exportieren"><i data-lucide="calendar" class="w-3.5 h-3.5"></i><span>.ics Export</span></button>
                 <button class="btn btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openAddAppointmentModal()"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Termin</span></button>
               </div>
             </div>
