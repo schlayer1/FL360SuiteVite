@@ -127,8 +127,19 @@ function updateHeaderPhaseBadge(cur) {
     return;
   }
   const visitsCount = (cur.visits || []).length;
-  const phase = cur.phase || "Hauptphase";
-  badge.innerHTML = `<i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i><span>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>`;
+  const phase = cur.currentPhase || cur.phase || "Hauptphase";
+  const type = cur.type || "LAA";
+  const typeColors = {
+    LAA: "bg-blue-500/20 text-blue-300 border-blue-500/40",
+    NQ: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+    WB: "bg-purple-500/20 text-purple-300 border-purple-500/40"
+  };
+  const typeBadgeClass = typeColors[type] || "bg-slate-500/20 text-slate-300 border-slate-500/40";
+
+  badge.innerHTML = `
+    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[0.7rem] font-bold border ${typeBadgeClass}">${type}</span>
+    <span class="inline-flex items-center text-slate-300"><i data-lucide="compass" class="w-3.5 h-3.5 inline mr-1 text-cyan-400"></i>${phase} • ${visitsCount} UB${visitsCount === 1 ? '' : 's'}</span>
+  `;
   badge.style.display = "inline-flex";
   updateHeaderBreadcrumbs();
   if (window.lucide) lucide.createIcons();
@@ -357,10 +368,18 @@ function handleLAAChange(laaId) {
   appState.selectedLAA = laaId;
   liveSessionFocus = "";
   isEditingLiveFocus = false;
+
+  const targetLAA = appState.laas[laaId];
+  if (targetLAA && targetLAA.type && ['LAA', 'NQ', 'WB'].includes(targetLAA.type)) {
+    if (typeof activeCalcMode !== 'undefined') {
+      activeCalcMode = targetLAA.type;
+    }
+  }
+
   saveState();
-  updateHeaderPhaseBadge(appState.laas[laaId]);
+  updateHeaderPhaseBadge(targetLAA);
   switchTab(activeTabId);
-  showToast(`Profil gewechselt: ${appState.laas[laaId]?.name}`, "👤");
+  showToast(`Profil gewechselt: ${targetLAA?.name}`, "👤");
 }
 
 function openAddLAAModal() {
