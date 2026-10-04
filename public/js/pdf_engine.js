@@ -481,18 +481,18 @@ async function renderPage(pageNum) {
     }
   }
 
-  const pageIndicator = document.getElementById("pdfPageIndicator");
+  const pageIndicator = document.getElementById("pdfFormPageIndicator") || document.getElementById("pdfPageIndicator");
   if (pageIndicator) pageIndicator.innerText = `Seite ${pageNum} von ${totalPages}`;
 }
 
-function prevPdfPage() {
+function prevFormPage() {
   if (currentPage > 1) {
     currentPage--;
     renderPage(currentPage);
   }
 }
 
-function nextPdfPage() {
+function nextFormPage() {
   if (currentPage < totalPages) {
     currentPage++;
     renderPage(currentPage);

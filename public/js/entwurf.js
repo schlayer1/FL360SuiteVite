@@ -166,7 +166,7 @@ function renderEntwurfWorkspace() {
             <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
             <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
             <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="prevPdfPage()" title="Vorherige Seite"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-            <span id="pdfPageIndicator" style="font-size:0.75rem; font-weight:700; color:#94a3b8;">1 / 1</span>
+            <span id="entwurfPdfPageIndicator" style="font-size:0.75rem; font-weight:700; color:#94a3b8;">1 / 1</span>
             <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="nextPdfPage()" title="Nächste Seite"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
@@ -333,12 +333,14 @@ function handleEntwurfPdfSelected(e) {
   reader.readAsArrayBuffer(file);
 }
 
+let activePdfRenderTasks = {};
+
 function renderPdfPage(num) {
   if (!currentPdfDoc) return;
   currentPdfPage = num;
   currentPdfDoc.getPage(num).then(function(page) {
     const targets = [
-      { canvasId: "entwurfPdfCanvas", placeholderId: "pdfPlaceholderNotice", indicatorId: "pdfPageIndicator", badgeId: "entwurfPdfNameBadge" },
+      { canvasId: "entwurfPdfCanvas", placeholderId: "pdfPlaceholderNotice", indicatorId: "entwurfPdfPageIndicator", badgeId: "entwurfPdfNameBadge" },
       { canvasId: "nsSplitPdfCanvas", placeholderId: "nsSplitPdfPlaceholder", indicatorId: "nsSplitPdfPageIndicator", badgeId: "nsSplitPdfNameBadge" },
       { canvasId: "cockpitSplitPdfCanvas", placeholderId: "cockpitSplitPdfPlaceholder", indicatorId: "cockpitSplitPdfPageIndicator", badgeId: "cockpitSplitPdfNameBadge" }
     ];
@@ -359,6 +361,13 @@ function renderPdfPage(num) {
         return;
       }
 
+      // Cancel any existing render task on this canvas before starting a new one
+      if (activePdfRenderTasks[cfg.canvasId]) {
+        try {
+          activePdfRenderTasks[cfg.canvasId].cancel();
+        } catch(e) {}
+      }
+
       const viewport = page.getViewport({ scale: currentPdfScale });
       canvas.height = viewport.height;
       canvas.width = viewport.width;
@@ -370,7 +379,18 @@ function renderPdfPage(num) {
         canvasContext: ctx,
         viewport: viewport
       };
-      page.render(renderContext);
+
+      const renderTask = page.render(renderContext);
+      activePdfRenderTasks[cfg.canvasId] = renderTask;
+      renderTask.promise.then(() => {
+        if (activePdfRenderTasks[cfg.canvasId] === renderTask) {
+          delete activePdfRenderTasks[cfg.canvasId];
+        }
+      }).catch(err => {
+        if (err && err.name !== 'RenderingCancelledException') {
+          console.warn("PDF render notice:", err);
+        }
+      });
     });
   });
 }
@@ -562,6 +582,7 @@ async function loadSampleLessonPlanPdf() {
     const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
     
+    // Seite 1: Deckblatt & Lehrplanbezug
     page.drawText("STAATSSEMINAR FÜR LEHRÄMTER THÜRINGEN", { x: 50, y: 800, size: 9, font: fontBold, color: PDFLib.rgb(0.25, 0.4, 0.55) });
     page.drawText("Schriftlicher Unterrichtsentwurf zur 2. Staatsprüfung", { x: 50, y: 775, size: 15, font: fontBold, color: PDFLib.rgb(0.06, 0.1, 0.2) });
     
@@ -577,20 +598,46 @@ async function loadSampleLessonPlanPdf() {
     page.drawText("• Methodenkompetenz: Quellenkritische Erschließung historischer Flugblätter und Bürgerkomitee-Berichte.", { x: 60, y: 652, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
     page.drawText("• Urteilskompetenz: Reflexion des Wertes von Meinungs- und Demonstrationsfreiheit im Gegenwartsbezug.", { x: 60, y: 634, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
 
-    page.drawText("2. Didaktisch-methodische Verlaufsplanung (45 Min.):", { x: 50, y: 600, size: 11, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
-    page.drawText("00-08 Min | Einstieg: Bildimpuls Nikolaikirche Leipzig & Gebete für den Frieden (Plenum)", { x: 60, y: 580, size: 9, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("08-26 Min | Erarbeitung: Quellenanalyse in Partnerarbeit mit gestuften Hilfekarten (Tandems)", { x: 60, y: 562, size: 9, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("26-38 Min | Sicherung: Synoptische Ergebnissicherung an der Tafel & historische Einordnung", { x: 60, y: 544, size: 9, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("38-45 Min | Transfer & Reflexion: 'Demokratie heute verteidigen' – Blitzlicht im Plenum", { x: 60, y: 526, size: 9, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page.drawText("2. Bedingungs- und Lerngruppenanalyse:", { x: 50, y: 600, size: 11, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
+    page.drawText("Die Klasse 9b besteht aus 24 Lernenden (13w, 11m). Das Vorwissen zur DDR-Geschichte ist heterogen.", { x: 60, y: 580, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page.drawText("Kooperative Lernformen wie Tandem-Arbeit sind etabliert, bedürfen jedoch klarer Zeitstrukturen.", { x: 60, y: 562, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page.drawText("— Seite 1 von 3 (Weiterblättern für Verlaufsplanung & Binnendifferenzierung) —", { x: 120, y: 50, size: 8.5, font, color: PDFLib.rgb(0.5, 0.55, 0.6) });
 
-    page.drawText("3. Binnendifferenzierung, Hilfesystem & Inklusion:", { x: 50, y: 490, size: 11, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
-    page.drawText("• Niveau Basis: Entlastete Textauszüge mit Wortschatz-Erklärungen und Zeilenangaben.", { x: 60, y: 470, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("• Niveau Erweitert: Ungestutzte Zeitzeugenberichte aus der Erfurter Andreasstraße.", { x: 60, y: 452, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("• Zusatzangebot: Vergleich mit aktuellen Bürgerrechtsbewegungen weltweit.", { x: 60, y: 434, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    // Seite 2: Didaktisch-methodische Verlaufsplanung
+    const page2 = pdfDoc.addPage([595.28, 841.89]);
+    page2.drawText("STAATSSEMINAR FÜR LEHRÄMTER THÜRINGEN • SEITE 2", { x: 50, y: 800, size: 9, font: fontBold, color: PDFLib.rgb(0.25, 0.4, 0.55) });
+    page2.drawText("2. Didaktisch-methodische Verlaufsplanung (45 Min.):", { x: 50, y: 765, size: 12, font: fontBold, color: PDFLib.rgb(0.06, 0.1, 0.2) });
+    page2.drawLine({ start: { x: 50, y: 750 }, end: { x: 545, y: 750 }, thickness: 1, color: PDFLib.rgb(0.8, 0.85, 0.9) });
 
-    page.drawText("4. Begründung der didaktischen Schwerpunktsetzung:", { x: 50, y: 395, size: 11, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
-    page.drawText("Die didaktische Reduktion konzentriert sich exemplarisch auf den regionalen Bezug Thüringens.", { x: 60, y: 375, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
-    page.drawText("Der kooperative Ansatz fördert die diskursive Argumentation und multiperspektivische Urteilsbildung.", { x: 60, y: 357, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page2.drawText("00-08 Min | Einstieg: Bildimpuls Nikolaikirche Leipzig & Friedensgebete (Plenum)", { x: 50, y: 720, size: 9.5, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
+    page2.drawText("• Ziel: Emotionaler Problemaufriss und Aktivierung des Vorwissens zu Bürgerprotesten.", { x: 65, y: 704, size: 9, font, color: PDFLib.rgb(0.25, 0.3, 0.35) });
+
+    page2.drawText("08-26 Min | Erarbeitung: Quellenanalyse in Partnerarbeit mit gestuften Hilfekarten", { x: 50, y: 670, size: 9.5, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
+    page2.drawText("• Material: Flugblatt des Neuen Forums Erfurt (Herbst 1989) & MfS-Lagebericht.", { x: 65, y: 654, size: 9, font, color: PDFLib.rgb(0.25, 0.3, 0.35) });
+    page2.drawText("• Differenzierung: Niveau A (Wortgeländer), Niveau B (Originaltext mit Leitfragen).", { x: 65, y: 638, size: 9, font, color: PDFLib.rgb(0.25, 0.3, 0.35) });
+
+    page2.drawText("26-38 Min | Sicherung: Synoptische Ergebnissicherung an der Tafel", { x: 50, y: 605, size: 9.5, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
+    page2.drawText("• Ergebnis: Gegenüberstellung Bürgerforderungen vs. staatliche Repression.", { x: 65, y: 589, size: 9, font, color: PDFLib.rgb(0.25, 0.3, 0.35) });
+
+    page2.drawText("38-45 Min | Transfer & Reflexion: 'Demokratie heute verteidigen' – Blitzlicht im Plenum", { x: 50, y: 555, size: 9.5, font: fontBold, color: PDFLib.rgb(0.1, 0.15, 0.2) });
+    page2.drawText("• Reflexionsimpuls: 'Welche Verantwortung erwächst aus 1989 für uns heute?'", { x: 65, y: 539, size: 9, font, color: PDFLib.rgb(0.25, 0.3, 0.35) });
+    page2.drawText("— Seite 2 von 3 (Weiterblättern für Binnendifferenzierung & Reflexion) —", { x: 120, y: 50, size: 8.5, font, color: PDFLib.rgb(0.5, 0.55, 0.6) });
+
+    // Seite 3: Binnendifferenzierung & Begründung
+    const page3 = pdfDoc.addPage([595.28, 841.89]);
+    page3.drawText("STAATSSEMINAR FÜR LEHRÄMTER THÜRINGEN • SEITE 3", { x: 50, y: 800, size: 9, font: fontBold, color: PDFLib.rgb(0.25, 0.4, 0.55) });
+    page3.drawText("3. Binnendifferenzierung, Hilfesystem & Inklusion:", { x: 50, y: 765, size: 12, font: fontBold, color: PDFLib.rgb(0.06, 0.1, 0.2) });
+    page3.drawLine({ start: { x: 50, y: 750 }, end: { x: 545, y: 750 }, thickness: 1, color: PDFLib.rgb(0.8, 0.85, 0.9) });
+
+    page3.drawText("• Niveau Basis: Entlastete Textauszüge mit Wortschatz-Erklärungen und Zeilenangaben.", { x: 60, y: 720, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page3.drawText("• Niveau Erweitert: Ungestutzte Zeitzeugenberichte aus der Erfurter Andreasstraße.", { x: 60, y: 700, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page3.drawText("• Zusatzangebot: Vergleich mit aktuellen Bürgerrechtsbewegungen weltweit.", { x: 60, y: 680, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+
+    page3.drawText("4. Begründung der didaktischen Schwerpunktsetzung:", { x: 50, y: 640, size: 12, font: fontBold, color: PDFLib.rgb(0.06, 0.1, 0.2) });
+    page3.drawLine({ start: { x: 50, y: 625 }, end: { x: 545, y: 625 }, thickness: 1, color: PDFLib.rgb(0.8, 0.85, 0.9) });
+    page3.drawText("Die didaktische Reduktion konzentriert sich exemplarisch auf den regionalen Bezug Thüringens.", { x: 60, y: 595, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page3.drawText("Der kooperative Ansatz fördert die diskursive Argumentation und multiperspektivische Urteilsbildung.", { x: 60, y: 575, size: 9.5, font, color: PDFLib.rgb(0.2, 0.25, 0.3) });
+    page3.drawText("— Seite 3 von 3 (Ende des Unterrichtsentwurfs) —", { x: 160, y: 50, size: 8.5, font, color: PDFLib.rgb(0.5, 0.55, 0.6) });
 
     const pdfBytes = await pdfDoc.save();
     currentPdfFileName = `Unterrichtsentwurf_${candName.replace(/ /g, '_')}.pdf`;
@@ -601,7 +648,7 @@ async function loadSampleLessonPlanPdf() {
     currentPdfDoc = pdf;
     currentPdfPage = 1;
     renderPdfPage(1);
-    showToast(`Muster-Unterrichtsentwurf für '${candName}' im Split-Screen geladen!`, "📄");
+    showToast(`Muster-Unterrichtsentwurf (3 Seiten) für '${candName}' im Split-Screen geladen!`, "📄");
   } catch(err) {
     console.error("Error loading sample lesson plan pdf:", err);
   }
