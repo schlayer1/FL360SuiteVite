@@ -156,11 +156,13 @@ function renderEntwurfWorkspace() {
             <span id="entwurfPdfNameBadge" style="font-size:0.75rem; color:#94a3b8; font-family:monospace;">${currentPdfFileName || (evalData.pdfName || 'Kein PDF geladen')}</span>
           </div>
 
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <!-- Annotation Toolbar -->
+            ${getAnnotToolbarHtml('entwurfWorkspace')}
+
             <button class="btn btn-outline" style="font-size:0.75rem; padding:3px 8px;" onclick="triggerPdfUpload()" title="PDF-Entwurf auswählen">
               <i data-lucide="folder-open" class="w-3.5 h-3.5 inline-block mr-1"></i> PDF laden...
             </button>
-            <input type="file" id="entwurfPdfFileInput" accept="application/pdf" style="display:none;" onchange="handleEntwurfPdfSelected(event)" />
             
             <!-- Zoom Controls -->
             <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
@@ -180,7 +182,10 @@ function renderEntwurfWorkspace() {
             </p>
             <button class="btn btn-primary" onclick="triggerPdfUpload()"><i data-lucide="upload" class="w-4 h-4 inline-block mr-1"></i> PDF-Entwurf auswählen</button>
           </div>
-          <canvas id="entwurfPdfCanvas" style="display:none; max-width:100%; margin:0 auto; box-shadow:0 4px 12px rgba(0,0,0,0.4); border-radius:4px;"></canvas>
+          <div id="entwurfPdfWrapper" class="pdf-canvas-wrapper" style="display:none;">
+            <canvas id="entwurfPdfCanvas" style="display:block; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.4); border-radius:4px;"></canvas>
+            <canvas id="entwurfAnnotCanvas" class="pdf-annot-layer" style="display:block;"></canvas>
+          </div>
         </div>
       </div>
 
@@ -298,8 +303,19 @@ function renderEntwurfWorkspace() {
  * PDF ENGINE (PDF.JS INTEGRATION)
  */
 function triggerPdfUpload() {
-  const input = document.getElementById("entwurfPdfFileInput");
-  if (input) input.click();
+  let input = document.getElementById("entwurfPdfFileInput");
+  if (!input) {
+    input = document.createElement("input");
+    input.type = "file";
+    input.id = "entwurfPdfFileInput";
+    input.accept = "application/pdf";
+    input.style.display = "none";
+    input.onchange = handleEntwurfPdfSelected;
+    document.body.appendChild(input);
+  }
+  // Reset value so selecting the same file again triggers change event
+  input.value = "";
+  input.click();
 }
 
 function handleEntwurfPdfSelected(e) {
@@ -333,6 +349,407 @@ function handleEntwurfPdfSelected(e) {
   reader.readAsArrayBuffer(file);
 }
 
+/**
+ * GOODNOTES-STYLE ANNOTATION ENGINE FOR PDF ENTWURF
+ */
+let annotCurrentTool = 'none'; // 'none', 'highlighter', 'pen', 'eraser', 'note'
+let annotCurrentColor = '#fde047'; // default yellow highlighter
+let annotHighlighterSize = 18;
+let annotPenSize = 3;
+let isDrawingAnnotation = false;
+let currentStrokePoints = [];
+
+const ANNOT_COLORS = {
+  highlighter: [
+    { name: 'Gelb', hex: '#fde047' },
+    { name: 'Grün', hex: '#4ade80' },
+    { name: 'Pink', hex: '#f472b6' },
+    { name: 'Blau', hex: '#38bdf8' },
+    { name: 'Orange', hex: '#fb923c' }
+  ],
+  pen: [
+    { name: 'Rot', hex: '#ef4444' },
+    { name: 'Blau', hex: '#2563eb' },
+    { name: 'Schwarz', hex: '#0f172a' },
+    { name: 'Grün', hex: '#16a34a' }
+  ]
+};
+
+function setAnnotTool(tool) {
+  annotCurrentTool = (annotCurrentTool === tool) ? 'none' : tool;
+  if (annotCurrentTool === 'highlighter' && !ANNOT_COLORS.highlighter.some(c => c.hex === annotCurrentColor)) {
+    annotCurrentColor = '#fde047';
+  } else if (annotCurrentTool === 'pen' && !ANNOT_COLORS.pen.some(c => c.hex === annotCurrentColor)) {
+    annotCurrentColor = '#ef4444';
+  }
+  updateAnnotToolbarsUI();
+  updateAnnotLayerCursors();
+}
+
+function setAnnotColor(hex) {
+  annotCurrentColor = hex;
+  updateAnnotToolbarsUI();
+}
+
+function updateAnnotToolbarsUI() {
+  document.querySelectorAll('.pdf-annot-btn[data-tool]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tool') === annotCurrentTool);
+  });
+  document.querySelectorAll('.pdf-annot-color-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.getAttribute('data-color') === annotCurrentColor);
+  });
+}
+
+function updateAnnotLayerCursors() {
+  document.querySelectorAll('.pdf-annot-layer').forEach(layer => {
+    layer.className = 'pdf-annot-layer';
+    if (annotCurrentTool !== 'none') {
+      layer.classList.add(`mode-${annotCurrentTool}`);
+    }
+  });
+}
+
+function getCandidateAnnotations() {
+  const cur = getCurrentLAA();
+  if (!cur) return {};
+  if (!cur.entwurfAnnotations) {
+    cur.entwurfAnnotations = {};
+  }
+  return cur.entwurfAnnotations;
+}
+
+function getPageAnnotations(pageNum) {
+  const annots = getCandidateAnnotations();
+  const pageKey = `page_${pageNum}`;
+  if (!annots[pageKey]) {
+    annots[pageKey] = [];
+  }
+  return annots[pageKey];
+}
+
+function savePageAnnotations(pageNum, list) {
+  const annots = getCandidateAnnotations();
+  annots[`page_${pageNum}`] = list;
+  saveState();
+}
+
+function undoLastAnnotation() {
+  if (!currentPdfDoc) return;
+  const list = getPageAnnotations(currentPdfPage);
+  if (list.length > 0) {
+    list.pop();
+    savePageAnnotations(currentPdfPage, list);
+    redrawAllAnnotLayers();
+    showToast("Letzte Markierung rückgängig gemacht", "↩️");
+  }
+}
+
+function clearPageAnnotations() {
+  if (!currentPdfDoc) return;
+  const list = getPageAnnotations(currentPdfPage);
+  if (list.length === 0) return;
+  if (confirm(`Möchten Sie wirklich alle Markierungen auf Seite ${currentPdfPage} löschen?`)) {
+    savePageAnnotations(currentPdfPage, []);
+    redrawAllAnnotLayers();
+    showToast(`Markierungen auf Seite ${currentPdfPage} gelöscht`, "🧹");
+  }
+}
+
+function renderPdfAnnotations(annotCanvas, pageNum) {
+  if (!annotCanvas) return;
+  const ctx = annotCanvas.getContext('2d');
+  const w = annotCanvas.width;
+  const h = annotCanvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const list = getPageAnnotations(pageNum);
+  list.forEach(item => {
+    if (item.type === 'highlighter' || item.type === 'pen') {
+      drawStroke(ctx, item, w, h);
+    }
+  });
+
+  // Render sticky note pins
+  const wrapper = annotCanvas.parentElement;
+  if (wrapper) {
+    wrapper.querySelectorAll('.pdf-note-pin').forEach(pin => pin.remove());
+    list.forEach((item, idx) => {
+      if (item.type === 'note') {
+        createNotePinElement(wrapper, item, idx);
+      }
+    });
+  }
+}
+
+function drawStroke(ctx, stroke, w, h) {
+  if (!stroke.points || stroke.points.length < 2) return;
+  ctx.save();
+  ctx.beginPath();
+
+  if (stroke.type === 'highlighter') {
+    ctx.globalAlpha = 0.38;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = (stroke.size || annotHighlighterSize) * (w / 800);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  } else {
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = (stroke.size || annotPenSize) * (w / 800);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+
+  const p0 = stroke.points[0];
+  ctx.moveTo(p0.x * w, p0.y * h);
+  for (let i = 1; i < stroke.points.length; i++) {
+    const pt = stroke.points[i];
+    ctx.lineTo(pt.x * w, pt.y * h);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function createNotePinElement(wrapper, noteItem, idx) {
+  const pin = document.createElement('div');
+  pin.className = 'pdf-note-pin';
+  pin.style.left = `${noteItem.x * 100}%`;
+  pin.style.top = `${noteItem.y * 100}%`;
+  pin.innerHTML = `<span>${idx + 1}</span>`;
+  pin.title = noteItem.text || 'Notiz öffnen';
+  pin.onclick = (e) => {
+    e.stopPropagation();
+    openNotePinDialog(noteItem, idx);
+  };
+  wrapper.appendChild(pin);
+}
+
+function openNotePinDialog(noteItem, idx) {
+  const action = prompt(`Fachleiter-Notiz #${idx + 1}:\n(Leer lassen oder 'LÖSCHEN' zum Entfernen)`, noteItem.text || "");
+  if (action === null) return;
+  const list = getPageAnnotations(currentPdfPage);
+  if (action.trim() === "" || action.trim().toUpperCase() === "LÖSCHEN") {
+    list.splice(idx, 1);
+    savePageAnnotations(currentPdfPage, list);
+    redrawAllAnnotLayers();
+    showToast("Notiz-Pin entfernt", "🗑️");
+  } else {
+    noteItem.text = action.trim();
+    savePageAnnotations(currentPdfPage, list);
+    redrawAllAnnotLayers();
+    showToast("Notiz aktualisiert", "💾");
+  }
+}
+
+function redrawAllAnnotLayers() {
+  const annotCanvases = [
+    document.getElementById("entwurfAnnotCanvas"),
+    document.getElementById("nsSplitAnnotCanvas"),
+    document.getElementById("cockpitSplitAnnotCanvas")
+  ];
+  annotCanvases.forEach(ac => {
+    if (ac && ac.width > 0) {
+      renderPdfAnnotations(ac, currentPdfPage);
+    }
+  });
+}
+
+function setupAnnotCanvasEvents(annotCanvas) {
+  if (!annotCanvas || annotCanvas._annotInitialized) return;
+  annotCanvas._annotInitialized = true;
+
+  const getCanvasCoords = (e) => {
+    const rect = annotCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width,
+      y: (clientY - rect.top) / rect.height
+    };
+  };
+
+  const onPointerDown = (e) => {
+    if (annotCurrentTool === 'none') return;
+    e.preventDefault();
+
+    const coords = getCanvasCoords(e);
+    if (coords.x < 0 || coords.x > 1 || coords.y < 0 || coords.y > 1) return;
+
+    if (annotCurrentTool === 'note') {
+      const noteText = prompt("Neue Fachleiter-Randnotiz auf dem PDF anheften:");
+      if (noteText && noteText.trim()) {
+        const list = getPageAnnotations(currentPdfPage);
+        list.push({
+          type: 'note',
+          x: Math.round(coords.x * 1000) / 1000,
+          y: Math.round(coords.y * 1000) / 1000,
+          text: noteText.trim(),
+          date: new Date().toISOString()
+        });
+        savePageAnnotations(currentPdfPage, list);
+        redrawAllAnnotLayers();
+        showToast("Randnotiz angeheftet!", "📌");
+      }
+      return;
+    }
+
+    if (annotCurrentTool === 'eraser') {
+      eraseAnnotationAt(coords);
+      return;
+    }
+
+    // Pen or Highlighter
+    isDrawingAnnotation = true;
+    currentStrokePoints = [coords];
+  };
+
+  const onPointerMove = (e) => {
+    if (!isDrawingAnnotation) return;
+    e.preventDefault();
+    const coords = getCanvasCoords(e);
+    currentStrokePoints.push(coords);
+
+    // Live feedback drawing
+    const ctx = annotCanvas.getContext('2d');
+    const w = annotCanvas.width;
+    const h = annotCanvas.height;
+    const pts = currentStrokePoints;
+    if (pts.length >= 2) {
+      ctx.save();
+      ctx.beginPath();
+      if (annotCurrentTool === 'highlighter') {
+        ctx.globalAlpha = 0.38;
+        ctx.strokeStyle = annotCurrentColor;
+        ctx.lineWidth = annotHighlighterSize * (w / 800);
+      } else {
+        ctx.globalAlpha = 1.0;
+        ctx.strokeStyle = annotCurrentColor;
+        ctx.lineWidth = annotPenSize * (w / 800);
+      }
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const prev = pts[pts.length - 2];
+      const curr = pts[pts.length - 1];
+      ctx.moveTo(prev.x * w, prev.y * h);
+      ctx.lineTo(curr.x * w, curr.y * h);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
+  const onPointerUp = (e) => {
+    if (!isDrawingAnnotation) return;
+    isDrawingAnnotation = false;
+    if (currentStrokePoints.length >= 2) {
+      const list = getPageAnnotations(currentPdfPage);
+      list.push({
+        type: annotCurrentTool,
+        color: annotCurrentColor,
+        size: (annotCurrentTool === 'highlighter') ? annotHighlighterSize : annotPenSize,
+        points: currentStrokePoints.map(p => ({
+          x: Math.round(p.x * 1000) / 1000,
+          y: Math.round(p.y * 1000) / 1000
+        }))
+      });
+      savePageAnnotations(currentPdfPage, list);
+      redrawAllAnnotLayers();
+    }
+    currentStrokePoints = [];
+  };
+
+  annotCanvas.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  annotCanvas.addEventListener('touchstart', onPointerDown, { passive: false });
+  window.addEventListener('touchmove', onPointerMove, { passive: false });
+  window.addEventListener('touchend', onPointerUp, { passive: false });
+}
+
+function eraseAnnotationAt(coords) {
+  const list = getPageAnnotations(currentPdfPage);
+  let removed = false;
+  // Check in reverse order so latest strokes on top are erased first
+  for (let i = list.length - 1; i >= 0; i--) {
+    const item = list[i];
+    if (item.type === 'note') {
+      const dist = Math.hypot(item.x - coords.x, item.y - coords.y);
+      if (dist < 0.04) {
+        list.splice(i, 1);
+        removed = true;
+        break;
+      }
+    } else if (item.points) {
+      const hit = item.points.some(pt => Math.hypot(pt.x - coords.x, pt.y - coords.y) < 0.035);
+      if (hit) {
+        list.splice(i, 1);
+        removed = true;
+        break;
+      }
+    }
+  }
+
+  if (removed) {
+    savePageAnnotations(currentPdfPage, list);
+    redrawAllAnnotLayers();
+    showToast("Markierung gelöscht", "🧹");
+  }
+}
+
+/**
+ * GENERATE TOOLBAR HTML HELPER
+ */
+function getAnnotToolbarHtml(prefix = "") {
+  return `
+    <div class="pdf-annot-toolbar" id="${prefix}AnnotToolbar">
+      <!-- Highlighter Button & Palette -->
+      <button class="pdf-annot-btn" data-tool="highlighter" onclick="setAnnotTool('highlighter')" title="Textmarker (GoodNotes-Style: Gelb, Grün, Pink, Blau)">
+        <i data-lucide="highlighter" class="w-3.5 h-3.5 inline"></i>
+        <span>Marker</span>
+      </button>
+
+      <!-- Pen Button -->
+      <button class="pdf-annot-btn" data-tool="pen" onclick="setAnnotTool('pen')" title="Stift / Freihand-Kommentar (Rot, Blau, Schwarz)">
+        <i data-lucide="pencil" class="w-3.5 h-3.5 inline"></i>
+        <span>Stift</span>
+      </button>
+
+      <!-- Color Dot Selector -->
+      <div style="display:inline-flex; align-items:center; gap:3px; padding:0 3px;">
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#fde047' ? 'active' : ''}" data-color="#fde047" style="background:#fde047;" onclick="setAnnotColor('#fde047')" title="Neon Gelb"></span>
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#4ade80' ? 'active' : ''}" data-color="#4ade80" style="background:#4ade80;" onclick="setAnnotColor('#4ade80')" title="Pastell Grün"></span>
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#f472b6' ? 'active' : ''}" data-color="#f472b6" style="background:#f472b6;" onclick="setAnnotColor('#f472b6')" title="Neon Pink"></span>
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#38bdf8' ? 'active' : ''}" data-color="#38bdf8" style="background:#38bdf8;" onclick="setAnnotColor('#38bdf8')" title="Himmelblau"></span>
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#ef4444' ? 'active' : ''}" data-color="#ef4444" style="background:#ef4444;" onclick="setAnnotColor('#ef4444')" title="Korrektur-Rot"></span>
+        <span class="pdf-annot-color-dot ${annotCurrentColor === '#0f172a' ? 'active' : ''}" data-color="#0f172a" style="background:#0f172a;" onclick="setAnnotColor('#0f172a')" title="Schwarz / Dunkel"></span>
+      </div>
+
+      <!-- Eraser Button -->
+      <button class="pdf-annot-btn" data-tool="eraser" onclick="setAnnotTool('eraser')" title="Radierer: Klick auf Markierung oder Pin zum Entfernen">
+        <i data-lucide="eraser" class="w-3.5 h-3.5 inline"></i>
+      </button>
+
+      <!-- Sticky Note Pin Button -->
+      <button class="pdf-annot-btn" data-tool="note" onclick="setAnnotTool('note')" title="Randnotiz-Pin: Klicke auf das PDF, um einen Kommentar anzuheften">
+        <i data-lucide="sticky-note" class="w-3.5 h-3.5 inline"></i>
+        <span>Notiz</span>
+      </button>
+
+      <!-- Undo Button -->
+      <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+        <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+      </button>
+
+      <!-- Clear Page Annotations Button -->
+      <button class="pdf-annot-btn" onclick="clearPageAnnotations()" title="Alle Markierungen dieser Seite entfernen">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i>
+      </button>
+    </div>
+  `;
+}
+
 let activePdfRenderTasks = {};
 
 function renderPdfPage(num) {
@@ -340,13 +757,15 @@ function renderPdfPage(num) {
   currentPdfPage = num;
   currentPdfDoc.getPage(num).then(function(page) {
     const targets = [
-      { canvasId: "entwurfPdfCanvas", placeholderId: "pdfPlaceholderNotice", indicatorId: "entwurfPdfPageIndicator", badgeId: "entwurfPdfNameBadge" },
-      { canvasId: "nsSplitPdfCanvas", placeholderId: "nsSplitPdfPlaceholder", indicatorId: "nsSplitPdfPageIndicator", badgeId: "nsSplitPdfNameBadge" },
-      { canvasId: "cockpitSplitPdfCanvas", placeholderId: "cockpitSplitPdfPlaceholder", indicatorId: "cockpitSplitPdfPageIndicator", badgeId: "cockpitSplitPdfNameBadge" }
+      { canvasId: "entwurfPdfCanvas", annotId: "entwurfAnnotCanvas", wrapperId: "entwurfPdfWrapper", placeholderId: "pdfPlaceholderNotice", indicatorId: "entwurfPdfPageIndicator", badgeId: "entwurfPdfNameBadge" },
+      { canvasId: "nsSplitPdfCanvas", annotId: "nsSplitAnnotCanvas", wrapperId: "nsSplitPdfWrapper", placeholderId: "nsSplitPdfPlaceholder", indicatorId: "nsSplitPdfPageIndicator", badgeId: "nsSplitPdfNameBadge" },
+      { canvasId: "cockpitSplitPdfCanvas", annotId: "cockpitSplitAnnotCanvas", wrapperId: "cockpitSplitPdfWrapper", placeholderId: "cockpitSplitPdfPlaceholder", indicatorId: "cockpitSplitPdfPageIndicator", badgeId: "cockpitSplitPdfNameBadge" }
     ];
 
     targets.forEach(cfg => {
       const canvas = document.getElementById(cfg.canvasId);
+      const annotCanvas = document.getElementById(cfg.annotId);
+      const wrapper = document.getElementById(cfg.wrapperId);
       const placeholder = document.getElementById(cfg.placeholderId);
       const indicator = document.getElementById(cfg.indicatorId);
       const badge = document.getElementById(cfg.badgeId);
@@ -372,6 +791,20 @@ function renderPdfPage(num) {
       canvas.height = viewport.height;
       canvas.width = viewport.width;
       canvas.style.display = "block";
+
+      if (wrapper) {
+        wrapper.style.display = "inline-block";
+        wrapper.style.width = `${viewport.width}px`;
+        wrapper.style.height = `${viewport.height}px`;
+      }
+
+      if (annotCanvas) {
+        annotCanvas.width = viewport.width;
+        annotCanvas.height = viewport.height;
+        annotCanvas.style.display = "block";
+        setupAnnotCanvasEvents(annotCanvas);
+      }
+
       if (placeholder) placeholder.style.display = "none";
 
       const ctx = canvas.getContext('2d');
@@ -386,6 +819,10 @@ function renderPdfPage(num) {
         if (activePdfRenderTasks[cfg.canvasId] === renderTask) {
           delete activePdfRenderTasks[cfg.canvasId];
         }
+        if (annotCanvas) {
+          renderPdfAnnotations(annotCanvas, num);
+        }
+        updateAnnotLayerCursors();
       }).catch(err => {
         if (err && err.name !== 'RenderingCancelledException') {
           console.warn("PDF render notice:", err);

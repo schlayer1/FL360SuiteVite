@@ -612,12 +612,42 @@
       <div id="nsSplitGrid" class="split-screen-grid">
         <!-- LEFT PANE: PDF Unterrichtsentwurf Viewer -->
         <div id="nsSplitPdfPane" class="split-pane-pdf">
-          <div class="split-pdf-header">
+          <div class="split-pdf-header" style="flex-wrap:wrap; gap:6px;">
             <div style="display:flex; align-items:center; gap:6px;">
               <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
               <strong style="font-size:0.82rem; color:inherit;">PDF-Unterrichtsentwurf</strong>
               <span id="nsSplitPdfNameBadge" class="badge-pill" style="font-size:0.7rem; font-family:monospace; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Kein PDF</span>
             </div>
+
+            <!-- GoodNotes Annotation Toolbar -->
+            <div class="pdf-annot-toolbar" id="nsSplitAnnotToolbar">
+              <button class="pdf-annot-btn" data-tool="highlighter" onclick="setAnnotTool('highlighter')" title="Textmarker (GoodNotes-Style)">
+                <i data-lucide="highlighter" class="w-3.5 h-3.5 inline"></i>
+                <span>Marker</span>
+              </button>
+              <button class="pdf-annot-btn" data-tool="pen" onclick="setAnnotTool('pen')" title="Stift / Freihand-Kommentar">
+                <i data-lucide="pencil" class="w-3.5 h-3.5 inline"></i>
+                <span>Stift</span>
+              </button>
+              <div style="display:inline-flex; align-items:center; gap:3px; padding:0 3px;">
+                <span class="pdf-annot-color-dot active" data-color="#fde047" style="background:#fde047;" onclick="setAnnotColor('#fde047')" title="Neon Gelb"></span>
+                <span class="pdf-annot-color-dot" data-color="#4ade80" style="background:#4ade80;" onclick="setAnnotColor('#4ade80')" title="Pastell Grün"></span>
+                <span class="pdf-annot-color-dot" data-color="#f472b6" style="background:#f472b6;" onclick="setAnnotColor('#f472b6')" title="Neon Pink"></span>
+                <span class="pdf-annot-color-dot" data-color="#38bdf8" style="background:#38bdf8;" onclick="setAnnotColor('#38bdf8')" title="Himmelblau"></span>
+                <span class="pdf-annot-color-dot" data-color="#ef4444" style="background:#ef4444;" onclick="setAnnotColor('#ef4444')" title="Korrektur-Rot"></span>
+              </div>
+              <button class="pdf-annot-btn" data-tool="eraser" onclick="setAnnotTool('eraser')" title="Radierer">
+                <i data-lucide="eraser" class="w-3.5 h-3.5 inline"></i>
+              </button>
+              <button class="pdf-annot-btn" data-tool="note" onclick="setAnnotTool('note')" title="Randnotiz-Pin">
+                <i data-lucide="sticky-note" class="w-3.5 h-3.5 inline"></i>
+                <span>Notiz</span>
+              </button>
+              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+                <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+              </button>
+            </div>
+
             <div style="display:flex; align-items:center; gap:4px;">
               <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
                 <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
@@ -637,7 +667,10 @@
                 <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 12px;" onclick="loadSampleLessonPlanPdf()"><i data-lucide="sparkles" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i> Muster-Entwurf laden</button>
               </div>
             </div>
-            <canvas id="nsSplitPdfCanvas" style="display:none; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
+            <div id="nsSplitPdfWrapper" class="pdf-canvas-wrapper" style="display:none;">
+              <canvas id="nsSplitPdfCanvas" style="display:block; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
+              <canvas id="nsSplitAnnotCanvas" class="pdf-annot-layer" style="display:block;"></canvas>
+            </div>
           </div>
         </div>
 
@@ -914,12 +947,42 @@
       <div id="cockpitSplitGrid" class="split-screen-grid">
         <!-- LEFT PANE: Candidate PDF Entwurf Viewer -->
         <div id="cockpitSplitPdfPane" class="split-pane-pdf">
-          <div class="split-pdf-header">
+          <div class="split-pdf-header" style="flex-wrap:wrap; gap:6px;">
             <div style="display:flex; align-items:center; gap:6px;">
               <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
               <strong style="font-size:0.82rem; color:inherit;">PDF-Unterrichtsentwurf</strong>
               <span id="cockpitSplitPdfNameBadge" class="badge-pill" style="font-size:0.7rem; font-family:monospace; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Kein PDF</span>
             </div>
+
+            <!-- GoodNotes Annotation Toolbar -->
+            <div class="pdf-annot-toolbar" id="cockpitSplitAnnotToolbar">
+              <button class="pdf-annot-btn" data-tool="highlighter" onclick="setAnnotTool('highlighter')" title="Textmarker (GoodNotes-Style)">
+                <i data-lucide="highlighter" class="w-3.5 h-3.5 inline"></i>
+                <span>Marker</span>
+              </button>
+              <button class="pdf-annot-btn" data-tool="pen" onclick="setAnnotTool('pen')" title="Stift / Freihand-Kommentar">
+                <i data-lucide="pencil" class="w-3.5 h-3.5 inline"></i>
+                <span>Stift</span>
+              </button>
+              <div style="display:inline-flex; align-items:center; gap:3px; padding:0 3px;">
+                <span class="pdf-annot-color-dot active" data-color="#fde047" style="background:#fde047;" onclick="setAnnotColor('#fde047')" title="Neon Gelb"></span>
+                <span class="pdf-annot-color-dot" data-color="#4ade80" style="background:#4ade80;" onclick="setAnnotColor('#4ade80')" title="Pastell Grün"></span>
+                <span class="pdf-annot-color-dot" data-color="#f472b6" style="background:#f472b6;" onclick="setAnnotColor('#f472b6')" title="Neon Pink"></span>
+                <span class="pdf-annot-color-dot" data-color="#38bdf8" style="background:#38bdf8;" onclick="setAnnotColor('#38bdf8')" title="Himmelblau"></span>
+                <span class="pdf-annot-color-dot" data-color="#ef4444" style="background:#ef4444;" onclick="setAnnotColor('#ef4444')" title="Korrektur-Rot"></span>
+              </div>
+              <button class="pdf-annot-btn" data-tool="eraser" onclick="setAnnotTool('eraser')" title="Radierer">
+                <i data-lucide="eraser" class="w-3.5 h-3.5 inline"></i>
+              </button>
+              <button class="pdf-annot-btn" data-tool="note" onclick="setAnnotTool('note')" title="Randnotiz-Pin">
+                <i data-lucide="sticky-note" class="w-3.5 h-3.5 inline"></i>
+                <span>Notiz</span>
+              </button>
+              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+                <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+              </button>
+            </div>
+
             <div style="display:flex; align-items:center; gap:4px;">
               <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
                 <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
@@ -938,7 +1001,10 @@
                 <button class="btn btn-outline" style="font-size:0.78rem; padding:4px 12px;" onclick="loadSampleLessonPlanPdf()"><i data-lucide="sparkles" class="w-3.5 h-3.5 inline mr-1 text-blue-500"></i> Muster-Entwurf laden</button>
               </div>
             </div>
-            <canvas id="cockpitSplitPdfCanvas" style="display:none; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
+            <div id="cockpitSplitPdfWrapper" class="pdf-canvas-wrapper" style="display:none;">
+              <canvas id="cockpitSplitPdfCanvas" style="display:block; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.35); border-radius:4px;"></canvas>
+              <canvas id="cockpitSplitAnnotCanvas" class="pdf-annot-layer" style="display:block;"></canvas>
+            </div>
           </div>
         </div>
 
@@ -991,6 +1057,9 @@
 
 <!-- TOAST NOTIFICATION CONTAINER -->
 <div id="toastContainer" class="toast-container"></div>
+
+<!-- GLOBAL HIDDEN FILE INPUT FOR PDF ENTWURF UPLOAD -->
+<input type="file" id="entwurfPdfFileInput" accept="application/pdf" style="display:none;" onchange="handleEntwurfPdfSelected(event)" />
 
 <!-- PRIVACY & COMPLIANCE FOOTER -->
 <footer class="privacy-footer">

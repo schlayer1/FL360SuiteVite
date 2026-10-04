@@ -39,10 +39,14 @@ Die neue **Vite-Edition** bietet:
 
 ---
 
-## ⚡ Neu in Version 2.2.0: Workflow- & Live-Hospitations-Features
+## ⚡ Neu in Version 2.2.0 & 2.3.0: GoodNotes-Annotationen & Formular-Cockpit Split-Screen
 
 | Feature | Beschreibung | Nutzen in der Praxis |
 | :--- | :--- | :--- |
+| 🖍️ **GoodNotes PDF-Annotationen** | Vollausgestattetes Freihand- & Textmarker-System direkt auf dem PDF-Unterrichtsentwurf: Textmarker (Gelb, Grün, Pink, Blau), Stift (Rot, Schwarz), Radierer, Notiz-Pins und Undo. | Handschriftliches Kommentieren und Markieren von Entwürfen wie auf dem iPad – persistent pro Kandidat & Seite gesichert. |
+| 📌 **Digitale Randnotiz-Pins** | Klick-Pins direkt auf dem Entwurf zum Anheften nummerierter Fachleiter-Notizen und spontaner Prüfungsfragen. | Wichtige Diskussionspunkte fürs Kolloquium direkt an der Fundstelle im Entwurf verankern. |
+| 📑 **Formular-Cockpit PDF Upload & Split-Screen** | PDF-Entwürfe können direkt im Formular-Cockpit hochgeladen oder als Muster geladen werden – parallel zu amtlichen Formularen wie F 230. | Formulare ausfüllen mit dem Unterrichtsentwurf des Kandidaten direkt daneben im Blick. |
+| 🔄 **Universelles PDF-Blättern** | Nahtloses Vor- und Zurückblättern mehrseitiger Entwürfe in allen 3 Ansichten (Entwurfs-Arbeitsplatz, 15-Punkte-Raster, Formular-Cockpit). | Vollständige Durchsicht von Bedingungsanalyse bis Verlaufsplan ohne Wechsel der Ansicht. |
 | ⌨️ **Live-Shortcuts (`Alt + 1..5`)** | Wechselt die Unterrichtsphase im Flug (`1`: Einstieg, `2`: Erarbeitung, `3`: Sicherung, `4`: Vertiefung, `5`: Reflexion). | Kein Wechsel zur Maus/Dropdown während des Unterrichtsgeschehens nötig. |
 | ⏩ **Protokoll-Schnellabsendung** | `Enter` bzw. `Ctrl/Cmd + Enter` speichert die Beobachtung und setzt den Fokus sofort zurück. | Schnelles Mitschreiben im 10-Finger-System ohne Unterbrechung. |
 | 📋 **„Mitschrift kopieren“** | 1-Klick-Export des gesamten Live-Protokollstroms als formatierter Text mit Zeitstempeln und Metadaten in die Zwischenablage. | Perfekt für schnelles Einfügen in E-Mails, Besprechungsnotizen oder Word/Pages. |

@@ -2997,8 +2997,144 @@ body.theme-light .candidate-summary-meta .meta-dot {
   transition: all 0.2s ease !important;
 }
 
+/* ==========================================================================
+   GOODNOTES-STYLE PDF ANNOTATION & HIGHLIGHTER SYSTEM
+   ========================================================================== */
+.pdf-annot-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 3px 6px;
+  backdrop-filter: blur(10px);
+}
+
+body.theme-light .pdf-annot-toolbar {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: #cbd5e1;
+}
+
+.pdf-annot-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-annot-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+body.theme-light .pdf-annot-btn {
+  color: #475569;
+}
+
+body.theme-light .pdf-annot-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #0f172a;
+}
+
+.pdf-annot-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.4);
+}
+
+.pdf-annot-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+
+.pdf-annot-color-dot:hover {
+  transform: scale(1.2);
+}
+
+.pdf-annot-color-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #2563eb;
+  transform: scale(1.25);
+}
+
+.pdf-canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.pdf-annot-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: default;
+  z-index: 10;
+}
+
+.pdf-annot-layer.mode-pen {
+  cursor: crosshair;
+}
+
+.pdf-annot-layer.mode-highlighter {
+  cursor: crosshair;
+}
+
+.pdf-annot-layer.mode-eraser {
+  cursor: cell;
+}
+
+.pdf-annot-layer.mode-note {
+  cursor: copy;
+}
+
+/* Sticky note marker pin */
+.pdf-note-pin {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 20;
+  border: 2px solid #ffffff;
+  transition: transform 0.15s ease;
+}
+
+.pdf-note-pin:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
 @media print {
-  header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container { display: none !important; }
+  header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container, .pdf-annot-toolbar { display: none !important; }
   .app-container { padding: 0 !important; }
   .card { border: none !important; box-shadow: none !important; page-break-inside: avoid; }
 }
