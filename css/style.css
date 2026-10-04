@@ -2990,6 +2990,13 @@ body.theme-light .candidate-summary-meta .meta-dot {
   border-left: 3px solid #3b82f6 !important;
 }
 
+/* Visual pulse animation when a phrase is clicked */
+.phrase-inserted-pulse {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
 @media print {
   header, nav.tab-bar, .timer-banner, .note-input-group, .header-actions, .privacy-footer, .btn, .crit-buttons, .phrase-tags, .modal-overlay, .toast-container { display: none !important; }
   .app-container { padding: 0 !important; }

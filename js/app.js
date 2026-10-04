@@ -2075,11 +2075,39 @@ function autoResizeLiveNote(el) {
 }
 
 function handleLiveNoteKeydown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  // Support Ctrl+Enter, Cmd+Enter or plain Enter (without shift)
+  if ((event.key === 'Enter' && (event.ctrlKey || event.metaKey)) || (event.key === 'Enter' && !event.shiftKey)) {
     event.preventDefault();
     addLiveNote();
   }
 }
+
+// Global Keyboard Shortcuts for Live-Hospitation (Alt + 1..5)
+window.addEventListener("keydown", function(e) {
+  if (e.altKey && activeTabId === "tab-live") {
+    const phaseMap = {
+      "1": "Einstieg",
+      "2": "Erarbeitung",
+      "3": "Sicherung",
+      "4": "Vertiefung",
+      "5": "Reflexion"
+    };
+    if (phaseMap[e.key]) {
+      e.preventDefault();
+      quickSwitchPhase(phaseMap[e.key]);
+      showToast(`Phase gewechselt: ${phaseMap[e.key]} (Alt+${e.key})`, "clock");
+    }
+  }
+});
+
+// Guard against accidental window/tab closing while timer is actively running
+window.addEventListener("beforeunload", function(e) {
+  if (typeof liveTimerRunning !== "undefined" && liveTimerRunning) {
+    e.preventDefault();
+    e.returnValue = "Eine Live-Hospitation wird aktuell protokolliert. Möchten Sie die Seite wirklich verlassen?";
+    return e.returnValue;
+  }
+});
 
 function insertPhrase(phrase) {
   const input = document.getElementById("liveNoteInput");
@@ -2087,6 +2115,54 @@ function insertPhrase(phrase) {
   input.value = input.value ? `${input.value} ${phrase}` : phrase;
   autoResizeLiveNote(input);
   input.focus();
+
+  // Visual feedback: Subtle pulse highlight on input
+  input.classList.remove("phrase-inserted-pulse");
+  void input.offsetWidth; // Force reflow
+  input.classList.add("phrase-inserted-pulse");
+  setTimeout(() => input.classList.remove("phrase-inserted-pulse"), 600);
+}
+
+function copyLiveTranscriptText() {
+  if (!liveLogs || liveLogs.length === 0) {
+    showToast("Noch keine Protokolleinträge vorhanden.", "alert-triangle");
+    return;
+  }
+
+  const cur = getCurrentLAA ? getCurrentLAA() : null;
+  const header = `=== HOSPITATIONSPROTOKOLL ===\nKandidat: ${cur ? cur.name : 'Lehramtsanwärter'}\nDatum: ${new Date().toLocaleDateString('de-DE')}\nFachleiter/in: ${appState.mentorName || 'Fachleitung'}\n==============================\n\n`;
+
+  const body = liveLogs.slice().reverse().map(l => {
+    return `[${l.time}] (${l.phase}) ${l.text}`;
+  }).join("\n");
+
+  const fullText = header + body;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(fullText).then(() => {
+      showToast("Mitschrift als Text in Zwischenablage kopiert!", "copy");
+    }).catch(() => {
+      fallbackCopyText(fullText);
+    });
+  } else {
+    fallbackCopyText(fullText);
+  }
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast("Mitschrift in Zwischenablage kopiert!", "copy");
+  } catch(err) {
+    showToast("Kopieren fehlgeschlagen.", "x-circle");
+  }
+  document.body.removeChild(ta);
 }
 
 function addLiveNote() {

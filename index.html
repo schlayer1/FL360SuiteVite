@@ -429,9 +429,10 @@
         ></textarea>
         
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-          <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
-            <span class="inline-flex items-center gap-1"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Enter</kbd> Protokollieren</span>
+          <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="inline-flex items-center gap-1"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Enter</kbd> oder <kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Ctrl+Enter</kbd> Protokollieren</span>
             <span class="inline-flex items-center gap-1"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Shift + Enter</kbd> Neue Zeile</span>
+            <span class="inline-flex items-center gap-1" title="Alt+1: Einstieg, Alt+2: Erarbeitung, Alt+3: Sicherung, Alt+4: Vertiefung, Alt+5: Reflexion"><kbd style="background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:4px; font-family:monospace; border:1px solid rgba(255,255,255,0.15);">Alt + 1-5</kbd> Phasenwechsel</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <button id="btnLiveMic" type="button" class="btn btn-mic" onclick="toggleDictation()" title="Spracheingabe starten/stoppen">
@@ -446,9 +447,16 @@
         </div>
       </div>
 
-      <!-- Live Log Stream -->
-      <div style="margin-bottom:8px; font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;">
-        <span class="inline-flex items-center gap-1.5"><i data-lucide="scroll" class="w-4 h-4 text-blue-500"></i> Live-Protokollstrom (Zeitstempel &amp; Phasen):</span>
+      <!-- Live Log Stream Header mit Kopierfunktion -->
+      <div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px;" class="inline-flex items-center gap-1.5">
+          <i data-lucide="scroll" class="w-4 h-4 text-blue-500"></i>
+          <span>Live-Protokollstrom (Zeitstempel &amp; Phasen):</span>
+        </span>
+        <button type="button" class="btn btn-outline" style="font-size:0.75rem; padding:3px 10px; min-height:28px;" onclick="copyLiveTranscriptText()" title="Vollständige Mitschrift mit Zeitstempeln in die Zwischenablage kopieren">
+          <i data-lucide="copy" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span>Mitschrift kopieren</span>
+        </button>
       </div>
       <div id="liveLogStream" class="log-container"></div>
     </div>
