@@ -182,7 +182,10 @@ function renderEntwurfWorkspace() {
             <p style="font-size:0.84rem; max-width:400px; margin:0 auto 16px; color:#94a3b8;">
               Wählen Sie die PDF-Datei des Auszubildenden aus, um sie direkt im Split-Screen zu sichten und parallel zu begutachten.
             </p>
-            <button class="btn btn-primary" onclick="triggerPdfUpload()"><i data-lucide="upload" class="w-4 h-4 inline-block mr-1"></i> PDF-Entwurf auswählen</button>
+            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="triggerPdfUpload()"><i data-lucide="upload" class="w-4 h-4 inline-block mr-1"></i> PDF-Entwurf auswählen</button>
+              <button class="btn btn-outline" onclick="loadSampleLessonPlanPdf()"><i data-lucide="sparkles" class="w-4 h-4 inline-block mr-1 text-blue-500"></i> Muster-Entwurf laden</button>
+            </div>
           </div>
           <div id="entwurfPdfWrapper" class="pdf-canvas-wrapper" style="display:none;">
             <canvas id="entwurfPdfCanvas" style="display:block; max-width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.4); border-radius:4px;"></canvas>
@@ -436,24 +439,29 @@ function savePageAnnotations(pageNum, list) {
 }
 
 function undoLastAnnotation() {
-  if (!currentPdfDoc) return;
-  const list = getPageAnnotations(currentPdfPage);
+  const pageNum = parseInt(currentPdfPage, 10) || 1;
+  const list = getPageAnnotations(pageNum);
   if (list.length > 0) {
     list.pop();
-    savePageAnnotations(currentPdfPage, list);
+    savePageAnnotations(pageNum, list);
     redrawAllAnnotLayers();
     showToast("Letzte Markierung rückgängig gemacht", "↩️");
+  } else {
+    showToast("Keine Markierungen zum Rückgängig machen", "ℹ️");
   }
 }
 
 function clearPageAnnotations() {
-  if (!currentPdfDoc) return;
-  const list = getPageAnnotations(currentPdfPage);
-  if (list.length === 0) return;
-  if (confirm(`Möchten Sie wirklich alle Markierungen auf Seite ${currentPdfPage} löschen?`)) {
-    savePageAnnotations(currentPdfPage, []);
+  const pageNum = parseInt(currentPdfPage, 10) || 1;
+  const list = getPageAnnotations(pageNum);
+  if (list.length === 0) {
+    showToast("Keine Markierungen auf dieser Seite", "ℹ️");
+    return;
+  }
+  if (confirm(`Möchten Sie wirklich alle Markierungen auf Seite ${pageNum} löschen?`)) {
+    savePageAnnotations(pageNum, []);
     redrawAllAnnotLayers();
-    showToast(`Markierungen auf Seite ${currentPdfPage} gelöscht`, "🧹");
+    showToast(`Markierungen auf Seite ${pageNum} gelöscht`, "🧹");
   }
 }
 
@@ -529,17 +537,18 @@ function createNotePinElement(wrapper, noteItem, idx) {
 }
 
 function openNotePinDialog(noteItem, idx) {
+  const pageNum = parseInt(currentPdfPage, 10) || 1;
   const action = prompt(`Fachleiter-Notiz #${idx + 1}:\n(Leer lassen oder 'LÖSCHEN' zum Entfernen)`, noteItem.text || "");
   if (action === null) return;
-  const list = getPageAnnotations(currentPdfPage);
+  const list = getPageAnnotations(pageNum);
   if (action.trim() === "" || action.trim().toUpperCase() === "LÖSCHEN") {
     list.splice(idx, 1);
-    savePageAnnotations(currentPdfPage, list);
+    savePageAnnotations(pageNum, list);
     redrawAllAnnotLayers();
     showToast("Notiz-Pin entfernt", "🗑️");
   } else {
     noteItem.text = action.trim();
-    savePageAnnotations(currentPdfPage, list);
+    savePageAnnotations(pageNum, list);
     redrawAllAnnotLayers();
     showToast("Notiz aktualisiert", "💾");
   }
@@ -557,6 +566,17 @@ function redrawAllAnnotLayers() {
     }
   });
 }
+
+// Distance from point (p) to line segment between (v) and (w)
+function distToSegment(p, v, w) {
+  const l2 = (v.x - w.x) * (v.x - w.x) + (v.y - w.y) * (v.y - w.y);
+  if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+  let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+}
+
+let isErasingAnnotation = false;
 
 function setupAnnotCanvasEvents(annotCanvas) {
   if (!annotCanvas || annotCanvas._annotInitialized) return;
@@ -582,7 +602,8 @@ function setupAnnotCanvasEvents(annotCanvas) {
     if (annotCurrentTool === 'note') {
       const noteText = prompt("Neue Fachleiter-Randnotiz auf dem PDF anheften:");
       if (noteText && noteText.trim()) {
-        const list = getPageAnnotations(currentPdfPage);
+        const pageNum = parseInt(currentPdfPage, 10) || 1;
+        const list = getPageAnnotations(pageNum);
         list.push({
           type: 'note',
           x: Math.round(coords.x * 1000) / 1000,
@@ -590,7 +611,7 @@ function setupAnnotCanvasEvents(annotCanvas) {
           text: noteText.trim(),
           date: new Date().toISOString()
         });
-        savePageAnnotations(currentPdfPage, list);
+        savePageAnnotations(pageNum, list);
         redrawAllAnnotLayers();
         showToast("Randnotiz angeheftet!", "📌");
       }
@@ -598,6 +619,7 @@ function setupAnnotCanvasEvents(annotCanvas) {
     }
 
     if (annotCurrentTool === 'eraser') {
+      isErasingAnnotation = true;
       eraseAnnotationAt(coords);
       return;
     }
@@ -608,6 +630,13 @@ function setupAnnotCanvasEvents(annotCanvas) {
   };
 
   const onPointerMove = (e) => {
+    if (annotCurrentTool === 'eraser' && isErasingAnnotation) {
+      e.preventDefault();
+      const coords = getCanvasCoords(e);
+      eraseAnnotationAt(coords);
+      return;
+    }
+
     if (!isDrawingAnnotation) return;
     e.preventDefault();
     const coords = getCanvasCoords(e);
@@ -642,10 +671,15 @@ function setupAnnotCanvasEvents(annotCanvas) {
   };
 
   const onPointerUp = (e) => {
+    if (isErasingAnnotation) {
+      isErasingAnnotation = false;
+    }
+
     if (!isDrawingAnnotation) return;
     isDrawingAnnotation = false;
     if (currentStrokePoints.length >= 2) {
-      const list = getPageAnnotations(currentPdfPage);
+      const pageNum = parseInt(currentPdfPage, 10) || 1;
+      const list = getPageAnnotations(pageNum);
       list.push({
         type: annotCurrentTool,
         color: annotCurrentColor,
@@ -655,7 +689,7 @@ function setupAnnotCanvasEvents(annotCanvas) {
           y: Math.round(p.y * 1000) / 1000
         }))
       });
-      savePageAnnotations(currentPdfPage, list);
+      savePageAnnotations(pageNum, list);
       redrawAllAnnotLayers();
     }
     currentStrokePoints = [];
@@ -671,20 +705,37 @@ function setupAnnotCanvasEvents(annotCanvas) {
 }
 
 function eraseAnnotationAt(coords) {
-  const list = getPageAnnotations(currentPdfPage);
+  const pageNum = parseInt(currentPdfPage, 10) || 1;
+  const list = getPageAnnotations(pageNum);
   let removed = false;
+
   // Check in reverse order so latest strokes on top are erased first
   for (let i = list.length - 1; i >= 0; i--) {
     const item = list[i];
     if (item.type === 'note') {
       const dist = Math.hypot(item.x - coords.x, item.y - coords.y);
-      if (dist < 0.04) {
+      if (dist < 0.05) {
         list.splice(i, 1);
         removed = true;
         break;
       }
-    } else if (item.points) {
-      const hit = item.points.some(pt => Math.hypot(pt.x - coords.x, pt.y - coords.y) < 0.035);
+    } else if (item.points && item.points.length > 0) {
+      // Dynamic tolerance based on stroke size
+      const tolerance = (item.size || 15) / 500 + 0.025; // generous hit box for ease of erasing
+      
+      // Point check
+      let hit = item.points.some(pt => Math.hypot(pt.x - coords.x, pt.y - coords.y) < tolerance);
+      
+      // Line segment check between consecutive points
+      if (!hit) {
+        for (let j = 0; j < item.points.length - 1; j++) {
+          if (distToSegment(coords, item.points[j], item.points[j + 1]) < tolerance) {
+            hit = true;
+            break;
+          }
+        }
+      }
+
       if (hit) {
         list.splice(i, 1);
         removed = true;
@@ -694,7 +745,7 @@ function eraseAnnotationAt(coords) {
   }
 
   if (removed) {
-    savePageAnnotations(currentPdfPage, list);
+    savePageAnnotations(pageNum, list);
     redrawAllAnnotLayers();
     showToast("Markierung gelöscht", "🧹");
   }
@@ -753,8 +804,30 @@ function getAnnotToolbarHtml(prefix = "") {
 }
 
 let activePdfRenderTasks = {};
+let pendingPdfPage = null;
 let isPdfPageRendering = false;
 let pdfPageCache = {};
+
+function isElementVisible(el) {
+  if (!el) return false;
+  // Check element itself and its offsetParent or display/visibility
+  if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') {
+    return false;
+  }
+  const style = window.getComputedStyle(el);
+  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+    return false;
+  }
+  // Check tab or parent panes
+  const parentPane = el.closest('.split-pane-pdf, .entwurf-pane, .tab-content, .ns-view-pane');
+  if (parentPane) {
+    const parentStyle = window.getComputedStyle(parentPane);
+    if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') {
+      return false;
+    }
+  }
+  return true;
+}
 
 function renderPdfPage(num) {
   if (!currentPdfDoc) return;
@@ -763,7 +836,7 @@ function renderPdfPage(num) {
   if (num > currentPdfDoc.numPages) num = currentPdfDoc.numPages;
   currentPdfPage = num;
 
-  // Immediate UI Indicator & Badge Update (Zero Latency)
+  // Immediate UI Indicator & Badge Update on all controls (Zero Latency)
   const indicatorIds = ["entwurfPdfPageIndicator", "nsSplitPdfPageIndicator", "cockpitSplitPdfPageIndicator"];
   indicatorIds.forEach(id => {
     const el = document.getElementById(id);
@@ -776,7 +849,22 @@ function renderPdfPage(num) {
     if (el && currentPdfFileName) el.innerText = currentPdfFileName;
   });
 
-  // Cancel any in-flight rendering tasks immediately
+  // If already rendering a page, queue the target page and cancel in-flight tasks
+  if (isPdfPageRendering) {
+    pendingPdfPage = num;
+    Object.keys(activePdfRenderTasks).forEach(canvasId => {
+      try {
+        if (activePdfRenderTasks[canvasId]) {
+          activePdfRenderTasks[canvasId].cancel();
+        }
+      } catch(e) {}
+    });
+    return;
+  }
+
+  isPdfPageRendering = true;
+
+  // Cancel any existing tasks
   Object.keys(activePdfRenderTasks).forEach(canvasId => {
     try {
       if (activePdfRenderTasks[canvasId]) {
@@ -786,35 +874,45 @@ function renderPdfPage(num) {
     delete activePdfRenderTasks[canvasId];
   });
 
-  // Fast Page Object Retrieval (Cached or Promise)
+  // Fast Page Retrieval (Memory Cached or Promise)
   const getPagePromise = pdfPageCache[num] ? Promise.resolve(pdfPageCache[num]) : currentPdfDoc.getPage(num).then(p => {
     pdfPageCache[num] = p;
     return p;
   });
 
   getPagePromise.then(function(page) {
-    // Only continue if the user hasn't already switched to another page in the meantime
-    if (currentPdfPage !== num) return;
+    // If user requested another page in the meantime
+    if (pendingPdfPage !== null && pendingPdfPage !== num) {
+      const nextNum = pendingPdfPage;
+      pendingPdfPage = null;
+      isPdfPageRendering = false;
+      renderPdfPage(nextNum);
+      return;
+    }
 
-    const targets = [
+    const allTargets = [
       { canvasId: "entwurfPdfCanvas", annotId: "entwurfAnnotCanvas", wrapperId: "entwurfPdfWrapper", placeholderId: "pdfPlaceholderNotice" },
       { canvasId: "nsSplitPdfCanvas", annotId: "nsSplitAnnotCanvas", wrapperId: "nsSplitPdfWrapper", placeholderId: "nsSplitPdfPlaceholder" },
       { canvasId: "cockpitSplitPdfCanvas", annotId: "cockpitSplitAnnotCanvas", wrapperId: "cockpitSplitPdfWrapper", placeholderId: "cockpitSplitPdfPlaceholder" }
     ];
 
-    targets.forEach(cfg => {
+    // Identify which targets are currently visible or relevant to render
+    const targetsToRender = allTargets.filter(cfg => {
+      const canvas = document.getElementById(cfg.canvasId);
+      if (!canvas) return false;
+      return isElementVisible(canvas);
+    });
+
+    // Fallback: If no target is strictly visible (e.g. initial tab switch layout measurement), use first available canvas
+    const targets = targetsToRender.length > 0 ? targetsToRender : allTargets.filter(cfg => document.getElementById(cfg.canvasId) !== null).slice(0, 1);
+
+    const renderPromises = targets.map(cfg => {
       const canvas = document.getElementById(cfg.canvasId);
       const annotCanvas = document.getElementById(cfg.annotId);
       const wrapper = document.getElementById(cfg.wrapperId);
       const placeholder = document.getElementById(cfg.placeholderId);
 
-      if (!canvas) return;
-
-      // Only render if container is not completely hidden
-      const parentPane = canvas.closest('.split-pane-pdf, .entwurf-pane');
-      if (parentPane && getComputedStyle(parentPane).display === 'none') {
-        return;
-      }
+      if (!canvas) return Promise.resolve();
 
       const viewport = page.getViewport({ scale: currentPdfScale });
       canvas.height = viewport.height;
@@ -844,7 +942,7 @@ function renderPdfPage(num) {
       const renderTask = page.render(renderContext);
       activePdfRenderTasks[cfg.canvasId] = renderTask;
 
-      renderTask.promise.then(() => {
+      return renderTask.promise.then(() => {
         if (activePdfRenderTasks[cfg.canvasId] === renderTask) {
           delete activePdfRenderTasks[cfg.canvasId];
         }
@@ -858,19 +956,34 @@ function renderPdfPage(num) {
         }
       });
     });
+
+    return Promise.all(renderPromises);
   }).catch(err => {
     console.error("Error loading PDF page:", err);
+  }).finally(() => {
+    isPdfPageRendering = false;
+    if (pendingPdfPage !== null) {
+      const nextNum = pendingPdfPage;
+      pendingPdfPage = null;
+      renderPdfPage(nextNum);
+    }
   });
 }
 
 function prevPdfPage() {
-  if (!currentPdfDoc || currentPdfPage <= 1) return;
-  renderPdfPage(currentPdfPage - 1);
+  if (!currentPdfDoc) return;
+  const target = Math.max(1, (pendingPdfPage !== null ? pendingPdfPage : currentPdfPage) - 1);
+  if (target !== currentPdfPage || pendingPdfPage !== null) {
+    renderPdfPage(target);
+  }
 }
 
 function nextPdfPage() {
-  if (!currentPdfDoc || currentPdfPage >= currentPdfDoc.numPages) return;
-  renderPdfPage(currentPdfPage + 1);
+  if (!currentPdfDoc) return;
+  const target = Math.min(currentPdfDoc.numPages, (pendingPdfPage !== null ? pendingPdfPage : currentPdfPage) + 1);
+  if (target !== currentPdfPage || pendingPdfPage !== null) {
+    renderPdfPage(target);
+  }
 }
 
 function zoomPdf(delta) {
