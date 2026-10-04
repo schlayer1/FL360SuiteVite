@@ -649,14 +649,14 @@
             </div>
 
             <div style="display:flex; align-items:center; gap:4px;">
-              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:28px;" onclick="triggerPdfUpload()" title="PDF auswählen">
                 <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
               </button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="prevPdfPage()" title="Zurück"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-              <span id="nsSplitPdfPageIndicator" style="font-size:0.72rem; font-weight:700; color:var(--text-muted); min-width:40px; text-align:center;">1 / 1</span>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="nextPdfPage()" title="Weiter"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+              <button class="pdf-nav-btn" onclick="zoomPdf(-0.2)" title="Verkleinern (Zoom -)"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="zoomPdf(0.2)" title="Vergrößern (Zoom +)"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="prevPdfPage()" title="Zurück (←)"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <span id="nsSplitPdfPageIndicator" class="pdf-page-badge">1 / 1</span>
+              <button class="pdf-nav-btn" onclick="nextPdfPage()" title="Weiter (→)"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
             </div>
           </div>
           <div class="split-pdf-viewer" id="nsSplitPdfViewerContainer">
@@ -984,14 +984,14 @@
             </div>
 
             <div style="display:flex; align-items:center; gap:4px;">
-              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:26px;" onclick="triggerPdfUpload()" title="PDF auswählen">
+              <button class="btn btn-outline" style="font-size:0.72rem; padding:2px 8px; min-height:28px;" onclick="triggerPdfUpload()" title="PDF auswählen">
                 <i data-lucide="folder-open" class="w-3.5 h-3.5 inline mr-1"></i> PDF laden
               </button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="prevPdfPage()" title="Zurück"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-              <span id="cockpitSplitPdfPageIndicator" style="font-size:0.72rem; font-weight:700; color:var(--text-muted); min-width:40px; text-align:center;">1 / 1</span>
-              <button class="btn btn-ghost" style="padding:2px 6px; min-height:26px;" onclick="nextPdfPage()" title="Weiter"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+              <button class="pdf-nav-btn" onclick="zoomPdf(-0.2)" title="Verkleinern (Zoom -)"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="zoomPdf(0.2)" title="Vergrößern (Zoom +)"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="prevPdfPage()" title="Zurück (←)"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <span id="cockpitSplitPdfPageIndicator" class="pdf-page-badge">1 / 1</span>
+              <button class="pdf-nav-btn" onclick="nextPdfPage()" title="Weiter (→)"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
             </div>
           </div>
           <div class="split-pdf-viewer" id="cockpitSplitPdfViewerContainer">

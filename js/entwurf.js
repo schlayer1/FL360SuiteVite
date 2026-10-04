@@ -164,12 +164,14 @@ function renderEntwurfWorkspace() {
               <i data-lucide="folder-open" class="w-3.5 h-3.5 inline-block mr-1"></i> PDF laden...
             </button>
             
-            <!-- Zoom Controls -->
-            <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="zoomPdf(-0.2)" title="Verkleinern"><i data-lucide="zoom-out" class="w-3.5 h-3.5"></i></button>
-            <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="zoomPdf(0.2)" title="Vergrößern"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-            <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="prevPdfPage()" title="Vorherige Seite"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-            <span id="entwurfPdfPageIndicator" style="font-size:0.75rem; font-weight:700; color:#94a3b8;">1 / 1</span>
-            <button class="btn btn-ghost" style="padding:2px 6px; font-size:0.8rem;" onclick="nextPdfPage()" title="Nächste Seite"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            <!-- Zoom & Page Navigation Controls -->
+            <div style="display:inline-flex; align-items:center; gap:4px;">
+              <button class="pdf-nav-btn" onclick="zoomPdf(-0.2)" title="Verkleinern (Zoom -)"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="zoomPdf(0.2)" title="Vergrößern (Zoom +)"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+              <button class="pdf-nav-btn" onclick="prevPdfPage()" title="Vorherige Seite (←)"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <span id="entwurfPdfPageIndicator" class="pdf-page-badge">1 / 1</span>
+              <button class="pdf-nav-btn" onclick="nextPdfPage()" title="Nächste Seite (→)"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
           </div>
         </div>
 
@@ -751,15 +753,53 @@ function getAnnotToolbarHtml(prefix = "") {
 }
 
 let activePdfRenderTasks = {};
+let isPdfPageRendering = false;
+let pdfPageCache = {};
 
 function renderPdfPage(num) {
   if (!currentPdfDoc) return;
+  // Boundary check
+  if (num < 1) num = 1;
+  if (num > currentPdfDoc.numPages) num = currentPdfDoc.numPages;
   currentPdfPage = num;
-  currentPdfDoc.getPage(num).then(function(page) {
+
+  // Immediate UI Indicator & Badge Update (Zero Latency)
+  const indicatorIds = ["entwurfPdfPageIndicator", "nsSplitPdfPageIndicator", "cockpitSplitPdfPageIndicator"];
+  indicatorIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = `${num} / ${currentPdfDoc.numPages}`;
+  });
+
+  const badgeIds = ["entwurfPdfNameBadge", "nsSplitPdfNameBadge", "cockpitSplitPdfNameBadge"];
+  badgeIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && currentPdfFileName) el.innerText = currentPdfFileName;
+  });
+
+  // Cancel any in-flight rendering tasks immediately
+  Object.keys(activePdfRenderTasks).forEach(canvasId => {
+    try {
+      if (activePdfRenderTasks[canvasId]) {
+        activePdfRenderTasks[canvasId].cancel();
+      }
+    } catch(e) {}
+    delete activePdfRenderTasks[canvasId];
+  });
+
+  // Fast Page Object Retrieval (Cached or Promise)
+  const getPagePromise = pdfPageCache[num] ? Promise.resolve(pdfPageCache[num]) : currentPdfDoc.getPage(num).then(p => {
+    pdfPageCache[num] = p;
+    return p;
+  });
+
+  getPagePromise.then(function(page) {
+    // Only continue if the user hasn't already switched to another page in the meantime
+    if (currentPdfPage !== num) return;
+
     const targets = [
-      { canvasId: "entwurfPdfCanvas", annotId: "entwurfAnnotCanvas", wrapperId: "entwurfPdfWrapper", placeholderId: "pdfPlaceholderNotice", indicatorId: "entwurfPdfPageIndicator", badgeId: "entwurfPdfNameBadge" },
-      { canvasId: "nsSplitPdfCanvas", annotId: "nsSplitAnnotCanvas", wrapperId: "nsSplitPdfWrapper", placeholderId: "nsSplitPdfPlaceholder", indicatorId: "nsSplitPdfPageIndicator", badgeId: "nsSplitPdfNameBadge" },
-      { canvasId: "cockpitSplitPdfCanvas", annotId: "cockpitSplitAnnotCanvas", wrapperId: "cockpitSplitPdfWrapper", placeholderId: "cockpitSplitPdfPlaceholder", indicatorId: "cockpitSplitPdfPageIndicator", badgeId: "cockpitSplitPdfNameBadge" }
+      { canvasId: "entwurfPdfCanvas", annotId: "entwurfAnnotCanvas", wrapperId: "entwurfPdfWrapper", placeholderId: "pdfPlaceholderNotice" },
+      { canvasId: "nsSplitPdfCanvas", annotId: "nsSplitAnnotCanvas", wrapperId: "nsSplitPdfWrapper", placeholderId: "nsSplitPdfPlaceholder" },
+      { canvasId: "cockpitSplitPdfCanvas", annotId: "cockpitSplitAnnotCanvas", wrapperId: "cockpitSplitPdfWrapper", placeholderId: "cockpitSplitPdfPlaceholder" }
     ];
 
     targets.forEach(cfg => {
@@ -767,24 +807,13 @@ function renderPdfPage(num) {
       const annotCanvas = document.getElementById(cfg.annotId);
       const wrapper = document.getElementById(cfg.wrapperId);
       const placeholder = document.getElementById(cfg.placeholderId);
-      const indicator = document.getElementById(cfg.indicatorId);
-      const badge = document.getElementById(cfg.badgeId);
-
-      if (indicator) indicator.innerText = `${num} / ${currentPdfDoc.numPages}`;
-      if (badge && currentPdfFileName) badge.innerText = currentPdfFileName;
 
       if (!canvas) return;
+
       // Only render if container is not completely hidden
       const parentPane = canvas.closest('.split-pane-pdf, .entwurf-pane');
       if (parentPane && getComputedStyle(parentPane).display === 'none') {
         return;
-      }
-
-      // Cancel any existing render task on this canvas before starting a new one
-      if (activePdfRenderTasks[cfg.canvasId]) {
-        try {
-          activePdfRenderTasks[cfg.canvasId].cancel();
-        } catch(e) {}
       }
 
       const viewport = page.getViewport({ scale: currentPdfScale });
@@ -794,8 +823,7 @@ function renderPdfPage(num) {
 
       if (wrapper) {
         wrapper.style.display = "inline-block";
-        wrapper.style.width = `${viewport.width}px`;
-        wrapper.style.height = `${viewport.height}px`;
+        wrapper.style.maxWidth = "100%";
       }
 
       if (annotCanvas) {
@@ -807,7 +835,7 @@ function renderPdfPage(num) {
 
       if (placeholder) placeholder.style.display = "none";
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { alpha: false });
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport
@@ -815,6 +843,7 @@ function renderPdfPage(num) {
 
       const renderTask = page.render(renderContext);
       activePdfRenderTasks[cfg.canvasId] = renderTask;
+
       renderTask.promise.then(() => {
         if (activePdfRenderTasks[cfg.canvasId] === renderTask) {
           delete activePdfRenderTasks[cfg.canvasId];
@@ -829,19 +858,19 @@ function renderPdfPage(num) {
         }
       });
     });
+  }).catch(err => {
+    console.error("Error loading PDF page:", err);
   });
 }
 
 function prevPdfPage() {
   if (!currentPdfDoc || currentPdfPage <= 1) return;
-  currentPdfPage--;
-  renderPdfPage(currentPdfPage);
+  renderPdfPage(currentPdfPage - 1);
 }
 
 function nextPdfPage() {
   if (!currentPdfDoc || currentPdfPage >= currentPdfDoc.numPages) return;
-  currentPdfPage++;
-  renderPdfPage(currentPdfPage);
+  renderPdfPage(currentPdfPage + 1);
 }
 
 function zoomPdf(delta) {

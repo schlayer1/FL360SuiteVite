@@ -1303,15 +1303,33 @@ body.theme-light .badge-past { background: #f1f5f9; color: #475569; border: 1px 
 
 .entwurf-split-grid {
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 16px;
   align-items: stretch;
+  width: 100%;
 }
 
 @media (max-width: 1024px) {
   .entwurf-split-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.entwurf-pdf-container {
+  padding: 14px;
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0b1329;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.theme-light .entwurf-pdf-container {
+  background: #f1f5f9;
 }
 
 .entwurf-pane-header {
@@ -3009,11 +3027,78 @@ body.theme-light .candidate-summary-meta .meta-dot {
   border-radius: 8px;
   padding: 3px 6px;
   backdrop-filter: blur(10px);
+  flex-wrap: wrap;
 }
 
 body.theme-light .pdf-annot-toolbar {
   background: rgba(241, 245, 249, 0.9);
   border-color: #cbd5e1;
+}
+
+.pdf-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 32px;
+  min-height: 30px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pdf-nav-btn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #3b82f6;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.pdf-nav-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pdf-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+body.theme-light .pdf-nav-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+body.theme-light .pdf-nav-btn:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.pdf-page-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: monospace;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 50px;
+  text-align: center;
+  user-select: none;
+}
+
+body.theme-light .pdf-page-badge {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
 }
 
 .pdf-annot-btn {
@@ -3079,6 +3164,14 @@ body.theme-light .pdf-annot-btn:hover {
   display: inline-block;
   margin: 0 auto;
   user-select: none;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pdf-canvas-wrapper canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 .pdf-annot-layer {
