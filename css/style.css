@@ -1003,7 +1003,8 @@ textarea.note-input {
    NATIVE HTML5 <dialog> & MODAL OVERLAY STYLING (Top-Layer & Accessibility)
    ========================================================================== */
 
-dialog.modal-dialog {
+dialog.modal-dialog,
+dialog:modal {
   border: none;
   background: transparent;
   padding: 0;
@@ -1011,10 +1012,14 @@ dialog.modal-dialog {
   max-width: 92vw;
   width: auto;
   overflow: visible;
+  overscroll-behavior: contain;
   color: inherit;
 }
 
-dialog.modal-dialog::backdrop {
+dialog.modal-dialog::backdrop,
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -3243,9 +3248,20 @@ body.theme-light .pdf-annot-btn:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: auto;
+  pointer-events: none;
+  touch-action: pan-y;
   cursor: default;
   z-index: 10;
+}
+
+.pdf-annot-layer.mode-pen,
+.pdf-annot-layer.mode-highlighter,
+.pdf-annot-layer.mode-eraser,
+.pdf-annot-layer.mode-note {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .pdf-annot-layer.mode-pen {
@@ -3294,3 +3310,29 @@ body.theme-light .pdf-annot-btn:hover {
   .app-container { padding: 0 !important; }
   .card { border: none !important; box-shadow: none !important; page-break-inside: avoid; }
 }
+
+/* ==========================================================================
+   MODERN FORM VALIDATION & ACCESSIBILITY (Baseline Widely Available)
+   ========================================================================== */
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25);
+}
+
+input:user-valid:not([type="checkbox"]):not([type="radio"]),
+select:user-valid,
+textarea:user-valid {
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+/* ==========================================================================
+   THEMED NATIVE SCROLLBARS (Baseline 2024 - Non-intrusive)
+   ========================================================================== */
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-width: thin;
+}
+

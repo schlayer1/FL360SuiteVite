@@ -247,7 +247,7 @@ function renderEntwurfWorkspace() {
                 placeholder="Gutachtliche Würdigung, Belege &amp; Beobachtungen eintragen..." 
                 rows="2"
                 oninput="autoResizeEntwurfTextarea(this); updateEntwurfDimNote(${idx}, this.value)"
-              >${dim.note || ''}</textarea>
+              >${typeof escapeHtml === 'function' ? escapeHtml(dim.note || '') : (dim.note || '')}</textarea>
             </div>
           `).join('')}
         </div>
@@ -275,7 +275,7 @@ function renderEntwurfWorkspace() {
                   rows="1"
                   placeholder="Prüferfrage eingeben..."
                   oninput="autoResizeEntwurfTextarea(this); updateColloquiumQuestion(${qIdx}, this.value)"
-                >${q}</textarea>
+                >${typeof escapeHtml === 'function' ? escapeHtml(q || '') : (q || '')}</textarea>
                 <button class="btn btn-ghost btn-icon-only" style="padding:2px 6px; color:#ef4444; font-size:0.85rem; margin-top:2px;" onclick="deleteColloquiumQuestion(${qIdx})" title="Frage löschen"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
               </div>
             `).join('') || '<div style="font-size:0.78rem; color:#94a3b8; font-style:italic;">Keine Fragen hinterlegt.</div>'}

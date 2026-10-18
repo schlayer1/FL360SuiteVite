@@ -3,14 +3,40 @@
  */
 
 let deferredInstallPrompt = null;
+let updateNotified = false;
+
+function notifyPwaUpdateAvailable() {
+  if (updateNotified) return;
+  updateNotified = true;
+  if (typeof showToast === 'function') {
+    showToast('Neue Suite-Version verfügbar! Seite neu laden für das Update.', '🔄');
+  }
+}
 
 function initPWA() {
-  // Register Service Worker
+  // Register Service Worker with Auto-Update Detection
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
           console.log('✅ ServiceWorker registered for Offline PWA Mode:', reg.scope);
+
+          // If a worker is already waiting, an update is ready
+          if (reg.waiting) {
+            notifyPwaUpdateAvailable();
+          }
+
+          // Listen for subsequent updates
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  notifyPwaUpdateAvailable();
+                }
+              });
+            }
+          });
         })
         .catch((err) => {
           console.warn('ServiceWorker registration notice:', err);

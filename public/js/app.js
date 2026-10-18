@@ -667,11 +667,16 @@ function executeDeleteLAA(id) {
 }
 
 function exportDataJSON() {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+  const jsonString = JSON.stringify(appState, null, 2);
+  const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.setAttribute("href", dataStr);
+  link.setAttribute("href", url);
   link.setAttribute("download", `Fachleiter_Suite_Backup_${new Date().toISOString().split('T')[0]}.json`);
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   
   if (window.resilientStorage && typeof window.resilientStorage.recordBackupTimestamp === 'function') {
     window.resilientStorage.recordBackupTimestamp();

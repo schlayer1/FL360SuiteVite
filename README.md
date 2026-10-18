@@ -39,6 +39,19 @@ Die neue **Vite-Edition** bietet:
 
 ---
 
+## 🛡️ Neu in Version 2.4.1: Pre-Testing Hardening & Touch/PWA Edition
+
+| Feature | Beschreibung | Nutzen in der Praxis |
+| :--- | :--- | :--- |
+| ✍️ **iPad- & Apple Pencil Touch-Locking** | `touch-action: none` auf aktiven Zeichen-Layern und `pan-y` im Ansichtsmodus. | Kein versehentliches Scrollen oder Wegspringen der Seite beim Zeichnen mit Stift oder Finger auf Tablets. |
+| 💾 **Absturzsicherer Blob-Export** | Umstellung des JSON-Backups von veralteten Data-URLs auf modernen `Blob` & `URL.createObjectURL()`. | Kein Speicherüberlauf (`URIError`) mehr bei umfangreichen Kandidaten-Akten mit großen Entwürfen und vielen Notizen. |
+| 🪟 **Modal-Scroll-Isolation & Light-Dismiss** | Nativer `<dialog closedby="any">` mit `overscroll-behavior: contain` und `getBoundingClientRect()`-Backdrop-Prüfung. | Verhindert, dass die Hintergrundseite beim Scrollen in Modals mitrutscht; intuitives Schließen per Klick neben das Fenster. |
+| 📲 **PWA Auto-Update Notifier** | Automatischer Service-Worker-Lifecycle-Listener (`updatefound`) benachrichtigt Tester dezent über neue Versionen. | Tester arbeiten nach GitHub/Vercel-Updates nie mehr unbemerkt auf veralteten Zwischenständen im Browser-Cache. |
+| 📢 **Barrierefreie ARIA-Live-Toasts** | Statusmeldungen mit `role="status"` und `aria-live="polite"`. | Screenreader erfassen Erfolgs- und Warnmeldungen ("Gespeichert", "Entwurf geladen") sofort und zuverlässig. |
+| ✨ **Modernes `:user-invalid` Formular-Feedback** | Fehlerhafte Eingaben werden erst nach Verlassen des Feldes dezent signalisiert. | Kein nerviges, vorzeitiges Aufleuchten roter Ränder während des Tippens. |
+
+---
+
 ## ⚡ Neu in Version 2.4.0: Modern Web Architecture & Performance Edition
 
 | Feature | Beschreibung | Nutzen in der Praxis |

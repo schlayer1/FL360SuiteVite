@@ -385,11 +385,25 @@ function calcDurationString(startStr, endStr) {
   return `${s.toLocaleDateString('de-DE')} bis ${e.toLocaleDateString('de-DE')} (${months} Monate)`;
 }
 
+/**
+ * Global HTML Escaping Helper (Prevents markup breakage / injection)
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function showToast(msg, icon = "info") {
   const container = document.getElementById("toastContainer");
   if (!container) return;
   const toast = document.createElement("div");
   toast.className = "toast";
+  toast.setAttribute("role", "status");
 
   const emojiMap = {
     "ℹ️": "info",
@@ -482,18 +496,27 @@ function closeModal() {
 }
 
 /**
- * Native Dialog Backdrop Click Dismiss & Escape Helper
+ * Native Dialog Backdrop Click Dismiss (Modern Light-Dismiss Fallback & Escape)
  */
 if (typeof document !== 'undefined') {
   document.addEventListener("DOMContentLoaded", () => {
     const modalEl = document.getElementById("appModal");
     if (modalEl && typeof modalEl.showModal === 'function') {
-      modalEl.addEventListener("click", (e) => {
-        // Schließt den nativen Dialog beim Klick auf den Backdrop (außerhalb der inneren .modal-card)
-        if (e.target === modalEl) {
+      // Fallback for browsers without native closedby support
+      if (!('closedBy' in HTMLDialogElement.prototype)) {
+        modalEl.addEventListener("click", (e) => {
+          if (e.target !== modalEl) return;
+          const rect = modalEl.getBoundingClientRect();
+          const isDialogContent = (
+            rect.top <= e.clientY &&
+            e.clientY <= rect.top + rect.height &&
+            rect.left <= e.clientX &&
+            e.clientX <= rect.left + rect.width
+          );
+          if (isDialogContent) return;
           closeModal();
-        }
-      });
+        });
+      }
     }
   });
 

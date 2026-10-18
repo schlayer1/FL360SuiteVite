@@ -1047,8 +1047,8 @@
 <!-- HIDDEN PRINT IFRAME -->
 <iframe id="pdfPrintIframe" style="position:fixed; right:0; bottom:0; width:0; height:0; border:none; visibility:hidden;"></iframe>
 
-<!-- GLOBAL MODAL DIALOG (Native HTML5 <dialog> with Top-Layer & Focus Trap) -->
-<dialog id="appModal" class="modal-dialog">
+<!-- GLOBAL MODAL DIALOG (Native HTML5 <dialog> with Top-Layer, Light-Dismiss & Focus Trap) -->
+<dialog id="appModal" class="modal-dialog" closedby="any" aria-labelledby="modalTitle">
   <div class="modal-card">
     <div class="modal-header">
       <h3 id="modalTitle">Modal Titel</h3>
@@ -1061,8 +1061,8 @@
   </div>
 </dialog>
 
-<!-- TOAST NOTIFICATION CONTAINER -->
-<div id="toastContainer" class="toast-container"></div>
+<!-- TOAST NOTIFICATION CONTAINER (Accessible Live Region) -->
+<div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- GLOBAL HIDDEN FILE INPUT FOR PDF ENTWURF UPLOAD -->
 <input type="file" id="entwurfPdfFileInput" accept="application/pdf" style="display:none;" onchange="handleEntwurfPdfSelected(event)" />
