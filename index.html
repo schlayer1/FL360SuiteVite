@@ -83,13 +83,13 @@
 
     <!-- Aktionen & Daten Dropdown Popover (Proposal 3) -->
     <div class="header-dropdown-wrap">
-      <button id="headerActionsBtn" class="btn btn-outline flex items-center gap-2" onclick="toggleHeaderActionsDropdown(event)" title="Aktionen, Verwaltung &amp; Sicherung">
+      <button id="headerActionsBtn" class="btn btn-outline flex items-center gap-2" popovertarget="headerActionsDropdown" onclick="toggleHeaderActionsDropdown(event)" title="Aktionen, Verwaltung &amp; Sicherung">
         <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500"></i>
         <span>Aktionen &amp; Daten</span>
         <i data-lucide="chevron-down" id="headerActionsChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
       </button>
 
-      <div id="headerActionsDropdown" class="header-dropdown-menu" style="display:none;" onclick="event.stopPropagation()">
+      <div id="headerActionsDropdown" popover="auto" class="header-dropdown-menu">
         <div class="dropdown-section-title">Kandidaten-Verwaltung</div>
         <button class="dropdown-item" onclick="openEditLAAModal(); closeHeaderActionsDropdown();" title="Aktuelles Profil bearbeiten">
           <i data-lucide="pencil" class="w-4 h-4 text-blue-500"></i>
@@ -643,8 +643,11 @@
                 <i data-lucide="sticky-note" class="w-3.5 h-3.5 inline"></i>
                 <span>Notiz</span>
               </button>
-              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzte Aktion rückgängig machen (Cmd+Z / Ctrl+Z)">
                 <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+              </button>
+              <button class="pdf-annot-btn" onclick="redoLastAnnotation()" title="Aktion wiederholen (Cmd+Shift+Z / Ctrl+Y)">
+                <i data-lucide="redo-2" class="w-3.5 h-3.5 inline"></i>
               </button>
             </div>
 
@@ -978,8 +981,11 @@
                 <i data-lucide="sticky-note" class="w-3.5 h-3.5 inline"></i>
                 <span>Notiz</span>
               </button>
-              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+              <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzte Aktion rückgängig machen (Cmd+Z / Ctrl+Z)">
                 <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+              </button>
+              <button class="pdf-annot-btn" onclick="redoLastAnnotation()" title="Aktion wiederholen (Cmd+Shift+Z / Ctrl+Y)">
+                <i data-lucide="redo-2" class="w-3.5 h-3.5 inline"></i>
               </button>
             </div>
 
@@ -1041,19 +1047,19 @@
 <!-- HIDDEN PRINT IFRAME -->
 <iframe id="pdfPrintIframe" style="position:fixed; right:0; bottom:0; width:0; height:0; border:none; visibility:hidden;"></iframe>
 
-<!-- GLOBAL MODAL OVERLAY -->
-<div id="appModal" class="modal-overlay">
+<!-- GLOBAL MODAL DIALOG (Native HTML5 <dialog> with Top-Layer & Focus Trap) -->
+<dialog id="appModal" class="modal-dialog">
   <div class="modal-card">
     <div class="modal-header">
       <h3 id="modalTitle">Modal Titel</h3>
-      <button class="btn btn-ghost btn-icon-only" style="color:white;" onclick="closeModal()">
+      <button class="btn btn-ghost btn-icon-only" style="color:white;" onclick="closeModal()" aria-label="Dialog schließen">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
     <div id="modalBody" class="modal-body"></div>
     <div id="modalFooter" class="modal-footer"></div>
   </div>
-</div>
+</dialog>
 
 <!-- TOAST NOTIFICATION CONTAINER -->
 <div id="toastContainer" class="toast-container"></div>
@@ -1084,7 +1090,6 @@
 <script src="js/pwa.js?v=2.2.0"></script>
 <script src="js/niederschrift.js?v=2.2.0"></script>
 <script src="js/pdf_engine.js?v=2.2.0"></script>
-<script src="js/templates_data.js?v=2.2.0"></script>
 
 <script>
   // Theme Management (Dark & Light Mode)
@@ -1136,29 +1141,32 @@
 
   document.addEventListener('DOMContentLoaded', initTheme);
 
-  // Automatic Lucide Icons initializer and dynamic DOM observer
-  function refreshLucideIcons() {
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons();
-    }
-  }
-  document.addEventListener('DOMContentLoaded', refreshLucideIcons);
-  window.addEventListener('load', refreshLucideIcons);
-
-  // MutationObserver for continuous icon creation when JS updates dynamic content
-  const lucideObserver = new MutationObserver((mutations) => {
-    let hasAddedNodes = false;
-    for (let i = 0; i < mutations.length; i++) {
-      if (mutations[i].addedNodes && mutations[i].addedNodes.length > 0) {
-        hasAddedNodes = true;
-        break;
+  // Optimized Scoped Lucide Icons Initializer (Zero Layout Thrashing)
+  let _lucideScheduled = false;
+  function refreshLucideIcons(rootElement) {
+    if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
+    if (rootElement && rootElement instanceof HTMLElement) {
+      // Scoped rendering: only parse and replace icons inside the updated container
+      try {
+        window.lucide.createIcons({ root: rootElement });
+      } catch (e) {
+        window.lucide.createIcons();
       }
+      return;
     }
-    if (hasAddedNodes) {
-      requestAnimationFrame(refreshLucideIcons);
-    }
-  });
-  lucideObserver.observe(document.body, { childList: true, subtree: true });
+    // Document-wide: Throttle to at most once per animation frame
+    if (_lucideScheduled) return;
+    _lucideScheduled = true;
+    requestAnimationFrame(() => {
+      _lucideScheduled = false;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    });
+  }
+  window.refreshLucideIcons = refreshLucideIcons;
+  document.addEventListener('DOMContentLoaded', () => refreshLucideIcons());
+  window.addEventListener('load', () => refreshLucideIcons());
 </script>
 
 </body>

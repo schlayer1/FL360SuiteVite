@@ -51,7 +51,41 @@ function wrapText(text, maxChars) {
   return result;
 }
 
+let _templatesLoadPromise = null;
+function ensureOfficialTemplatesLoaded() {
+  const existing = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : null);
+  if (existing) {
+    return Promise.resolve(existing);
+  }
+  if (_templatesLoadPromise) return _templatesLoadPromise;
+
+  _templatesLoadPromise = new Promise((resolve, reject) => {
+    console.log('[PDF Engine] Lade amtliche Formularvorlagen (3,2 MB) asynchron on-demand...');
+    const script = document.createElement('script');
+    script.src = 'js/templates_data.js?v=2.2.0';
+    script.onload = () => {
+      console.log('[PDF Engine] Amtliche Formularvorlagen erfolgreich on-demand geladen!');
+      const loaded = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : null);
+      resolve(loaded);
+    };
+    script.onerror = (err) => {
+      console.error('[PDF Engine] Fehler beim Laden der amtlichen Vorlagen:', err);
+      reject(err);
+    };
+    document.head.appendChild(script);
+  });
+  return _templatesLoadPromise;
+}
+
 async function initPdfEngine() {
+  const existing = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : null);
+  if (!existing) {
+    try {
+      await ensureOfficialTemplatesLoaded();
+    } catch(e) {
+      console.warn("Konnte amtliche Vorlagen nicht laden:", e);
+    }
+  }
   updateTemplateDropdown();
   updateFolderUIState();
   if (activeTemplateKey) {
@@ -64,9 +98,10 @@ function updateTemplateDropdown() {
   const countBadge = document.getElementById("templateCountBadge");
   if (!select) return;
 
+  const tpls = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : null);
   let optionsHtml = `<optgroup label="Amtliche Formulare (Thüringer Landesprüfungsamt)">`;
-  if (typeof OFFICIAL_TEMPLATES !== 'undefined') {
-    for (const [key, tpl] of Object.entries(OFFICIAL_TEMPLATES)) {
+  if (tpls) {
+    for (const [key, tpl] of Object.entries(tpls)) {
       const isSel = (key === activeTemplateKey) ? 'selected' : '';
       optionsHtml += `<option value="${key}" ${isSel}>${tpl.id} • ${tpl.title}</option>`;
     }
@@ -238,8 +273,13 @@ async function loadPdfTemplate(key) {
   showToast(`Formular "${key}" wird geladen...`, "⏳");
   
   let b64 = "";
-  if (typeof OFFICIAL_TEMPLATES !== 'undefined' && OFFICIAL_TEMPLATES[key]) {
-    b64 = OFFICIAL_TEMPLATES[key].base64;
+  const existingTpls = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : null);
+  if (!existingTpls) {
+    await ensureOfficialTemplatesLoaded();
+  }
+  const tpls = window.OFFICIAL_TEMPLATES || (typeof OFFICIAL_TEMPLATES !== 'undefined' ? OFFICIAL_TEMPLATES : {});
+  if (tpls && tpls[key]) {
+    b64 = tpls[key].base64;
   } else {
     const custom = customTemplates.find(t => t.id === key);
     if (custom) b64 = custom.base64;
@@ -260,7 +300,8 @@ async function loadPdfTemplate(key) {
 
     if (typeof pdfjsLib !== 'undefined') {
       try {
-        if (pdfjsLib.GlobalWorkerOptions) {
+        // Preserves local bundled worker configured in src/main.js
+        if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
           pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
       } catch(e) {}

@@ -245,6 +245,7 @@ let appState = (() => {
   }
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 })();
+window.appState = appState;
 
 function getCurrentLAA() {
   if (!appState || !appState.laas) return null;
@@ -259,21 +260,81 @@ function getCurrentLAA() {
   return null;
 }
 
-function saveState() {
+let _saveStateDebounceTimer = null;
+let _isSavePending = false;
+
+function _executeActualSave() {
+  _isSavePending = false;
   try {
+    // 1. Sichere localStorage-Spiegelung mit Quota-Guard
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem("fl_cockpit_pro_state_v8", JSON.stringify(appState));
+      try {
+        const serialized = JSON.stringify(appState);
+        // Prüfe ob State unter Quota-Sicherheitsgrenze (~3MB) liegt
+        if (serialized.length < 3 * 1024 * 1024) {
+          localStorage.setItem("fl_cockpit_pro_state_v8", serialized);
+        } else {
+          // Leichtgewichtiger Fallback-Spiegel ohne speicherintensive Freihand-Vektoren
+          const lightweightCopy = JSON.parse(serialized);
+          if (lightweightCopy.entwurfAnnotations) delete lightweightCopy.entwurfAnnotations;
+          if (lightweightCopy.laas) {
+            Object.values(lightweightCopy.laas).forEach(l => {
+              if (l.entwurfAnnotations) delete l.entwurfAnnotations;
+            });
+          }
+          localStorage.setItem("fl_cockpit_pro_state_v8", JSON.stringify(lightweightCopy));
+        }
+      } catch (quotaErr) {
+        console.warn("[SaveState] localStorage Quota erreicht, Primärspeicher IndexedDB übernimmt:", quotaErr);
+      }
     }
-    // Spiegelung in die moderne ResilientStorage Engine (IndexedDB + Quota Protection)
+
+    // 2. Primäre autoritative asynchrone IndexedDB-Persistierung
     if (window.resilientStorage && typeof window.resilientStorage.saveState === 'function') {
-      window.resilientStorage.saveState(appState);
+      window.resilientStorage.saveState(appState, true /* skip duplicate local write */);
+    }
+
+    // 3. Reaktive Benachrichtigung für parallele Ansichten (Split-Screens, Live-Tab, Reflexionsabgleich)
+    if (typeof window !== 'undefined') {
+      window._isSavePending = false;
+      window.dispatchEvent(new CustomEvent('fl:state-updated', { detail: { timestamp: Date.now() } }));
     }
   } catch(e) {
     console.warn("Save state warning:", e);
   }
 }
 
+function saveState(immediate = false) {
+  _isSavePending = true;
+  if (typeof window !== 'undefined') window._isSavePending = true;
+  if (immediate) {
+    if (_saveStateDebounceTimer) {
+      clearTimeout(_saveStateDebounceTimer);
+      _saveStateDebounceTimer = null;
+    }
+    _executeActualSave();
+    return;
+  }
+  
+  if (_saveStateDebounceTimer) {
+    clearTimeout(_saveStateDebounceTimer);
+  }
+  _saveStateDebounceTimer = setTimeout(() => {
+    _saveStateDebounceTimer = null;
+    _executeActualSave();
+  }, 250);
+}
+
 const saveAppState = saveState;
+
+// Sofortiger Sync-Flush bei Page Unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (_isSavePending) {
+      _executeActualSave();
+    }
+  });
+}
 
 /**
  * 1-Click Demo Candidate Loader
@@ -389,26 +450,56 @@ function openModal({ title, bodyHTML, footerHTML }) {
   }
   if (bodyEl) bodyEl.innerHTML = bodyHTML || "";
   if (footerEl) footerEl.innerHTML = footerHTML || '<button class="btn btn-outline" onclick="closeModal()">Schließen</button>';
-  if (window.lucide) lucide.createIcons();
+  
+  if (typeof refreshLucideIcons === 'function') {
+    refreshLucideIcons(modalEl);
+  } else if (window.lucide) {
+    lucide.createIcons();
+  }
+
   if (modalEl) {
-    modalEl.classList.add("active");
-    modalEl.style.display = "flex";
+    if (typeof modalEl.showModal === 'function') {
+      if (!modalEl.open) {
+        modalEl.showModal();
+      }
+    } else {
+      modalEl.classList.add("active");
+      modalEl.style.display = "flex";
+    }
   }
 }
 
 function closeModal() {
   const modalEl = document.getElementById("appModal") || document.getElementById("globalModalOverlay");
   if (modalEl) {
-    modalEl.classList.remove("active");
-    modalEl.style.display = "none";
+    if (typeof modalEl.close === 'function') {
+      if (modalEl.open) modalEl.close();
+    } else {
+      modalEl.classList.remove("active");
+      modalEl.style.display = "none";
+    }
   }
 }
 
 /**
- * Global Keyboard & Modal Esc Helper
+ * Native Dialog Backdrop Click Dismiss & Escape Helper
  */
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeModal();
-  }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener("DOMContentLoaded", () => {
+    const modalEl = document.getElementById("appModal");
+    if (modalEl && typeof modalEl.showModal === 'function') {
+      modalEl.addEventListener("click", (e) => {
+        // Schließt den nativen Dialog beim Klick auf den Backdrop (außerhalb der inneren .modal-card)
+        if (e.target === modalEl) {
+          closeModal();
+        }
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeModal();
+    }
+  });
+}

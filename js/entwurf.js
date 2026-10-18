@@ -416,11 +416,17 @@ function updateAnnotLayerCursors() {
 
 function getCandidateAnnotations() {
   const cur = getCurrentLAA();
-  if (!cur) return {};
-  if (!cur.entwurfAnnotations) {
-    cur.entwurfAnnotations = {};
+  if (cur) {
+    if (!cur.entwurfAnnotations) {
+      cur.entwurfAnnotations = {};
+    }
+    return cur.entwurfAnnotations;
   }
-  return cur.entwurfAnnotations;
+  // Fallback in appState wenn aktuell kein Kandidat ausgewählt ist
+  if (!appState.entwurfAnnotations) {
+    appState.entwurfAnnotations = {};
+  }
+  return appState.entwurfAnnotations;
 }
 
 function getPageAnnotations(pageNum) {
@@ -438,17 +444,99 @@ function savePageAnnotations(pageNum, list) {
   saveState();
 }
 
+// GoodNotes-Style Action History Stack (Command Pattern for Drawing & Erasing)
+let annotUndoStack = [];
+let annotRedoStack = [];
+
+function recordAnnotAction(action) {
+  annotUndoStack.push(action);
+  annotRedoStack = []; // Reset Redo upon new user action
+  if (annotUndoStack.length > 50) annotUndoStack.shift();
+}
+
 function undoLastAnnotation() {
-  const pageNum = parseInt(currentPdfPage, 10) || 1;
-  const list = getPageAnnotations(pageNum);
-  if (list.length > 0) {
-    list.pop();
-    savePageAnnotations(pageNum, list);
-    redrawAllAnnotLayers();
-    showToast("Letzte Markierung rückgängig gemacht", "↩️");
-  } else {
-    showToast("Keine Markierungen zum Rückgängig machen", "ℹ️");
+  if (annotUndoStack.length === 0) {
+    // Fallback: Wenn noch kein Stack existiert, pop vom aktuellen Page-Array
+    const pageNum = parseInt(currentPdfPage, 10) || 1;
+    const list = getPageAnnotations(pageNum);
+    if (list.length > 0) {
+      const removed = list.pop();
+      annotRedoStack.push({ type: 'add_stroke', pageNum, item: removed });
+      savePageAnnotations(pageNum, list);
+      redrawAllAnnotLayers();
+      showToast("Letzte Markierung rückgängig gemacht", "↩️");
+      return;
+    }
+    showToast("Keine Aktionen zum Rückgängig machen", "ℹ️");
+    return;
   }
+
+  const action = annotUndoStack.pop();
+  annotRedoStack.push(action);
+
+  const pageNum = action.pageNum;
+  const list = getPageAnnotations(pageNum);
+
+  if (action.type === 'add_stroke' || action.type === 'add_note') {
+    const idx = list.findIndex(it => (action.item.id && it.id === action.item.id) || it === action.item);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    } else {
+      list.pop();
+    }
+  } else if (action.type === 'erase_item' || action.type === 'delete_note') {
+    if (typeof action.index === 'number' && action.index >= 0 && action.index <= list.length) {
+      list.splice(action.index, 0, action.item);
+    } else {
+      list.push(action.item);
+    }
+  } else if (action.type === 'clear_page') {
+    if (action.items) {
+      list.push(...action.items);
+    }
+  }
+
+  savePageAnnotations(pageNum, list);
+  if (currentPdfPage !== pageNum) {
+    renderPdfPage(pageNum);
+  } else {
+    redrawAllAnnotLayers();
+  }
+  showToast("Aktion rückgängig gemacht", "↩️");
+}
+
+function redoLastAnnotation() {
+  if (annotRedoStack.length === 0) {
+    showToast("Keine Aktionen zum Wiederholen", "ℹ️");
+    return;
+  }
+
+  const action = annotRedoStack.pop();
+  annotUndoStack.push(action);
+
+  const pageNum = action.pageNum;
+  const list = getPageAnnotations(pageNum);
+
+  if (action.type === 'add_stroke' || action.type === 'add_note') {
+    list.push(action.item);
+  } else if (action.type === 'erase_item' || action.type === 'delete_note') {
+    const idx = list.findIndex(it => (action.item.id && it.id === action.item.id) || it === action.item);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    } else if (action.index < list.length) {
+      list.splice(action.index, 1);
+    }
+  } else if (action.type === 'clear_page') {
+    list.length = 0;
+  }
+
+  savePageAnnotations(pageNum, list);
+  if (currentPdfPage !== pageNum) {
+    renderPdfPage(pageNum);
+  } else {
+    redrawAllAnnotLayers();
+  }
+  showToast("Aktion wiederholt", "↪️");
 }
 
 function clearPageAnnotations() {
@@ -459,6 +547,12 @@ function clearPageAnnotations() {
     return;
   }
   if (confirm(`Möchten Sie wirklich alle Markierungen auf Seite ${pageNum} löschen?`)) {
+    const snapshot = [...list];
+    recordAnnotAction({
+      type: 'clear_page',
+      pageNum: pageNum,
+      items: snapshot
+    });
     savePageAnnotations(pageNum, []);
     redrawAllAnnotLayers();
     showToast(`Markierungen auf Seite ${pageNum} gelöscht`, "🧹");
@@ -542,7 +636,13 @@ function openNotePinDialog(noteItem, idx) {
   if (action === null) return;
   const list = getPageAnnotations(pageNum);
   if (action.trim() === "" || action.trim().toUpperCase() === "LÖSCHEN") {
-    list.splice(idx, 1);
+    const removed = list.splice(idx, 1)[0];
+    recordAnnotAction({
+      type: 'delete_note',
+      pageNum: pageNum,
+      item: removed,
+      index: idx
+    });
     savePageAnnotations(pageNum, list);
     redrawAllAnnotLayers();
     showToast("Notiz-Pin entfernt", "🗑️");
@@ -584,8 +684,8 @@ function setupAnnotCanvasEvents(annotCanvas) {
 
   const getCanvasCoords = (e) => {
     const rect = annotCanvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     return {
       x: (clientX - rect.left) / rect.width,
       y: (clientY - rect.top) / rect.height
@@ -594,6 +694,7 @@ function setupAnnotCanvasEvents(annotCanvas) {
 
   const onPointerDown = (e) => {
     if (annotCurrentTool === 'none') return;
+    if (e.isPrimary === false) return;
     e.preventDefault();
 
     const coords = getCanvasCoords(e);
@@ -604,12 +705,19 @@ function setupAnnotCanvasEvents(annotCanvas) {
       if (noteText && noteText.trim()) {
         const pageNum = parseInt(currentPdfPage, 10) || 1;
         const list = getPageAnnotations(pageNum);
-        list.push({
+        const noteObj = {
           type: 'note',
           x: Math.round(coords.x * 1000) / 1000,
           y: Math.round(coords.y * 1000) / 1000,
           text: noteText.trim(),
-          date: new Date().toISOString()
+          date: new Date().toISOString(),
+          id: 'note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)
+        };
+        list.push(noteObj);
+        recordAnnotAction({
+          type: 'add_note',
+          pageNum: pageNum,
+          item: noteObj
         });
         savePageAnnotations(pageNum, list);
         redrawAllAnnotLayers();
@@ -620,12 +728,14 @@ function setupAnnotCanvasEvents(annotCanvas) {
 
     if (annotCurrentTool === 'eraser') {
       isErasingAnnotation = true;
+      try { annotCanvas.setPointerCapture(e.pointerId); } catch(err) {}
       eraseAnnotationAt(coords);
       return;
     }
 
     // Pen or Highlighter
     isDrawingAnnotation = true;
+    try { annotCanvas.setPointerCapture(e.pointerId); } catch(err) {}
     currentStrokePoints = [coords];
   };
 
@@ -671,6 +781,12 @@ function setupAnnotCanvasEvents(annotCanvas) {
   };
 
   const onPointerUp = (e) => {
+    try {
+      if (annotCanvas.hasPointerCapture && annotCanvas.hasPointerCapture(e.pointerId)) {
+        annotCanvas.releasePointerCapture(e.pointerId);
+      }
+    } catch(err) {}
+
     if (isErasingAnnotation) {
       isErasingAnnotation = false;
     }
@@ -680,14 +796,21 @@ function setupAnnotCanvasEvents(annotCanvas) {
     if (currentStrokePoints.length >= 2) {
       const pageNum = parseInt(currentPdfPage, 10) || 1;
       const list = getPageAnnotations(pageNum);
-      list.push({
+      const strokeObj = {
         type: annotCurrentTool,
         color: annotCurrentColor,
         size: (annotCurrentTool === 'highlighter') ? annotHighlighterSize : annotPenSize,
         points: currentStrokePoints.map(p => ({
           x: Math.round(p.x * 1000) / 1000,
           y: Math.round(p.y * 1000) / 1000
-        }))
+        })),
+        id: 'stroke_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)
+      };
+      list.push(strokeObj);
+      recordAnnotAction({
+        type: 'add_stroke',
+        pageNum: pageNum,
+        item: strokeObj
       });
       savePageAnnotations(pageNum, list);
       redrawAllAnnotLayers();
@@ -695,13 +818,22 @@ function setupAnnotCanvasEvents(annotCanvas) {
     currentStrokePoints = [];
   };
 
-  annotCanvas.addEventListener('mousedown', onPointerDown);
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerUp);
+  const onPointerCancel = (e) => {
+    try {
+      if (annotCanvas.hasPointerCapture && annotCanvas.hasPointerCapture(e.pointerId)) {
+        annotCanvas.releasePointerCapture(e.pointerId);
+      }
+    } catch(err) {}
+    isErasingAnnotation = false;
+    isDrawingAnnotation = false;
+    currentStrokePoints = [];
+  };
 
-  annotCanvas.addEventListener('touchstart', onPointerDown, { passive: false });
-  window.addEventListener('touchmove', onPointerMove, { passive: false });
-  window.addEventListener('touchend', onPointerUp, { passive: false });
+  // Modern W3C Pointer Events with direct element capture (Zero window listener leaks)
+  annotCanvas.addEventListener('pointerdown', onPointerDown);
+  annotCanvas.addEventListener('pointermove', onPointerMove);
+  annotCanvas.addEventListener('pointerup', onPointerUp);
+  annotCanvas.addEventListener('pointercancel', onPointerCancel);
 }
 
 function eraseAnnotationAt(coords) {
@@ -715,7 +847,13 @@ function eraseAnnotationAt(coords) {
     if (item.type === 'note') {
       const dist = Math.hypot(item.x - coords.x, item.y - coords.y);
       if (dist < 0.05) {
-        list.splice(i, 1);
+        const deletedNote = list.splice(i, 1)[0];
+        recordAnnotAction({
+          type: 'erase_item',
+          pageNum: pageNum,
+          item: deletedNote,
+          index: i
+        });
         removed = true;
         break;
       }
@@ -737,7 +875,13 @@ function eraseAnnotationAt(coords) {
       }
 
       if (hit) {
-        list.splice(i, 1);
+        const erasedStroke = list.splice(i, 1)[0];
+        recordAnnotAction({
+          type: 'erase_item',
+          pageNum: pageNum,
+          item: erasedStroke,
+          index: i
+        });
         removed = true;
         break;
       }
@@ -791,8 +935,13 @@ function getAnnotToolbarHtml(prefix = "") {
       </button>
 
       <!-- Undo Button -->
-      <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzten Strich rückgängig machen">
+      <button class="pdf-annot-btn" onclick="undoLastAnnotation()" title="Letzte Aktion rückgängig machen (Cmd+Z / Ctrl+Z)">
         <i data-lucide="undo-2" class="w-3.5 h-3.5 inline"></i>
+      </button>
+
+      <!-- Redo Button -->
+      <button class="pdf-annot-btn" onclick="redoLastAnnotation()" title="Aktion wiederholen (Cmd+Shift+Z / Ctrl+Y)">
+        <i data-lucide="redo-2" class="w-3.5 h-3.5 inline"></i>
       </button>
 
       <!-- Clear Page Annotations Button -->
@@ -803,29 +952,75 @@ function getAnnotToolbarHtml(prefix = "") {
   `;
 }
 
+// Global Keyboard Shortcut Manager for Undo / Redo (GoodNotes Experience)
+if (typeof window !== 'undefined' && !window._annotKeyListenersAttached) {
+  window._annotKeyListenersAttached = true;
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redoLastAnnotation();
+        } else {
+          undoLastAnnotation();
+        }
+      } else if (e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redoLastAnnotation();
+      }
+    }
+  });
+}
+
 let activePdfRenderTasks = {};
 let pendingPdfPage = null;
 let isPdfPageRendering = false;
 let pdfPageCache = {};
 
-function isElementVisible(el) {
-  if (!el) return false;
-  // Check element itself and its offsetParent or display/visibility
-  if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') {
-    return false;
-  }
-  const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-    return false;
-  }
-  // Check tab or parent panes
-  const parentPane = el.closest('.split-pane-pdf, .entwurf-pane, .tab-content, .ns-view-pane');
-  if (parentPane) {
-    const parentStyle = window.getComputedStyle(parentPane);
-    if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') {
-      return false;
-    }
-  }
+let pdfUserZoomMultiplier = 1.0;
+let _pdfResizeObserver = null;
+
+function computeFitScale(page, wrapper) {
+  if (!page) return 1.0;
+  const unscaled = page.getViewport({ scale: 1.0 });
+  const container = wrapper ? (wrapper.closest('.entwurf-pane, .split-pane-pdf, .split-pane-card, .tab-content') || wrapper.parentElement) : null;
+  const availableWidth = container && container.clientWidth > 120 ? (container.clientWidth - 32) : (window.innerWidth > 900 ? 560 : 380);
+  const fitScale = (availableWidth / unscaled.width) * pdfUserZoomMultiplier;
+  return Math.max(0.35, Math.min(3.0, fitScale));
+}
+
+function initPdfResizeObserver() {
+  if (typeof ResizeObserver === 'undefined') return;
+  if (_pdfResizeObserver) return;
+  let resizeTimer = null;
+  _pdfResizeObserver = new ResizeObserver(() => {
+    if (!currentPdfDoc) return;
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      renderPdfPage(currentPdfPage);
+    }, 120);
+  });
+
+  const containers = [
+    document.getElementById("entwurfPdfViewerContainer"),
+    document.getElementById("nsSplitPdfContainer"),
+    document.getElementById("cockpitSplitPdfContainer")
+  ];
+  containers.forEach(el => {
+    if (el) _pdfResizeObserver.observe(el);
+  });
+}
+
+function isTargetPaneActive(cfg) {
+  const canvas = document.getElementById(cfg.canvasId);
+  if (!canvas) return false;
+  // Tab-Aktivitätsprüfung
+  const tab = canvas.closest('.tab-content');
+  if (tab && !tab.classList.contains('active')) return false;
+  // Sub-Pane Prüfung in Niederschrift
+  const nsPane = canvas.closest('.ns-view-pane');
+  if (nsPane && nsPane.style.display === 'none') return false;
   return true;
 }
 
@@ -835,6 +1030,9 @@ function renderPdfPage(num) {
   if (num < 1) num = 1;
   if (num > currentPdfDoc.numPages) num = currentPdfDoc.numPages;
   currentPdfPage = num;
+
+  // Initialisiere ResizeObserver für responsive Anpassung bei Fensterverkleinerung
+  initPdfResizeObserver();
 
   // Immediate UI Indicator & Badge Update on all controls (Zero Latency)
   const indicatorIds = ["entwurfPdfPageIndicator", "nsSplitPdfPageIndicator", "cockpitSplitPdfPageIndicator"];
@@ -897,13 +1095,9 @@ function renderPdfPage(num) {
     ];
 
     // Identify which targets are currently visible or relevant to render
-    const targetsToRender = allTargets.filter(cfg => {
-      const canvas = document.getElementById(cfg.canvasId);
-      if (!canvas) return false;
-      return isElementVisible(canvas);
-    });
+    const targetsToRender = allTargets.filter(cfg => isTargetPaneActive(cfg));
 
-    // Fallback: If no target is strictly visible (e.g. initial tab switch layout measurement), use first available canvas
+    // Fallback: If no target is strictly active, use first available canvas
     const targets = targetsToRender.length > 0 ? targetsToRender : allTargets.filter(cfg => document.getElementById(cfg.canvasId) !== null).slice(0, 1);
 
     const renderPromises = targets.map(cfg => {
@@ -914,24 +1108,30 @@ function renderPdfPage(num) {
 
       if (!canvas) return Promise.resolve();
 
-      const viewport = page.getViewport({ scale: currentPdfScale });
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      canvas.style.display = "block";
-
+      // Show wrapper immediately, hide placeholder
+      if (placeholder) placeholder.style.display = "none";
       if (wrapper) {
         wrapper.style.display = "inline-block";
         wrapper.style.maxWidth = "100%";
       }
 
+      // Compute dynamic fit scale for this container
+      const scale = computeFitScale(page, wrapper);
+      const viewport = page.getViewport({ scale: scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      canvas.style.display = "block";
+      canvas.style.maxWidth = "100%";
+      canvas.style.height = "auto";
+
       if (annotCanvas) {
         annotCanvas.width = viewport.width;
         annotCanvas.height = viewport.height;
         annotCanvas.style.display = "block";
+        annotCanvas.style.maxWidth = "100%";
+        annotCanvas.style.height = "auto";
         setupAnnotCanvasEvents(annotCanvas);
       }
-
-      if (placeholder) placeholder.style.display = "none";
 
       const ctx = canvas.getContext('2d', { alpha: false });
       const renderContext = {
@@ -972,7 +1172,8 @@ function renderPdfPage(num) {
 
 function prevPdfPage() {
   if (!currentPdfDoc) return;
-  const target = Math.max(1, (pendingPdfPage !== null ? pendingPdfPage : currentPdfPage) - 1);
+  const current = pendingPdfPage !== null ? pendingPdfPage : currentPdfPage;
+  const target = Math.max(1, current - 1);
   if (target !== currentPdfPage || pendingPdfPage !== null) {
     renderPdfPage(target);
   }
@@ -980,7 +1181,8 @@ function prevPdfPage() {
 
 function nextPdfPage() {
   if (!currentPdfDoc) return;
-  const target = Math.min(currentPdfDoc.numPages, (pendingPdfPage !== null ? pendingPdfPage : currentPdfPage) + 1);
+  const current = pendingPdfPage !== null ? pendingPdfPage : currentPdfPage;
+  const target = Math.min(currentPdfDoc.numPages, current + 1);
   if (target !== currentPdfPage || pendingPdfPage !== null) {
     renderPdfPage(target);
   }
@@ -988,8 +1190,11 @@ function nextPdfPage() {
 
 function zoomPdf(delta) {
   if (!currentPdfDoc) return;
-  currentPdfScale = Math.max(0.6, Math.min(2.5, currentPdfScale + delta));
+  pdfUserZoomMultiplier = Math.max(0.4, Math.min(3.0, pdfUserZoomMultiplier + delta));
   renderPdfPage(currentPdfPage);
+  if (typeof showToast === 'function') {
+    showToast(`Zoom: ${Math.round(pdfUserZoomMultiplier * 100)}%`, "🔍");
+  }
 }
 
 /**

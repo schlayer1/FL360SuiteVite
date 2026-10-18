@@ -290,12 +290,30 @@ nav.tab-bar::-webkit-scrollbar {
 }
 
 .tab-content {
-  display: none;
+  content-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  contain-intrinsic-size: 0 100vh;
 }
 
 .tab-content.active {
-  display: block;
-  animation: fadeIn 0.25s ease-out;
+  content-visibility: visible;
+  position: relative;
+  pointer-events: auto;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@supports not (content-visibility: hidden) {
+  .tab-content {
+    display: none;
+    position: static;
+  }
+  .tab-content.active {
+    display: block;
+  }
 }
 
 @keyframes fadeIn {
@@ -981,6 +999,33 @@ textarea.note-input {
 /* ==========================================================================
    MODALS: DARK GLASS OVERLAY & FROSTED CARDS
    ========================================================================== */
+/* ==========================================================================
+   NATIVE HTML5 <dialog> & MODAL OVERLAY STYLING (Top-Layer & Accessibility)
+   ========================================================================== */
+
+dialog.modal-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: auto;
+  max-width: 92vw;
+  width: auto;
+  overflow: visible;
+  color: inherit;
+}
+
+dialog.modal-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+dialog.modal-dialog[open] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -2018,6 +2063,24 @@ body.theme-light .reflection-question-card {
   padding: 8px;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
   z-index: 100;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+/* Native Popover API Support for Header Dropdown */
+.header-dropdown-menu[popover] {
+  position: fixed;
+  inset: unset;
+  top: 58px;
+  right: 16px;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.97);
+  color: inherit;
+}
+
+.header-dropdown-menu[popover]:popover-open {
+  display: flex;
+  flex-direction: column;
   animation: dropdownFadeIn 0.15s ease-out;
 }
 

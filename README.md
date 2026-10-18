@@ -39,7 +39,21 @@ Die neue **Vite-Edition** bietet:
 
 ---
 
-## ⚡ Neu in Version 2.2.0 & 2.3.0: GoodNotes-Annotationen & Formular-Cockpit Split-Screen
+## ⚡ Neu in Version 2.4.0: Modern Web Architecture & Performance Edition
+
+| Feature | Beschreibung | Nutzen in der Praxis |
+| :--- | :--- | :--- |
+| 🚀 **Modern Web Performance Boost** | Eliminierung des globalen MutationObservers, Tab-Caching mit `content-visibility: hidden` (< 16 ms Wechselzeit) und 250-ms-Debounce beim Speichern. | Keine Eingabeverzögerungen oder Ruckler mehr beim schnellen Schreiben, Tippen oder Blättern. |
+| 📐 **Container-adaptive PDF-Skalierung** | Dynamische Breitenanpassung per `ResizeObserver` und stufenloses Auto-Fit (`computeFitScale`). | Das PDF passt sich beim Verkleinern des Fensters oder bei Split-Screens millimetergenau und verzerrungsfrei an. |
+| ↩️ **Vollständiges Undo & Redo** | Command-Pattern Action-Stack für Freihandstriche, Textmarker, Radierer und Notiz-Pins mit `Cmd+Z` / `Cmd+Shift+Z` / `Ctrl+Y`. | Gelöschte Markierungen lassen sich exakt an derselben Stelle wiederherstellen; voller Schutz vor Fehlbedienung. |
+| 💾 **Primat von IndexedDB & Quota Guard** | Vollwertige asynchrone IndexedDB-Rehydrierung beim Start und Quota-Sicherheitsfilter bei > 3 MB. | Selbst hunderte Freihand-Seiten und große Dokumente übersteigen niemals die Browser-Grenzen; persistente Speicherung. |
+| 🌐 **100 % Autarker Lokaler PDF-Worker** | Vollständige Bündelung von `pdf.worker.min.js` als lokales Vite-PWA-Asset ohne externe CDN-Abhängigkeit. | Absolute Offline-Garantie auch im tiefsten Schul-Funkloch ohne Internetzugang. |
+| ⚡ **On-Demand Lazy Loading (3,2 MB Ballast weg)** | Amtliche PDF-Formularvorlagen werden nicht mehr beim App-Start blockierend geparst, sondern erst bei Klick auf das Gutachten-Cockpit. | Spürbar leichtfüßigerer und schnellerer Start der Webapplikation. |
+| 🏛️ **Native HTML5 `<dialog>` & Popover API** | Modernste Browser-Standards für Modaldialoge (`showModal()`, Focus-Trap, Backdrop-Dismiss) und Aktionsmenüs (`popover="auto"`). | Höchste Barrierefreiheit, nativer Tastatursupport und sauberes Schließen ohne Event-Konflikte. |
+
+---
+
+## ⚡ Bisherige Meilensteine (Version 2.2.0 & 2.3.0): GoodNotes-Annotationen & Split-Screens
 
 | Feature | Beschreibung | Nutzen in der Praxis |
 | :--- | :--- | :--- |

@@ -94,10 +94,21 @@ function switchTab(tabId) {
    ========================================================================== */
 
 function toggleHeaderActionsDropdown(event) {
-  if (event) event.stopPropagation();
   const dropdown = document.getElementById("headerActionsDropdown");
   const chevron = document.getElementById("headerActionsChevron");
   if (!dropdown) return;
+
+  if (typeof dropdown.togglePopover === 'function') {
+    try {
+      dropdown.togglePopover();
+      const isOpen = dropdown.matches(':popover-open');
+      if (chevron) chevron.style.transform = isOpen ? "rotate(180deg)" : "rotate(0deg)";
+      return;
+    } catch(e) {}
+  }
+
+  // Fallback for older browser engines
+  if (event) event.stopPropagation();
   const isShown = dropdown.style.display === "block";
   dropdown.style.display = isShown ? "none" : "block";
   if (chevron) {
@@ -108,15 +119,27 @@ function toggleHeaderActionsDropdown(event) {
 function closeHeaderActionsDropdown() {
   const dropdown = document.getElementById("headerActionsDropdown");
   const chevron = document.getElementById("headerActionsChevron");
-  if (dropdown) dropdown.style.display = "none";
+  if (dropdown) {
+    if (typeof dropdown.hidePopover === 'function') {
+      try { dropdown.hidePopover(); } catch(e) {}
+    }
+    dropdown.style.display = "none";
+  }
   if (chevron) chevron.style.transform = "rotate(0deg)";
 }
 
-window.addEventListener("click", (e) => {
-  if (!e.target.closest(".header-dropdown-wrap")) {
-    closeHeaderActionsDropdown();
-  }
-});
+// Native Popover Toggle Event Listener for Chevron Animation
+if (typeof document !== 'undefined') {
+  document.addEventListener("DOMContentLoaded", () => {
+    const dropdown = document.getElementById("headerActionsDropdown");
+    const chevron = document.getElementById("headerActionsChevron");
+    if (dropdown && chevron) {
+      dropdown.addEventListener("toggle", (event) => {
+        chevron.style.transform = (event.newState === "open") ? "rotate(180deg)" : "rotate(0deg)";
+      });
+    }
+  });
+}
 
 function updateHeaderPhaseBadge(cur) {
   const badge = document.getElementById("laaHeaderPhaseBadge");

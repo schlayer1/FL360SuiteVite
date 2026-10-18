@@ -82,18 +82,23 @@ export class ResilientStorage {
   /**
    * 3. Speichert den Zustand atomar in IndexedDB und synchron im localStorage-Spiegel
    */
-  async saveState(state) {
+  async saveState(state, skipLocal = false) {
     this.hasUnsavedChanges = true;
     try {
-      // Synchroner Spiegel (sofortige Verfügbarkeit)
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('fl_cockpit_pro_state_v8', JSON.stringify(state));
+      // Synchroner Spiegel (sofern nicht bereits durch state.js ausgeführt)
+      if (!skipLocal && typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem('fl_cockpit_pro_state_v8', JSON.stringify(state));
+        } catch (e) {
+          console.warn('[ResilientStorage] LocalStorage mirror notice:', e);
+        }
       }
       
-      // Asynchroner robuster IndexedDB-Commit
+      // Asynchroner robuster IndexedDB-Commit ohne 5MB-Beschränkung
       await set(IDB_KEY, state);
+      this.hasUnsavedChanges = false;
     } catch (e) {
-      console.error('[ResilientStorage] Fehler beim Speichern des Zustands:', e);
+      console.error('[ResilientStorage] Fehler beim Speichern des Zustands in IndexedDB:', e);
     }
   }
 
@@ -112,26 +117,34 @@ export class ResilientStorage {
       footer.appendChild(badge);
     }
 
+    const usageMB = this.quotaInfo && this.quotaInfo.usage 
+      ? (this.quotaInfo.usage / (1024 * 1024)).toFixed(1) 
+      : null;
+    const usageText = usageMB ? ` (${usageMB} MB)` : '';
+
     if (this.isPersisted) {
       badge.className = 'storage-resilience-badge persisted ml-2';
-      badge.innerHTML = '🛡️ Dauerhafter Gerätespeicher aktiv';
-      badge.title = 'Der Browser schützt diesen Datenbestand dauerhaft vor automatischer Bereinigung.';
+      badge.innerHTML = `🛡️ Dauerhafter Gerätespeicher aktiv${usageText}`;
+      badge.title = 'Der Browser schützt diesen Datenbestand dauerhaft vor automatischer Bereinigung (Persistente IndexedDB).';
     } else {
       badge.className = 'storage-resilience-badge ml-2';
-      badge.innerHTML = '💾 Lokaler Gerätespeicher aktiv';
-      badge.title = 'Daten werden lokal auf diesem Gerät gespeichert.';
+      badge.innerHTML = `💾 Lokaler Gerätespeicher aktiv${usageText}`;
+      badge.title = 'Daten werden lokal auf diesem Gerät in IndexedDB gespeichert.';
     }
   }
 
   /**
-   * Registriert Schließschutz (beforeunload) bei aktiven Live-Sitzungen
+   * Registriert Schließschutz (beforeunload) bei aktiven Live-Sitzungen oder ungespeicherten Daten
    */
   setupExitGuard() {
     window.addEventListener('beforeunload', (e) => {
-      // Wenn eine Live-Hospitation mit laufendem Timer oder Mitschrift aktiv ist
-      if (window.liveTimerRunning || (window.liveLogs && window.liveLogs.length > 0)) {
+      // Wenn eine Live-Hospitation aktiv ist ODER ungespeicherte Daten im Debounce-Puffer liegen
+      const hasPendingWrites = this.hasUnsavedChanges || (typeof window !== 'undefined' && window._isSavePending);
+      const isLiveHospitation = window.liveTimerRunning || (window.liveLogs && window.liveLogs.length > 0);
+
+      if (isLiveHospitation || hasPendingWrites) {
         e.preventDefault();
-        e.returnValue = 'Sie haben eine laufende Unterrichtsmitschrift. Möchten Sie die Seite wirklich verlassen?';
+        e.returnValue = 'Sie haben ungespeicherte Eingaben oder eine aktive Unterrichtsmitschrift. Möchten Sie die Seite wirklich verlassen?';
         return e.returnValue;
       }
     });
